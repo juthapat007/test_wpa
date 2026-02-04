@@ -1,20 +1,34 @@
+import 'package:test_wpa/features/profile/domain/entities/profile.dart'; // import Profile entity
+
 class ProfileModel {
   final int id;
   final String name;
   final String title;
   final String email;
-  final String avatarUrl;
+  final String phone;
   final Company company;
+  final String avatarUrl;
   final Team team;
+  final bool firstConference;
+  final bool spouseAttending;
+  final String spouseName;
+  final bool needRoom;
+  final String bookingNo;
 
   ProfileModel({
     required this.id,
     required this.name,
     required this.title,
     required this.email,
-    required this.avatarUrl,
+    required this.phone,
     required this.company,
+    required this.avatarUrl,
     required this.team,
+    required this.firstConference,
+    required this.spouseAttending,
+    required this.spouseName,
+    required this.needRoom,
+    required this.bookingNo,
   });
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
@@ -23,27 +37,67 @@ class ProfileModel {
       name: json['name'] ?? '',
       title: json['title'] ?? '',
       email: json['email'] ?? '',
-      avatarUrl: json['avatar_url'] ?? '',
+      phone: json['phone'] ?? '',
       company: Company.fromJson(json['company']),
+      avatarUrl: json['avatar_url'] ?? '',
       team: Team.fromJson(json['team']),
+      firstConference: json['first_conference'] ?? false,
+      spouseAttending: json['spouse_attending'] ?? false,
+      spouseName: json['spouse_name'] ?? '',
+      needRoom: json['need_room'] ?? false,
+      bookingNo: json['booking_no'] ?? '',
+    );
+  }
+
+  // แปลงจาก Model ไปเป็น Entity
+  Profile toEntity() {
+    return Profile(
+      id: id,
+      name: name,
+      title: title,
+      email: email,
+      avatarUrl: avatarUrl,
+      companyName: company.name,
+      teamName: team.name,
     );
   }
 }
 
 class Company {
+  final int id;
   final String name;
-  Company({required this.name});
+  final String country;
+  final String? logoUrl;
+
+  Company({
+    required this.id,
+    required this.name,
+    required this.country,
+    this.logoUrl,
+  });
 
   factory Company.fromJson(Map<String, dynamic> json) {
-    return Company(name: json['name'] ?? '');
+    return Company(
+      id: json['id'],
+      name: json['name'] ?? '',
+      country: json['country'] ?? '',
+      logoUrl: json['logo_url'],
+    );
   }
 }
 
 class Team {
+  final int id;
   final String name;
-  Team({required this.name});
+  final String? countryCode;
+
+  Team({required this.id, required this.name, this.countryCode});
 
   factory Team.fromJson(Map<String, dynamic> json) {
-    return Team(name: json['name'] ?? '');
+    return Team(
+      id: json['id'],
+      name: json['name'] ?? '',
+      countryCode: json['country_code'],
+    );
   }
 }

@@ -3,7 +3,7 @@ import 'package:test_wpa/features/auth/data/datasource/auth_local_storage.dart';
 import 'package:test_wpa/features/auth/data/models/login_response.dart';
 import 'package:test_wpa/features/auth/data/services/auth_api.dart';
 import 'package:flutter_modular/flutter_modular.dart';
-import 'package:test_wpa/features/auth/domain/repository/auth_repository.dart';
+import 'package:test_wpa/features/auth/domain/repositories/auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthApi authApi;

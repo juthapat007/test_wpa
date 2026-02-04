@@ -1,7 +1,7 @@
 import 'package:test_wpa/features/profile/data/models/profile_model.dart';
 import 'package:dio/dio.dart';
-abstract class ProfileRepository {
-  ProfileRepository(Dio dio);
+import 'package:test_wpa/features/profile/presentation/page/profile.dart';
 
-  Future<ProfileModel> getProfile();
+abstract class ProfileRepository {
+  Future<Profile> getProfile();
 }

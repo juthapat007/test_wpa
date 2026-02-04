@@ -2,7 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:meta/meta.dart';
 import 'package:test_wpa/core/network/dio_client.dart';
-import 'package:test_wpa/features/auth/domain/repository/auth_repository.dart';
+import 'package:test_wpa/features/auth/domain/repositories/auth_repository.dart';
 import 'package:test_wpa/features/auth_local_storage.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 part 'auth_event.dart';
@@ -36,6 +36,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   //     emit(AuthInitial());
   //   }
   // }
+
   Future<void> _onLoginRequested(
     AuthLoginEvent event,
     Emitter<AuthState> emit,
