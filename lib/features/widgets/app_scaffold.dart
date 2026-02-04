@@ -51,7 +51,9 @@ class AppScaffold extends StatelessWidget {
         actions: actions,
       ),
       body: body,
-      bottomNavigationBar: AppBottomNavigationBar(currentIndex: currentIndex),
+      bottomNavigationBar: currentIndex == -1
+          ? null
+          : AppBottomNavigationBar(currentIndex: currentIndex),
     );
   }
 }

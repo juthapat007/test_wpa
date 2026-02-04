@@ -10,8 +10,12 @@ class AppBottomNavigationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final validIndex = currentIndex >= 0 && currentIndex < bottomNavItems.length
+        ? currentIndex
+        : 0;
+
     return BottomNavigationBar(
-      currentIndex: currentIndex,
+      currentIndex: validIndex,
       onTap: (index) {
         Modular.to.navigate(bottomNavItems[index].route);
       },

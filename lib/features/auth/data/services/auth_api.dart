@@ -19,6 +19,5 @@ class AuthApi {
       debugPrintStack(stackTrace: s);
       rethrow;
     }
-    // return response;
   }
 }

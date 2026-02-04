@@ -32,6 +32,16 @@ class ProfileModel {
   });
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
+      String companyName;
+  if (json.containsKey('company_name')) {
+    // Format 1: delegate response มี company_name ตรงๆ
+    companyName = json['company_name'] ?? '';
+  } else if (json.containsKey('company') && json['company'] is Map) {
+    // Format 2: profile response มี company object
+    companyName = json['company']['name'] ?? '';
+  } else {
+    companyName = '';
+  }
     return ProfileModel(
       id: json['id'],
       name: json['name'] ?? '',

@@ -1,3 +1,4 @@
+import 'dart:convert'; // ✅ เพิ่ม import
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:test_wpa/features/auth/data/datasource/auth_local_storage.dart';
 import 'package:test_wpa/features/auth/data/models/login_response.dart';
@@ -22,6 +23,18 @@ class AuthRepositoryImpl implements AuthRepository {
       // เก็บ token ใน secure storage
       final storage = Modular.get<FlutterSecureStorage>();
       await storage.write(key: 'auth_token', value: loginResponse.accessToken);
+      
+      // ✅ เก็บ delegate/user data ไว้ด้วย
+      if (loginResponse.user != null) {
+        final userData = {
+          'id': loginResponse.user!.id,
+          'name': loginResponse.user!.name,
+          'email': loginResponse.user!.email,
+          'avatar_url': loginResponse.user!.avatarUrl,
+        };
+        await storage.write(key: 'user_data', value: jsonEncode(userData));
+        print('✅ Cached user data: ${loginResponse.user!.name}');
+      }
 
       return loginResponse;
     } catch (e) {
@@ -33,6 +46,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> logout() async {
     final storage = Modular.get<FlutterSecureStorage>();
     await storage.delete(key: 'auth_token');
+    await storage.delete(key: 'user_data');
   }
 
   @override

@@ -3,25 +3,39 @@ class User {
   final String name;
   final String email;
   final String avatarUrl;
-  final String password;
+  final String? password;
+  final String? title;
+  final String? companyName;
 
   User({
     required this.id,
     required this.name,
     required this.email,
     required this.avatarUrl,
-    required this.password,
+    this.password,
+    this.title, // ✅ เพิ่มใน constructor
+    this.companyName, // ✅ เพิ่มใน constructor
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id'],
       name: json['name'],
-      password: json['password'],
       email: json['email'],
-      avatarUrl: json['avatar_url'],
+      avatarUrl: json['avatar_url'] ?? '',
+      password: json['password'],
+      title: json['title'],
+      companyName: json['company_name'],
     );
   }
-  Map<String, dynamic> toJson() => {'email': email, 'password': password};
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'email': email,
+        'avatar_url': avatarUrl,
+        if (password != null) 'password': password,
+        if (title != null) 'title': title,
+        if (companyName != null) 'company_name': companyName,
+      };
 }
-//แปลง object ให้เป็น json เพื่อส่งไปยัง api

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:test_wpa/features/widget/app_scaffold.dart';
+import 'package:test_wpa/features/widgets/app_scaffold.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_wpa/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
@@ -10,7 +10,7 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      title: 'Profile',
+      title: 'Personal Information',
       currentIndex: -1, // ไม่มีใน bottom nav
       showAvatar: false,
       body: BlocBuilder<ProfileBloc, ProfileState>(
@@ -24,7 +24,7 @@ class ProfilePage extends StatelessWidget {
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   CircleAvatar(
                     radius: 50,
@@ -42,12 +42,18 @@ class ProfilePage extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: space.xs),
+
+                  // Text(
+                  //   p.title,
+                  //   style: const TextStyle(fontSize: 16, color: Colors.grey),
+                  // ),
+                  SizedBox(height: space.l),
                   Text(
-                    p.title,
+                    'Personal Info',
                     style: const TextStyle(fontSize: 16, color: Colors.grey),
                   ),
-                  SizedBox(height: space.l),
-                  _buildInfoCard('Email', p.email),
+
+                  _buildInfoCard('Full Name', p.name),
                   SizedBox(height: space.m),
                   _buildInfoCard('Company', p.companyName),
                   SizedBox(height: space.m),

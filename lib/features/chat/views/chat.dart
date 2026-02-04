@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_app_bar.dart';
 import 'package:test_wpa/core/theme/app_avatar.dart';
-import 'package:test_wpa/features/widget/app_bottom_navigation_bar.dart';
-import 'package:test_wpa/features/widget/app_scaffold.dart';
-import 'package:test_wpa/features/widget/app_text_form_field.dart';
+import 'package:test_wpa/features/widgets/app_bottom_navigation_bar.dart';
+import 'package:test_wpa/features/widgets/app_scaffold.dart';
+import 'package:test_wpa/features/widgets/app_text_form_field.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
