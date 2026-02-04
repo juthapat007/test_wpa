@@ -1,11 +1,12 @@
 import 'package:test_wpa/features/profile/data/models/profile_model.dart';
 import 'package:test_wpa/features/profile/data/repository/service/profile_api.dart';
 import 'package:test_wpa/features/profile/domain/entities/profile.dart';
-import 'package:test_wpa/features/profile/domain/repositories/profile_repository.dart'; // import Profile entity
+import 'package:test_wpa/features/profile/domain/repositories/profile_repository.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
   final ProfileApi api;
 
+  // ✅ CHANGED: from ProfileRepositoryImpl(this.api) to:
   ProfileRepositoryImpl({required this.api});
 
   @override
@@ -20,7 +21,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       final entity = model.toEntity();
       print('✅ Entity created: ${entity.name}');
       
-      return entity; // return Profile entity
+      return entity;
     } catch (e, stackTrace) {
       print('❌ ProfileRepositoryImpl error: $e');
       print('📍 StackTrace: $stackTrace');

@@ -23,7 +23,8 @@ import 'package:test_wpa/features/profile/data/repository/profile_repository_imp
 import 'package:test_wpa/features/profile/data/repository/service/profile_api.dart';
 import 'package:test_wpa/features/profile/domain/repositories/profile_repository.dart';
 import 'package:test_wpa/features/profile/presentation/bloc/profile_bloc.dart';
-import 'package:test_wpa/features/profile/presentation/page/profile.dart';
+import 'package:test_wpa/features/profile/presentation/page/profile_widget.dart';
+import 'package:test_wpa/features/profile/views/profile_page.dart';
 import 'package:test_wpa/features/scan/presentation/bloc/scan_bloc.dart';
 import 'package:test_wpa/features/scan/views/scan.dart';
 import 'package:test_wpa/features/search/presentation/bloc/search_bloc.dart';
@@ -125,7 +126,7 @@ class AppModule extends Module {
       '/profile',
       child: (_) => BlocProvider(
         create: (_) => Modular.get<ProfileBloc>()..add(LoadProfile()),
-        child: const Profile(),
+        child: const ProfileWidget(), // Changed from Profile to ProfileWidget
       ),
     );
 

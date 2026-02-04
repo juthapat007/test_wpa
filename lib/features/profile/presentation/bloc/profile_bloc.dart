@@ -1,7 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 import 'package:test_wpa/features/profile/domain/entities/profile.dart';
-import 'package:test_wpa/features/profile/domain/repositories/profile_repository.dart'; // แก้ path
+import 'package:test_wpa/features/profile/domain/repositories/profile_repository.dart'; // ✅ Fixed: repositories (plural)
 
 part 'profile_event.dart';
 part 'profile_state.dart';
