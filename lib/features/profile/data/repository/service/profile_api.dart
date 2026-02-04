@@ -1,6 +1,6 @@
 import 'package:test_wpa/core/network/dio_client.dart';
 import 'package:test_wpa/features/profile/data/models/profile_model.dart';
-import 'package:test_wpa/features/profile/domain/repository/profile_repository.dart';
+import 'package:test_wpa/features/profile/data/repository/profile_repository_impl.dart';
 import 'package:test_wpa/features/profile/presentation/page/profile.dart';
 import 'package:dio/dio.dart';
 

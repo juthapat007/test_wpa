@@ -20,9 +20,9 @@ import 'package:test_wpa/features/meeting/presentation/bloc/meeting_bloc.dart';
 import 'package:test_wpa/features/meeting/views/meeting_page.dart';
 import 'package:test_wpa/features/notification/presentation/bloc/notification_bloc.dart';
 import 'package:test_wpa/features/notification/presentation/page/notification.dart';
-import 'package:test_wpa/features/profile/data/repository/profile_repository_impl.dart';
 import 'package:test_wpa/features/profile/data/repository/service/profile_api.dart';
-import 'package:test_wpa/features/profile/domain/repository/profile_repository.dart';
+import 'package:test_wpa/features/profile/data/repository/profile_repository_impl.dart';
+import 'package:test_wpa/features/profile/domain/repositories/profile_repository.dart';
 import 'package:test_wpa/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:test_wpa/features/profile/presentation/page/profile.dart';
 import 'package:test_wpa/features/scan/presentation/bloc/scan_bloc.dart';
@@ -32,45 +32,40 @@ import 'package:test_wpa/features/search/views/search_page.dart';
 
 class AppModule extends Module {
   @override
+  @override
   void binds(i) {
-    /// ================= Core =================
-    i.addInstance<Dio>(DioClient.createDio());
+    /// ===== Core =====
+    i.addSingleton<Dio>(() => DioClient().dio);
     i.addInstance<FlutterSecureStorage>(const FlutterSecureStorage());
 
-    /// ================= Auth =================
-    i.addLazySingleton<AuthApi>(() => AuthApi(Modular.get<Dio>()));
+    /// ===== Auth =====
+    i.addLazySingleton<AuthApi>(() => AuthApi(i()));
+    i.addLazySingleton<AuthRepository>(() => AuthRepositoryImpl(i()));
+    i.addLazySingleton<AuthBloc>(() => AuthBloc(authRepository: i()));
 
-    i.addLazySingleton<AuthRepository>(
-      () => AuthRepositoryImpl(Modular.get<AuthApi>()),
-    );
+    /// ===== Profile =====
+    i.addLazySingleton<ProfileApi>(() => ProfileApi(i()));
 
-    i.addLazySingleton<AuthBloc>(
-      () => AuthBloc(authRepository: Modular.get<AuthRepository>()),
-    );
+    i.addLazySingleton<ProfileRepository>(() => ProfileRepositoryImpl(i()));
 
-    /// ================= Profile =================
-    i.addLazySingleton<ProfileApi>(() => ProfileApi(Modular.get<Dio>()));
-
-    i.addLazySingleton<ProfileRepository>(
-      () => ProfileRepositoryImpl(api: Modular.get<ProfileApi>()),
-    );
-
-    i.addLazySingleton<ProfileBloc>(
-      () => ProfileBloc(profileRepository: Modular.get<ProfileRepository>()),
-    );
-
-    /// ================= Other Feature Blocs =================
-    // SearchBloc, MeetingBloc, etc.
+    // i.addLazySingleton<ProfileBloc>(() => ProfileBloc(profileRepository: i()));
+    i.add<ProfileBloc>(() => ProfileBloc(profileRepository: i()));
   }
 
   @override
-
   void routes(r) {
     /// ===== Public =====
+    // r.child(
+    //   '/',
+    //   child: (_) => BlocProvider<AuthBloc>(
+    //     create: (_) => Modular.get<AuthBloc>(),
+    //     child: const LoginPage(),
+    //   ),
+    // );
     r.child(
       '/',
-      child: (_) => BlocProvider<AuthBloc>(
-        create: (_) => Modular.get<AuthBloc>(),
+      child: (_) => BlocProvider.value(
+        value: Modular.get<AuthBloc>(),
         child: const LoginPage(),
       ),
     );

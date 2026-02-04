@@ -1,6 +1,5 @@
 part of 'profile_bloc.dart';
 
-@immutable
 abstract class ProfileState {}
 
 class ProfileInitial extends ProfileState {}
@@ -8,7 +7,7 @@ class ProfileInitial extends ProfileState {}
 class ProfileLoading extends ProfileState {}
 
 class ProfileLoaded extends ProfileState {
-  final Profile profile;
+  final ProfileModel profile;
   ProfileLoaded(this.profile);
 }
 

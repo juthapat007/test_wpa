@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:meta/meta.dart';
+import 'package:test_wpa/core/network/dio_client.dart';
 import 'package:test_wpa/features/auth/domain/repository/auth_repository.dart';
 import 'package:test_wpa/features/auth_local_storage.dart';
 import 'package:flutter_modular/flutter_modular.dart';
@@ -16,14 +17,45 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthReset>(_onReset);
   }
 
+  // Future<void> _onLoginRequested(
+  //   AuthLoginEvent event,
+  //   Emitter<AuthState> emit,
+  // ) async {
+  //   emit(AuthLoading());
+  //   try {
+  //     // 1️⃣ login (ภายในนี้คุณ save token แล้ว)
+  //     await authRepository.login(email: event.email, password: event.password);
+
+  //     // ⭐ 2️⃣ re-init Dio เพื่อแนบ token กับทุก request
+  //     await DioClient().init();
+
+  //     // 3️⃣ login success
+  //     emit(AuthAuthenticated());
+  //   } catch (e) {
+  //     emit(AuthError('email or Password is wrong'));
+  //     emit(AuthInitial());
+  //   }
+  // }
   Future<void> _onLoginRequested(
     AuthLoginEvent event,
     Emitter<AuthState> emit,
   ) async {
     emit(AuthLoading());
     try {
-      await authRepository.login(email: event.email, password: event.password);
-      emit(AuthAuthenticated());
+      // 1️⃣ login
+      final result = await authRepository.login(
+        email: event.email,
+        password: event.password,
+      );
+
+      // ✅ ใช้ user (ไม่ใช่ delegate)
+      final avatarUrl = result.user?.avatarUrl;
+
+      // 2️⃣ init dio
+      await DioClient().init();
+
+      // 3️⃣ emit success พร้อม avatar
+      emit(AuthAuthenticated(avatarUrl: avatarUrl));
     } catch (e) {
       emit(AuthError('email or Password is wrong'));
       emit(AuthInitial());
@@ -33,7 +65,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> _onLogout(AuthLogout event, Emitter<AuthState> emit) async {
     await authRepository.logout();
     emit(AuthUnauthenticated());
-    //ปล่อยemitว่า ไม่ได้รับอนุญาตให้เข้ามา
   }
 
   void _onReset(AuthReset event, Emitter<AuthState> emit) {

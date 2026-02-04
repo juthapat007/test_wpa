@@ -1,22 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:test_wpa/core/network/dio_client.dart';
-import 'package:test_wpa/features/profile/domain/repository/profile_repository.dart';
-import 'package:test_wpa/features/profile/presentation/bloc/profile_bloc.dart';
-import 'package:test_wpa/features/widget/app_scaffold.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-class ProfilePage extends StatelessWidget {
-  final String token;
+import 'package:test_wpa/core/network/dio_client.dart';
+import 'package:test_wpa/features/profile/data/repository/profile_repository_impl.dart';
+import 'package:test_wpa/features/profile/domain/repositories/profile_repository.dart';
+import 'package:test_wpa/features/profile/presentation/bloc/profile_bloc.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 
-  const ProfilePage({super.key, required this.token});
+class ProfilePage extends StatelessWidget {
+  const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => ProfileBloc(
-        ProfileRepository(
-          DioClient(token).dio,
-        ),
-      )..add(LoadProfile()),
+      create: (_) => Modular.get<ProfileBloc>()..add(LoadProfile()),
+
       child: Scaffold(
         appBar: AppBar(title: const Text('Profile')),
         body: BlocBuilder<ProfileBloc, ProfileState>(
@@ -39,7 +36,6 @@ class ProfilePage extends StatelessWidget {
                     Text(p.name, style: const TextStyle(fontSize: 20)),
                     Text(p.title),
                     Text(p.email),
-                    const SizedBox(height: 12),
                     Text('Company: ${p.company.name}'),
                     Text('Team: ${p.team.name}'),
                   ],
