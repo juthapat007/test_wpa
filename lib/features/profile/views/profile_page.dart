@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:test_wpa/features/profile/widgets/profile_info_card.dart';
+import 'package:test_wpa/features/widgets/app_button.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_wpa/features/profile/presentation/bloc/profile_bloc.dart';
@@ -41,23 +43,113 @@ class ProfilePage extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: space.xs),
 
-                  // Text(
-                  //   p.title,
-                  //   style: const TextStyle(fontSize: 16, color: Colors.grey),
-                  // ),
                   SizedBox(height: space.l),
                   Text(
-                    'Personal Info',
+                    'PERSONAL INFORMATION',
                     style: const TextStyle(fontSize: 16, color: Colors.grey),
                   ),
 
-                  _buildInfoCard('Full Name', p.name),
-                  SizedBox(height: space.m),
-                  _buildInfoCard('Company', p.companyName),
-                  SizedBox(height: space.m),
-                  _buildInfoCard('Team', p.teamName),
+                  ProfileInfoCard(
+                    label: 'Full Name',
+                    child: Row(
+                      children: [
+                        Text(p.name, style: const TextStyle(fontSize: 16)),
+                        const Spacer(),
+                        IconButton(
+                          icon: const Icon(Icons.keyboard_arrow_right),
+                          onPressed: () {
+                            // open edit dialog
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: space.xs),
+                  ProfileInfoCard(
+                    label: 'Company',
+                    child: Row(
+                      children: [
+                        Text(
+                          p.companyName,
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon: const Icon(Icons.keyboard_arrow_right),
+                          onPressed: () {
+                            // open edit dialog
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: space.xs),
+                  ProfileInfoCard(
+                    label: 'Team',
+                    child: Row(
+                      children: [
+                        Text(p.teamName, style: const TextStyle(fontSize: 16)),
+                        const Spacer(),
+                        IconButton(
+                          icon: const Icon(Icons.keyboard_arrow_right),
+                          onPressed: () {
+                            // open edit dialog
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: space.l),
+                  Text(
+                    'SECURITY',
+                    style: const TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                  SizedBox(height: space.xs),
+                  ProfileInfoCard(
+                    label: 'Company',
+                    child: Row(
+                      children: [
+                        Text(
+                          p.companyName,
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon: const Icon(Icons.keyboard_arrow_right),
+                          onPressed: () {
+                            // open edit dialog
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: space.l),
+                  Text(
+                    'NOTIFICATIONS',
+                    style: const TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                  ProfileInfoCard(
+                    label: 'Company',
+                    child: Row(
+                      children: [
+                        Text(
+                          p.companyName,
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon: const Icon(Icons.keyboard_arrow_right),
+                          onPressed: () {
+                            // open edit dialog
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: space.l),
+                  AppButton(text: 'Logout', onPressed: () {}),
                 ],
               ),
             );
@@ -82,37 +174,6 @@ class ProfilePage extends StatelessWidget {
 
           return const SizedBox.shrink();
         },
-      ),
-    );
-  }
-
-  Widget _buildInfoCard(String label, String value) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

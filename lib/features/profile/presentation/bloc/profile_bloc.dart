@@ -22,7 +22,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       final profile = await profileRepository.getProfile();
       emit(ProfileLoaded(profile));
     } catch (e) {
-      print('❌ ProfileBloc error: $e');
+      print(' ProfileBloc error: $e');
       emit(ProfileError('Cannot load profile: $e'));
     }
   }

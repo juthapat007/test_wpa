@@ -14,8 +14,9 @@ class AppView extends StatelessWidget {
         if (state is AuthUnauthenticated) {
           Modular.to.navigate('/');
         }
-      },
+      }, //ฟังก์ชันที่ใช้เพื่อตรวจสอบสถานะการล็อกอิน และควบคุม navigation
       child: const RouterOutlet(),
+      //แสดงหน้าตามการเปลี่ยนแปลงของ navigation
     );
   }
 }

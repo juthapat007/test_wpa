@@ -43,16 +43,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(AuthLoading());
     try {
-      // 1️⃣ login
+      // 1️login
       final result = await authRepository.login(
         email: event.email,
         password: event.password,
       );
 
-      // ✅ ใช้ user (ไม่ใช่ delegate)
+      //  ใช้ user (ไม่ใช่ delegate)
       final avatarUrl = result.user?.avatarUrl;
 
-      // 2️⃣ init dio
+      //init dio
       await DioClient().init();
 
       // 3️⃣ emit success พร้อม avatar

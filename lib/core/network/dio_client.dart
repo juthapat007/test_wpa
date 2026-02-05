@@ -8,6 +8,7 @@ class DioClient {
   static final DioClient _instance = DioClient._internal();
   factory DioClient() => _instance;
   DioClient._internal();
+  //internal
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
@@ -19,6 +20,7 @@ class DioClient {
       headers: {'Content-Type': 'application/json'},
     ),
   );
+  //dio ตัวนี้จะถูกใช้ทั้งแอป
 
   Future<void> init() async {
     dio.interceptors.clear();
@@ -26,7 +28,8 @@ class DioClient {
     dio.interceptors.add(AuthInterceptor());
   }
 
-  // ✅ ADD THIS METHOD
+  //  ADD THIS METHOD
+
   static Dio createDio() {
     final dio = Dio(
       BaseOptions(
@@ -39,4 +42,5 @@ class DioClient {
     dio.interceptors.add(AuthInterceptor());
     return dio;
   }
+  //สว่น dio ตัวนี้จะถูกใช้ในแต่ละ feature
 }

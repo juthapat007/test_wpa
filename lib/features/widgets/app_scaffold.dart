@@ -7,6 +7,7 @@ import 'package:flutter_modular/flutter_modular.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class AppScaffold extends StatelessWidget {
+  final String icon;
   final String title;
   final int currentIndex;
   final Widget? body;
@@ -15,6 +16,7 @@ class AppScaffold extends StatelessWidget {
 
   const AppScaffold({
     super.key,
+    this.icon = '',
     required this.title,
     required this.currentIndex,
     this.body,

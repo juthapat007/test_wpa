@@ -23,3 +23,4 @@ class AppWidget extends StatelessWidget {
     );
   }
 }
+//เป็นหน้าหลักของแอป
