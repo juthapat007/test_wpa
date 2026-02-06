@@ -1,3 +1,4 @@
+import 'package:test_wpa/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:test_wpa/features/profile/widgets/profile_info_card.dart';
 import 'package:test_wpa/features/widgets/app_button.dart';
@@ -13,7 +14,7 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'Personal Information',
-      currentIndex: -1, // ไม่มีใน bottom nav
+      currentIndex: -1,
       showAvatar: false,
       body: BlocBuilder<ProfileBloc, ProfileState>(
         builder: (context, state) {

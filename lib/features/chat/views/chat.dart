@@ -6,6 +6,7 @@ import 'package:test_wpa/core/theme/app_avatar.dart';
 import 'package:test_wpa/features/widgets/app_bottom_navigation_bar.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
 import 'package:test_wpa/features/widgets/app_text_form_field.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -34,8 +35,13 @@ class _ChatPageState extends State<ChatPage> {
     return AppScaffold(
       title: 'Chat',
       currentIndex: 3,
-      actions: const [
-        IconButton(icon: Icon(Icons.notifications_outlined), onPressed: null),
+      backgroundColor: const Color(0xFFF9FAFB),
+      appBarStyle: AppBarStyle.elegant,
+      actions: [
+        IconButton(
+          onPressed: () => Modular.to.pushNamed('/notification'),
+          icon: const Icon(Icons.notifications_outlined, color: Colors.grey),
+        ),
       ],
       body: SafeArea(
         child: Padding(

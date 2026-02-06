@@ -1,5 +1,5 @@
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
-import 'package:test_wpa/features/schedules/presentation/views/schedule_status.dart';
+import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 
 class ScheduleModel {
   final int id;

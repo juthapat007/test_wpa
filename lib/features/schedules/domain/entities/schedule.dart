@@ -1,4 +1,4 @@
-import 'package:test_wpa/features/schedules/presentation/views/schedule_status.dart';
+import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 
 class Schedule {
   final int id;
