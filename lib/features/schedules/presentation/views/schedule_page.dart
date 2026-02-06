@@ -257,17 +257,7 @@ class _SchedulePageState extends State<SchedulePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: color.AppColors.surface,
-      // ✨ Floating Action Button
-      // floatingActionButton: Padding(
-      //   padding: const EdgeInsets.only(bottom: 100, right: 20),
-      //   child: FloatingActionButton(
-      //     backgroundColor: isSelectionMode
-      //         ? Colors.green
-      //         : const Color(0xFF4F46E5),
-      //     child: Icon(isSelectionMode ? Icons.check_circle : Icons.event_busy),
-      //     onPressed: _toggleSelectionMode,
-      //   ),
-      // ),
+      // ✅ Floating Action Button - ส่งข้อมูลไปหน้า AttendanceStatus
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 100, right: 20),
         child: FloatingActionButton(
@@ -277,13 +267,35 @@ class _SchedulePageState extends State<SchedulePage> {
           child: Icon(isSelectionMode ? Icons.check_circle : Icons.event_busy),
           onPressed: () {
             if (isSelectionMode) {
-              // ✨ ถ้าอยู่ใน selection mode แล้วกด = ไปหน้า AttendanceStatus
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AttendanceStatus(),
-                ),
-              );
+              // ✅ ตรวจสอบว่าเลือกอย่างน้อย 1 รายการ
+              if (selectedScheduleIds.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please select at least one meeting'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                return;
+              }
+
+              // ✅ ดึงข้อมูล Schedule จาก BlocState
+              final state = ReadContext(context).read<ScheduleBloc>().state;
+              if (state is ScheduleLoaded) {
+                // กรอง schedules ที่ถูกเลือก
+                final selectedSchedules = state.scheduleResponse.schedules
+                    .where((s) => selectedScheduleIds.contains(s.id))
+                    .toList();
+
+                // ไปหน้า AttendanceStatus พร้อมส่งข้อมูล
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AttendanceStatus(
+                      selectedSchedules: selectedSchedules,
+                    ),
+                  ),
+                );
+              }
             } else {
               // ถ้ายังไม่ได้เปิด selection mode = เปิด selection mode
               _toggleSelectionMode();

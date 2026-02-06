@@ -29,7 +29,27 @@ class _MeetingCard extends StatelessWidget {
 
   const _MeetingCard({required this.schedule});
 
+  bool _isUnknownDelegate() {
+    // ✅ ตรวจสอบว่า delegate เป็น unknown หรือไม่
+    final delegate = schedule.delegate;
+    if (delegate == null) return true;
+    if (delegate.id == null) return true;
+    if (delegate.name?.toLowerCase() == 'unknown') return true;
+    if (delegate.company?.toLowerCase() == 'n/a') return true;
+    return false;
+  }
+
   Color _getStatusColor() {
+    // ✅ ถ้า tableNumber เป็น null หรือ empty = Break Time
+    if (schedule.tableNumber.isEmpty) {
+      return Colors.amber[600]!;
+    }
+
+    // ✅ ถ้า delegate เป็น unknown = สีเทา
+    if (_isUnknownDelegate()) {
+      return Colors.grey[600]!;
+    }
+
     final now = DateTime.now();
     if (schedule.endAt.isBefore(now)) {
       return Colors.green[600]!;
@@ -41,6 +61,16 @@ class _MeetingCard extends StatelessWidget {
   }
 
   String _getStatusText() {
+    // ✅ ถ้า tableNumber เป็น null หรือ empty = Break Time
+    if (schedule.tableNumber.isEmpty) {
+      return 'BREAK';
+    }
+
+    // ✅ ถ้า delegate เป็น unknown = TBD (To Be Determined)
+    if (_isUnknownDelegate()) {
+      return 'TBD';
+    }
+
     final now = DateTime.now();
     if (schedule.endAt.isBefore(now)) {
       return 'PASSED';
@@ -56,12 +86,23 @@ class _MeetingCard extends StatelessWidget {
     final startTime = DateFormat('HH:mm').format(schedule.startAt.toLocal());
     final endTime = DateFormat('HH:mm').format(schedule.endAt.toLocal());
     final statusColor = _getStatusColor();
+    final isBreakTime = schedule.tableNumber.isEmpty;
+    final isUnknown = _isUnknownDelegate();
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isBreakTime
+            ? Colors.amber[50]
+            : isUnknown
+            ? Colors.grey[100]
+            : Colors.white,
         borderRadius: BorderRadius.circular(10),
+        border: isBreakTime
+            ? Border.all(color: Colors.amber[200]!, width: 2)
+            : isUnknown
+            ? Border.all(color: Colors.grey[300]!, width: 2)
+            : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -88,14 +129,38 @@ class _MeetingCard extends StatelessWidget {
                       color: Colors.black87,
                     ),
                   ),
-                  Text(
-                    'Table ${schedule.tableNumber}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
+                  // ✅ แสดง Table number เฉพาะเมื่อไม่ใช่ Break Time
+                  if (!isBreakTime)
+                    Text(
+                      'Table ${schedule.tableNumber}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isUnknown
+                            ? Colors.grey[500]
+                            : AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
+                  // ✅ แสดง "Break Time" เมื่อเป็น Break
+                  if (isBreakTime)
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.coffee_outlined,
+                          size: 14,
+                          color: Colors.amber[700],
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Break Time',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.amber[700],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
                 ],
               ),
               Container(
@@ -119,34 +184,65 @@ class _MeetingCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            schedule.delegate?.company ?? 'No company',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: statusColor,
-            ),
-          ),
-          if (schedule.delegate?.name != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              schedule.delegate!.name!,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-          ],
-          if (schedule.country.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(Icons.flag, size: 12, color: Colors.grey[400]),
-                const SizedBox(width: 4),
+          // ✅ แสดงข้อมูลบริษัทเฉพาะเมื่อไม่ใช่ Break Time
+          if (!isBreakTime) ...[
+            // ✅ แสดงข้อความพิเศษสำหรับ Unknown Delegate
+            if (isUnknown)
+              Row(
+                children: [
+                  Icon(Icons.help_outline, size: 14, color: Colors.grey[500]),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Waiting for confirmation',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              )
+            else ...[
+              Text(
+                schedule.delegate?.company ?? 'No company',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: statusColor,
+                ),
+              ),
+              if (schedule.delegate?.name != null) ...[
+                const SizedBox(height: 4),
                 Text(
-                  schedule.country,
-                  style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+                  schedule.delegate!.name!,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],
-            ),
+              if (schedule.country.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.flag, size: 12, color: Colors.grey[400]),
+                    const SizedBox(width: 4),
+                    Text(
+                      schedule.country,
+                      style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+                    ),
+                  ],
+                ),
+              ],
+            ],
           ],
+          // ✅ แสดงข้อความพิเศษสำหรับ Break Time
+          if (isBreakTime)
+            Text(
+              'Rest and recharge',
+              style: TextStyle(
+                fontSize: 13,
+                fontStyle: FontStyle.italic,
+                color: Colors.amber[700],
+              ),
+            ),
         ],
       ),
     );
