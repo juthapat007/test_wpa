@@ -10,7 +10,8 @@ class ScheduleModel {
   final String conferenceDate;
   final ScheduleDelegateModel? delegate;
   final int? durationMinutes;
-
+  final dynamic leave;
+  final String? type;
   ScheduleModel({
     required this.id,
     required this.startAt,
@@ -20,6 +21,8 @@ class ScheduleModel {
     required this.conferenceDate,
     this.delegate,
     this.durationMinutes,
+    this.leave,
+    this.type,
   });
 
   factory ScheduleModel.fromJson(Map<String, dynamic> json) {
@@ -31,7 +34,9 @@ class ScheduleModel {
       country: json['country'] ?? '',
       conferenceDate: json['conference_date'] ?? '',
       delegate: ScheduleDelegateModel.fromJson(json['delegate']),
-      durationMinutes: json['duration_minutes'], // null
+      durationMinutes: json['duration_minutes'],
+      leave: json['leave'],
+      type: json['type'],
     );
   }
 
@@ -43,8 +48,10 @@ class ScheduleModel {
       tableNumber: tableNumber,
       country: country,
       conferenceDate: conferenceDate,
-      delegate: delegate?.toEntity(), // ✅ สำคัญมาก
+      delegate: delegate?.toEntity(),
       durationMinutes: durationMinutes,
+      leave: leave,
+      type: type,
     );
   }
 }

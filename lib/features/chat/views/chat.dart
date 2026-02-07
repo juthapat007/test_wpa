@@ -8,6 +8,7 @@ import 'package:test_wpa/features/widgets/app_scaffold.dart';
 import 'package:test_wpa/features/widgets/app_text_form_field.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
+//ยังไม่ได้ต่อ api
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
 

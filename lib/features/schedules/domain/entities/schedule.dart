@@ -9,7 +9,9 @@ class Schedule {
   final String conferenceDate;
   final ScheduleDelegate? delegate;
   final int? durationMinutes;
-
+  final dynamic leave;
+  final String? type;
+  //การที่ datatype เป็น dynamic ให้แปลว่า type เป็น string หรือ null
   Schedule({
     required this.id,
     required this.startAt,
@@ -19,6 +21,8 @@ class Schedule {
     required this.conferenceDate,
     required this.delegate,
     required this.durationMinutes,
+    this.leave,
+    this.type,
   });
 }
 

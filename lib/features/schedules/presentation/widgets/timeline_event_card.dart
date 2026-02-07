@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 
 enum EventCardType { meeting, empty, breakTime }
 
+enum LeaveStatus { onLeave, available }
+
 class TimelineEventCard extends StatelessWidget {
   final Schedule? schedule;
   final EventCardType type;
@@ -29,6 +31,14 @@ class _MeetingCard extends StatelessWidget {
 
   const _MeetingCard({required this.schedule});
 
+  bool _isOnLeave() {
+    return schedule.leave != null;
+  }
+
+  bool _isEvent() {
+    return schedule.type == 'event';
+  }
+
   bool _isUnknownDelegate() {
     // ✅ ตรวจสอบว่า delegate เป็น unknown หรือไม่
     final delegate = schedule.delegate;
@@ -40,8 +50,13 @@ class _MeetingCard extends StatelessWidget {
   }
 
   Color _getStatusColor() {
-    // ✅ ถ้า tableNumber เป็น null หรือ empty = Break Time
-    if (schedule.tableNumber.isEmpty) {
+    // ✨ เพิ่มเช็ค leave ก่อน
+    if (_isOnLeave()) {
+      return Colors.red[600]!;
+    }
+
+    // ✨ เพิ่มเช็ค event (break time)
+    if (_isEvent() || schedule.tableNumber.isEmpty) {
       return Colors.amber[600]!;
     }
 
@@ -61,8 +76,12 @@ class _MeetingCard extends StatelessWidget {
   }
 
   String _getStatusText() {
-    // ✅ ถ้า tableNumber เป็น null หรือ empty = Break Time
-    if (schedule.tableNumber.isEmpty) {
+    if (_isOnLeave()) {
+      return 'LEAVE';
+    }
+
+    // ✨ เพิ่มเช็ค event (break time)
+    if (_isEvent() || schedule.tableNumber.isEmpty) {
       return 'BREAK';
     }
 
@@ -86,23 +105,38 @@ class _MeetingCard extends StatelessWidget {
     final startTime = DateFormat('HH:mm').format(schedule.startAt.toLocal());
     final endTime = DateFormat('HH:mm').format(schedule.endAt.toLocal());
     final statusColor = _getStatusColor();
-    final isBreakTime = schedule.tableNumber.isEmpty;
+    final isBreakTime = _isEvent() || schedule.tableNumber.isEmpty;
     final isUnknown = _isUnknownDelegate();
+    final isOnLeave = _isOnLeave();
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isBreakTime
+        color: isOnLeave
+            ? Colors.red[50]
+            : isBreakTime
             ? Colors.amber[50]
             : isUnknown
             ? Colors.grey[100]
             : Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: isBreakTime
+        border: isOnLeave
+            ? Border.all(
+                color: Colors.red[200]!,
+                width: 2,
+              ) // ✨ เพิ่ม border สีแดง
+            : isBreakTime
             ? Border.all(color: Colors.amber[200]!, width: 2)
             : isUnknown
             ? Border.all(color: Colors.grey[300]!, width: 2)
             : null,
+        // border: isBreakTime
+        //     ? Border.all(color: Colors.red[200]!, width: 2)
+        //     : isBreakTime
+        //     ? Border.all(color: Colors.amber[200]!, width: 2)
+        //     : isUnknown
+        //     ? Border.all(color: Colors.grey[300]!, width: 2)
+        //     : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),

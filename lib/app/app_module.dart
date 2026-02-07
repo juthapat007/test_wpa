@@ -26,11 +26,15 @@ import 'package:test_wpa/features/scan/presentation/bloc/scan_bloc.dart';
 import 'package:test_wpa/features/scan/views/scan.dart';
 import 'package:test_wpa/features/schedules/data/repository/schedule_repository_impl.dart';
 import 'package:test_wpa/features/schedules/data/services/schedule_api.dart';
-import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/domain/repositories/schedule_repository.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
 import 'package:test_wpa/features/schedules/presentation/page/schedule_widget.dart';
+
+// ✨ Search/Delegate imports
+import 'package:test_wpa/features/search/data/repository/delegate_repository_impl.dart';
+import 'package:test_wpa/features/search/data/services/delegate_api.dart';
+import 'package:test_wpa/features/search/domain/repositories/delegate_repository.dart';
 import 'package:test_wpa/features/search/presentation/bloc/search_bloc.dart';
 import 'package:test_wpa/features/search/views/search_page.dart';
 
@@ -63,7 +67,7 @@ class AppModule extends Module {
       () => ProfileBloc(profileRepository: Modular.get<ProfileRepository>()),
     );
 
-    /// ================= Schedule (ใหม่!) =================
+    /// ================= Schedule =================
     i.addLazySingleton<ScheduleApi>(() => ScheduleApi(Modular.get<Dio>()));
 
     i.addLazySingleton<ScheduleRepository>(
@@ -74,8 +78,18 @@ class AppModule extends Module {
       () => ScheduleBloc(scheduleRepository: Modular.get<ScheduleRepository>()),
     );
 
+    /// ================= Search/Delegate (ใหม่!) =================
+    i.addLazySingleton<DelegateApi>(() => DelegateApi(Modular.get<Dio>()));
+
+    i.addLazySingleton<DelegateRepository>(
+      () => DelegateRepositoryImpl(api: Modular.get<DelegateApi>()),
+    );
+
+    i.addLazySingleton<SearchBloc>(
+      () => SearchBloc(delegateRepository: Modular.get<DelegateRepository>()),
+    );
+
     /// ================= Other Feature Blocs =================
-    i.addLazySingleton<SearchBloc>(() => SearchBloc());
     i.addLazySingleton<MeetingBloc>(() => MeetingBloc());
     i.addLazySingleton<ChatBloc>(() => ChatBloc());
     i.addLazySingleton<EventBloc>(() => EventBloc());
@@ -99,8 +113,8 @@ class AppModule extends Module {
     /// ===== Protected =====
     r.child(
       '/search',
-      child: (_) => BlocProvider(
-        create: (_) => Modular.get<SearchBloc>(),
+      child: (_) => BlocProvider.value(
+        value: Modular.get<SearchBloc>()..add(SearchDelegates()),
         child: const SearchPage(),
       ),
     );
@@ -121,13 +135,13 @@ class AppModule extends Module {
       ),
     );
 
-    // r.child(
-    //   '/event',
-    //   child: (_) => BlocProvider(
-    //     create: (_) => Modular.get<EventBloc>(),
-    //     child: const EventPage(),
-    //   ),
-    // );
+    r.child(
+      '/event',
+      child: (_) => BlocProvider(
+        create: (_) => Modular.get<EventBloc>(),
+        child: const EventPage(),
+      ),
+    );
 
     r.child(
       '/scan',
@@ -153,7 +167,6 @@ class AppModule extends Module {
       ),
     );
 
-    /// ===== Schedule (ใหม่!) =====
     r.child(
       '/schedule',
       child: (_) => BlocProvider.value(
