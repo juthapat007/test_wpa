@@ -1,0 +1,32 @@
+// lib/features/meeting/data/services/table_api.dart
+
+import 'package:dio/dio.dart';
+
+class TableApi {
+  final Dio dio;
+
+  TableApi(this.dio);
+
+  Future<Map<String, dynamic>> getTableView({
+    String? date,
+    String? time,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{};
+
+      if (date != null) queryParams['date'] = date;
+      if (time != null) queryParams['time'] = time;
+
+      final response = await dio.get(
+        '/tables/time_view',
+        queryParameters: queryParams.isEmpty ? null : queryParams,
+      );
+
+      // print('✅ Table API Response: ${response.data}');
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      print('❌ TableApi error: $e');
+      rethrow;
+    }
+  }
+}

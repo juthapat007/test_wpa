@@ -1,0 +1,104 @@
+import 'package:flutter/material.dart';
+import 'package:test_wpa/core/constants/set_space.dart';
+import 'package:test_wpa/core/theme/app_colors.dart' as color;
+import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
+import 'package:intl/intl.dart';
+import 'timeline_event_card.dart';
+
+class TimelineRow extends StatelessWidget {
+  final Schedule? schedule;
+  final EventCardType cardType;
+  final bool isSelectionMode; // เพิ่ม
+  final bool isSelected;
+
+  const TimelineRow({
+    super.key,
+    this.schedule,
+    required this.cardType,
+    this.isSelectionMode = false, // เปลี่ยน
+    this.isSelected = false, // เปลี่ยน
+  });
+  String _formatTime(DateTime dateTime) {
+    return DateFormat('h:mm').format(dateTime.toLocal());
+  }
+
+  String _formatPeriod(DateTime dateTime) {
+    return DateFormat('a').format(dateTime.toLocal()).toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final timeToDisplay = schedule?.startAt ?? DateTime.now();
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Time indicator - เปลี่ยนจาก CrossAxisAlignment.end เป็น center
+        SizedBox(
+          width: 55,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 10),
+              Text(
+                _formatTime(timeToDisplay),
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                  height: 1,
+                ),
+              ),
+              Text(
+                _formatPeriod(timeToDisplay),
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                  height: 1,
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(width: space.m),
+        // Event card
+        Expanded(
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              TimelineEventCard(schedule: schedule, type: cardType),
+              // Checkbox overlay
+              if (isSelectionMode)
+                Positioned(
+                  top: 12,
+                  left: -29,
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? color.AppColors.primary
+                          : color.AppColors.surface,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isSelected
+                            ? color.AppColors.primary
+                            : Colors.grey[300]!,
+                        width: 2,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
