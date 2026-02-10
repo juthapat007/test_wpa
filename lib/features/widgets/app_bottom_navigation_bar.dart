@@ -57,67 +57,50 @@ class AppBottomNavigationBar extends StatelessWidget {
     IconData icon, {
     bool isActive = false,
   }) {
-    try {
-      // พยายามหา ChatBloc
-      final chatBloc = ModularWatchExtension(context).read<ChatBloc>();
+    // ใช้ BlocBuilder จาก context โดยตรง (ChatBloc provide ที่ AppWidget level)
+    return BlocBuilder<ChatBloc, ChatState>(
+      builder: (context, state) {
+        // ดึง unread count จาก ChatBloc internal state ผ่าน rooms
+        final chatBloc = ModularWatchExtension(context).read<ChatBloc>();
+        final totalUnread = chatBloc.totalUnreadCount;
 
-      return BlocBuilder<ChatBloc, ChatState>(
-        bloc: chatBloc,
-        builder: (context, state) {
-          int totalUnread = 0;
+        // ถ้าไม่มี unread แสดง icon ธรรมดา
+        if (totalUnread == 0) {
+          return Icon(icon);
+        }
 
-          // นับ unread จาก ChatRoomsLoaded state
-          if (state is ChatRoomsLoaded) {
-            totalUnread = state.rooms.fold(
-              0,
-              (sum, room) => sum + room.unreadCount,
-            );
-          }
-
-          // ถ้าไม่มี unread แสดง icon ธรรมดา
-          if (totalUnread == 0) {
-            return Icon(icon);
-          }
-
-          // ถ้ามี unread แสดง badge
-          return Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Icon(icon),
-              Positioned(
-                right: -6,
-                top: -4,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  constraints: const BoxConstraints(
-                    minWidth: 16,
-                    minHeight: 16,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.error,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 1.5),
-                  ),
-                  child: Center(
-                    child: Text(
-                      totalUnread > 99 ? '99+' : totalUnread.toString(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        height: 1,
-                      ),
+        // ถ้ามี unread แสดง badge
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Icon(icon),
+            Positioned(
+              right: -6,
+              top: -4,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.error,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.5),
+                ),
+                child: Center(
+                  child: Text(
+                    totalUnread > 99 ? '99+' : totalUnread.toString(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      height: 1,
                     ),
                   ),
                 ),
               ),
-            ],
-          );
-        },
-      );
-    } catch (e) {
-      print('hatBloc not found in context, showing normal icon');
-      return Icon(icon);
-    }
+            ),
+          ],
+        );
+      },
+    );
   }
 }

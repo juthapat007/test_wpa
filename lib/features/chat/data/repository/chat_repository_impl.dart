@@ -40,16 +40,6 @@ class ChatRepositoryImpl implements ChatRepository {
   Future<void> sendMessage(ChatMessage message) async {
     // ส่งผ่าน WebSocket (real-time)
     await webSocketService.sendMessage(message);
-
-    // หรือใช้ REST API (ถ้า WebSocket ไม่ได้เชื่อมต่อ)
-    // try {
-    //   await api.sendMessage(
-    //     recipientId: message.receiverId,
-    //     content: message.content,
-    //   );
-    // } catch (e) {
-    //   throw Exception('Failed to send message: $e');
-    // }
   }
 
   @override
@@ -59,7 +49,6 @@ class ChatRepositoryImpl implements ChatRepository {
       final List<dynamic> data = response.data;
 
       final rooms = data.map((json) {
-        // แปลง API response เป็น ChatRoom model
         final delegate = json['delegate'];
         final lastMessageText = json['last_message'] as String?;
         final lastMessageAt = json['last_message_at'] as String?;
@@ -68,13 +57,13 @@ class ChatRepositoryImpl implements ChatRepository {
           id: delegate['id'].toString(),
           participantId: delegate['id'].toString(),
           participantName: delegate['name'] ?? 'Unknown',
-          participantAvatar: delegate['avatar_url'], // อาจจะไม่มีใน response
+          participantAvatar: delegate['avatar_url'],
           lastMessage: lastMessageText != null && lastMessageAt != null
               ? ChatMessage(
                   id: DateTime.now().millisecondsSinceEpoch.toString(),
                   senderId: delegate['id'].toString(),
                   senderName: delegate['name'] ?? '',
-                  receiverId: '', // ไม่ทราบจาก response นี้
+                  receiverId: '',
                   content: lastMessageText,
                   createdAt: DateTime.parse(lastMessageAt),
                 )
@@ -125,6 +114,11 @@ class ChatRepositoryImpl implements ChatRepository {
       // 📌 เรียงตาม createdAt (เก่าสุดก่อน เพื่อแสดงจากบนลงล่าง)
       messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
+      print('📩 Loaded ${messages.length} messages for partner $partnerId');
+      print(
+        '📩 Latest message: ${messages.isNotEmpty ? messages.last.content : "none"}',
+      );
+
       return messages;
     } catch (e) {
       throw Exception('Failed to load chat history: $e');
@@ -133,10 +127,6 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<ChatRoom> createChatRoom(String participantId) async {
-    // สำหรับ 1:1 chat ไม่จำเป็นต้องสร้างห้อง
-    // แค่ส่งข้อความไปหาคนนั้นเลย
-    // ระบบจะสร้างห้องอัตโนมัติ
-
     return ChatRoom(
       id: participantId,
       participantId: participantId,
@@ -149,17 +139,16 @@ class ChatRepositoryImpl implements ChatRepository {
   Future<void> markAsRead(String partnerId) async {
     try {
       await api.markAllAsRead(partnerId);
+      print('✅ Marked all messages as read for partner $partnerId');
     } catch (e) {
       throw Exception('Failed to mark as read: $e');
     }
   }
 
-  /// เพิ่ม methods สำหรับ typing indicator
   Future<void> sendTypingIndicator(String recipientId, bool isTyping) async {
     await webSocketService.sendTypingIndicator(recipientId, isTyping);
   }
 
-  /// เข้า/ออกจากห้องแชท
   Future<void> enterRoom(String userId) async {
     await webSocketService.enterRoom(userId);
   }
@@ -168,7 +157,6 @@ class ChatRepositoryImpl implements ChatRepository {
     await webSocketService.leaveRoom(userId);
   }
 
-  /// แก้ไข/ลบข้อความ
   Future<void> updateMessage(String messageId, String content) async {
     try {
       await api.updateMessage(messageId: messageId, content: content);

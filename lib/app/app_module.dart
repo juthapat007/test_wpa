@@ -53,8 +53,6 @@ import 'package:test_wpa/features/chat/presentation/pages/chat_conversation_page
 
 // Other features
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:test_wpa/features/event/presentation/bloc/event_bloc.dart';
-import 'package:test_wpa/features/event/views/event.dart';
 import 'package:test_wpa/features/notification/presentation/bloc/notification_bloc.dart';
 import 'package:test_wpa/features/notification/presentation/page/notification.dart';
 import 'package:test_wpa/features/scan/presentation/bloc/scan_bloc.dart';
@@ -127,7 +125,6 @@ class AppModule extends Module {
     );
 
     /// ================= Other Feature Blocs =================
-    i.addLazySingleton<EventBloc>(() => EventBloc());
     i.addLazySingleton<ScanBloc>(() => ScanBloc());
     i.addLazySingleton<NotificationBloc>(() => NotificationBloc());
   }
@@ -178,14 +175,6 @@ class AppModule extends Module {
     // );
 
     r.child('/chat/room', child: (_) => const ChatConversationPage());
-
-    r.child(
-      '/event',
-      child: (_) => BlocProvider(
-        create: (_) => Modular.get<EventBloc>(),
-        child: const EventPage(),
-      ),
-    );
 
     r.child(
       '/scan',

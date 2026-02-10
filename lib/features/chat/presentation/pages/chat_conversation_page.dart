@@ -26,8 +26,9 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
       Future.delayed(const Duration(milliseconds: 100), () {
+        // reverse: true ทำให้ position 0 คือด้านล่างสุด (ข้อความล่าสุด)
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
+          0.0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
@@ -42,11 +43,12 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
     final bloc = context.read<ChatBloc>();
     final state = bloc.state;
 
-    if (state is ChatRoomSelected) {
-      bloc.add(SendMessage(roomId: state.room.id, content: content));
-      _messageController.clear();
-      _scrollToBottom();
-    }
+    // ดึง room จากทุก state ที่เป็นไปได้ (ไม่ใช่แค่ ChatRoomSelected)
+    final room = _getRoom(state);
+    if (room == null) return;
+
+    bloc.add(SendMessage(roomId: room.id, content: content));
+    _messageController.clear();
   }
 
   @override
@@ -62,7 +64,10 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
         appBar: _buildAppBar(),
         body: BlocConsumer<ChatBloc, ChatState>(
           listener: (context, state) {
-            if (state is NewMessageReceived || state is MessageSent) {
+            if (state is ChatRoomSelected ||
+                state is NewMessageReceived ||
+                state is MessageSent ||
+                state is MessageSending) {
               _scrollToBottom();
             }
           },
@@ -96,10 +101,15 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
                           )
                         : ListView.builder(
                             controller: _scrollController,
+                            reverse:
+                                true, // แสดงข้อความล่าสุดที่ด้านล่าง (เลื่อนขึ้นดูเก่า)
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             itemCount: messages.length,
                             itemBuilder: (context, index) {
-                              final message = messages[index];
+                              // reverse: true จะแสดง index 0 ที่ด้านล่างสุด
+                              // ดังนั้นต้องกลับ index เพื่อให้ข้อความล่าสุดอยู่ล่าง
+                              final reversedIndex = messages.length - 1 - index;
+                              final message = messages[reversedIndex];
                               final isMe = message.senderId == currentUserId;
 
                               return ChatMessageBubble(
