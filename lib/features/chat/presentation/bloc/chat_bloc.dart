@@ -80,7 +80,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   ) {
     final message = event.message;
 
-    // 📩 ถ้ากำลังอยู่ในห้องแชทนั้น
+    // ตรวจสอบ duplicate: ถ้า message id ซ้ำกับที่มีอยู่แล้ว ให้ skip
+    final isDuplicate = _messages.any((m) => m.id == message.id);
+    if (isDuplicate) return;
+
+    // ถ้ากำลังอยู่ในห้องแชทนั้น
     if (_selectedRoom != null &&
         (message.senderId == _selectedRoom!.participantId ||
             message.receiverId == _selectedRoom!.participantId)) {
@@ -102,12 +106,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         ),
       );
 
-      // 📖 Mark as read ถ้าข้อความมาจากคนอื่น
+      // Mark as read ถ้าข้อความมาจากคนอื่น
       if (message.senderId == _selectedRoom!.participantId) {
         add(MarkAsRead(_selectedRoom!.participantId));
       }
     }
-    // 🔔 ถ้าไม่ได้อยู่ในห้องนั้น = เพิ่ม unread count
+    // ถ้าไม่ได้อยู่ในห้องนั้น = เพิ่ม unread count
     else {
       _updateChatRoomsWithNewMessage(message, emit);
     }
@@ -334,13 +338,24 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         _selectedRoom = _selectedRoom!.copyWith(unreadCount: 0);
       }
 
-      // 🔔 Emit state ใหม่เพื่ออัพเดท badge
-      emit(
-        ChatRoomsLoaded(
-          rooms: _chatRooms,
-          isWebSocketConnected: _isWebSocketConnected,
-        ),
-      );
+      // ถ้าอยู่ในห้องแชท ให้ emit ChatRoomSelected เพื่อไม่ให้ UI หาย
+      if (_selectedRoom != null) {
+        emit(
+          ChatRoomSelected(
+            room: _selectedRoom!,
+            messages: _messages,
+            isWebSocketConnected: _isWebSocketConnected,
+          ),
+        );
+      } else {
+        // ถ้าอยู่หน้า list ให้ emit ChatRoomsLoaded เพื่ออัพเดท badge
+        emit(
+          ChatRoomsLoaded(
+            rooms: _chatRooms,
+            isWebSocketConnected: _isWebSocketConnected,
+          ),
+        );
+      }
     } catch (e) {
       // Silent fail - not critical
       print('Failed to mark as read: $e');

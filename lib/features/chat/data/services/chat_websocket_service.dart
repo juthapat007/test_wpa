@@ -94,64 +94,88 @@ class ChatWebSocketService {
       final data = jsonDecode(rawData.toString());
       final type = data['type'] as String?;
 
+      // ActionCable system messages (welcome, ping, confirm_subscription)
+      // มี 'type' อยู่ที่ root level
       switch (type) {
         case 'welcome':
-          debugPrint('👋 Welcome to WebSocket');
+          debugPrint('Welcome to WebSocket');
           break;
 
         case 'ping':
-          debugPrint('💓 Ping: ${data['message']}');
+          // ping ไม่ต้อง print
           break;
 
         case 'confirm_subscription':
-          debugPrint('✅ Subscription confirmed: ${data['identifier']}');
+          debugPrint('Subscription confirmed: ${data['identifier']}');
           break;
 
-        case 'new_message':
-          _handleNewMessage(data['message']);
-          break;
-
-        case 'message_read':
-        case 'messages_read':
-          debugPrint('📖 Message(s) marked as read');
-          // TODO: อัพเดท UI read status
-          break;
-
-        case 'typing_start':
-          debugPrint('⌨️ User is typing...');
-          // TODO: แสดง typing indicator
-          break;
-
-        case 'typing_stop':
-          debugPrint('⌨️ User stopped typing');
-          // TODO: ซ่อน typing indicator
-          break;
-
-        case 'message_deleted':
-          debugPrint('🗑️ Message deleted: ${data['message_id']}');
-          // TODO: ลบข้อความจาก UI
-          break;
-
-        case 'message_updated':
-          debugPrint('✏️ Message updated');
-          // TODO: อัพเดทข้อความใน UI
-          break;
-
-        case 'new_notification':
-          debugPrint('🔔 New notification: ${data['notification']}');
-          // TODO: แสดงการแจ้งเตือน
-          break;
-
-        case 'announcement':
-          debugPrint('📢 Announcement: ${data['content']}');
-          // TODO: แสดงประกาศ
+        case 'disconnect':
+          debugPrint('WebSocket disconnect requested');
+          _isConnected = false;
+          _connectionController.add(false);
           break;
 
         default:
-          debugPrint('ℹ️ Unknown message type: $type');
+          // ActionCable data messages มา format:
+          // { "identifier": "...", "message": { "type": "new_message", ... } }
+          // ไม่มี 'type' ที่ root level (type == null)
+          if (data['message'] != null && data['message'] is Map) {
+            _handleActionCableDataMessage(data['message']);
+          } else if (type != null) {
+            debugPrint('Unknown system type: $type');
+          }
       }
     } catch (e) {
-      debugPrint('❌ Error parsing message: $e');
+      debugPrint('Error parsing message: $e');
+    }
+  }
+
+  /// จัดการ ActionCable data messages (ข้อความจริงจาก channel)
+  void _handleActionCableDataMessage(Map<String, dynamic> message) {
+    final messageType = message['type'] as String?;
+
+    switch (messageType) {
+      case 'new_message':
+        _handleNewMessage(message['message'] ?? message);
+        break;
+
+      case 'message_read':
+      case 'messages_read':
+        debugPrint('Message(s) marked as read');
+        break;
+
+      case 'typing_start':
+        debugPrint('User is typing...');
+        break;
+
+      case 'typing_stop':
+        debugPrint('User stopped typing');
+        break;
+
+      case 'message_deleted':
+        debugPrint('Message deleted: ${message['message_id']}');
+        break;
+
+      case 'message_updated':
+        debugPrint('Message updated');
+        break;
+
+      case 'new_notification':
+        debugPrint('New notification: ${message['notification']}');
+        break;
+
+      case 'announcement':
+        debugPrint('Announcement: ${message['content']}');
+        break;
+
+      default:
+        // บาง ActionCable server อาจส่ง message โดยไม่มี 'type' wrapper
+        // ลองดูว่ามี sender/recipient field หรือไม่ (เป็น chat message โดยตรง)
+        if (message.containsKey('sender') && message.containsKey('content')) {
+          _handleNewMessage(message);
+        } else {
+          debugPrint('Unknown data message type: $messageType, data: $message');
+        }
     }
   }
 

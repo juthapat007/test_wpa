@@ -18,9 +18,8 @@ class _ChatRoomListPageState extends State<ChatRoomListPage> {
   @override
   void initState() {
     super.initState();
-    // Load chat rooms และเชื่อมต่อ WebSocket
-    ReadContext(context).read<ChatBloc>().add(LoadChatRooms());
-    ReadContext(context).read<ChatBloc>().add(ConnectWebSocket());
+    // Load chat rooms (WebSocket เชื่อมต่อแล้วจาก AppWidget)
+    context.read<ChatBloc>().add(LoadChatRooms());
   }
 
   @override
@@ -82,7 +81,7 @@ class _ChatRoomListPageState extends State<ChatRoomListPage> {
 
             return RefreshIndicator(
               onRefresh: () async {
-                ReadContext(context).read<ChatBloc>().add(LoadChatRooms());
+                context.read<ChatBloc>().add(LoadChatRooms());
               },
               child: Column(
                 children: [
@@ -123,9 +122,7 @@ class _ChatRoomListPageState extends State<ChatRoomListPage> {
                         return ChatRoomCard(
                           room: room,
                           onTap: () {
-                            ReadContext(
-                              context,
-                            ).read<ChatBloc>().add(SelectChatRoom(room));
+                            context.read<ChatBloc>().add(SelectChatRoom(room));
                             Modular.to.pushNamed('/chat/room');
                           },
                         );
