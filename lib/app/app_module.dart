@@ -40,7 +40,6 @@ import 'package:test_wpa/features/meeting/data/repository/table_repository_impl.
 import 'package:test_wpa/features/meeting/data/services/table_api.dart';
 import 'package:test_wpa/features/meeting/domain/repositories/table_repository.dart';
 import 'package:test_wpa/features/meeting/presentation/bloc/table_bloc.dart';
-import 'package:test_wpa/features/meeting/presentation/bloc/meeting_bloc.dart';
 import 'package:test_wpa/features/meeting/views/meeting_page.dart';
 
 // Other features
@@ -107,7 +106,7 @@ class AppModule extends Module {
     );
 
     /// ================= Other Feature Blocs =================
-    i.addLazySingleton<MeetingBloc>(() => MeetingBloc());
+    // i.addLazySingleton<MeetingBloc>(() => MeetingBloc());
     i.addLazySingleton<ChatBloc>(() => ChatBloc());
     i.addLazySingleton<EventBloc>(() => EventBloc());
     i.addLazySingleton<ScanBloc>(() => ScanBloc());
@@ -129,7 +128,7 @@ class AppModule extends Module {
 
     /// ===== Protected =====
 
-    // ✅ Meeting - ต้อง provide ทั้ง ScheduleBloc และ TableBloc
+    //  Meeting - ต้อง provide ทั้ง ScheduleBloc และ TableBloc
     r.child(
       '/meeting',
       child: (_) => MultiBlocProvider(

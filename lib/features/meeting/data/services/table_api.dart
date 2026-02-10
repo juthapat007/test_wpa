@@ -25,7 +25,7 @@ class TableApi {
       // print('✅ Table API Response: ${response.data}');
       return response.data as Map<String, dynamic>;
     } catch (e) {
-      print('❌ TableApi error: $e');
+      print(' TableApi error: $e');
       rethrow;
     }
   }

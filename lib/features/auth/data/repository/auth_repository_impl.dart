@@ -33,7 +33,6 @@ class AuthRepositoryImpl implements AuthRepository {
           'avatar_url': loginResponse.user!.avatarUrl,
         };
         await storage.write(key: 'user_data', value: jsonEncode(userData));
-        print(' Cached user data: ${loginResponse.user!.name}');
       }
 
       return loginResponse;

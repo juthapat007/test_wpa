@@ -6,6 +6,7 @@ import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.da
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_state.dart';
 import 'package:test_wpa/features/schedules/presentation/views/attendance_status.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/date_header.dart';
+import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/timeline_row.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/timeline_event_card.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/empty_schedule_view.dart';
@@ -14,7 +15,6 @@ import 'package:test_wpa/features/widgets/app_calendar_bottom_sheet.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:intl/intl.dart';
-
 
 class SchedulePage extends StatefulWidget {
   const SchedulePage({super.key});
@@ -26,10 +26,10 @@ class SchedulePage extends StatefulWidget {
 class _SchedulePageState extends State<SchedulePage> {
   DateTime selectedDate = DateTime.now();
 
-  // 🎯 ปรับตรงนี้เพื่อขยับเส้น timeline
+  // ปรับตรงนี้เพื่อขยับเส้น timeline
   static const double timelineOffset = 42.0;
 
-  // ✨ Selection mode state
+  //  Selection mode state
   bool isSelectionMode = false;
   Set<int> selectedScheduleIds = {};
 
@@ -62,7 +62,7 @@ class _SchedulePageState extends State<SchedulePage> {
     ).read<ScheduleBloc>().add(LoadSchedules(date: dateString));
   }
 
-  // ✨ Toggle selection mode
+  //  Toggle selection mode
   void _toggleSelectionMode() {
     setState(() {
       isSelectionMode = !isSelectionMode;
@@ -72,7 +72,7 @@ class _SchedulePageState extends State<SchedulePage> {
     });
   }
 
-  // ✨ Toggle schedule selection
+  //  Toggle schedule selection
   void _toggleScheduleSelection(int scheduleId) {
     if (!isSelectionMode) return;
 
@@ -94,12 +94,11 @@ class _SchedulePageState extends State<SchedulePage> {
         padding: const EdgeInsets.only(bottom: 100, right: 20),
         child: FloatingActionButton(
           backgroundColor: isSelectionMode
-              ? Colors.green
+              ? color.AppColors.success
               : color.AppColors.warning,
           child: Icon(isSelectionMode ? Icons.check_circle : Icons.event_busy),
           onPressed: () {
             if (isSelectionMode) {
-              //  ตรวจสอบว่าเลือกอย่างน้อย 1 รายการ
               if (selectedScheduleIds.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -141,7 +140,7 @@ class _SchedulePageState extends State<SchedulePage> {
         appBarStyle: AppBarStyle.elegant,
         showBottomNavBar: true,
         actions: [
-          // ✨ Show selected count when in selection mode
+          //  Show selected count when in selection mode
           if (isSelectionMode && selectedScheduleIds.isNotEmpty)
             Center(
               child: Container(
@@ -150,7 +149,7 @@ class _SchedulePageState extends State<SchedulePage> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.green,
+                  color: color.AppColors.success,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -207,10 +206,7 @@ class _SchedulePageState extends State<SchedulePage> {
                         final todayOnlySchedules = response.schedules.where((
                           s,
                         ) {
-                          return DateUtils.isSameDay(
-                            s.startAt.toLocal(),
-                            selectedDate,
-                          );
+                          return DateUtils.isSameDay(s.startAt, selectedDate);
                         }).toList();
 
                         if (todayOnlySchedules.isEmpty) {
@@ -232,7 +228,7 @@ class _SchedulePageState extends State<SchedulePage> {
                               schedule.id,
                             );
 
-                            // ✨ Wrap with GestureDetector for tap handling
+                            //  Wrap with GestureDetector for tap handling
                             return GestureDetector(
                               onTap: () =>
                                   _toggleScheduleSelection(schedule.id),

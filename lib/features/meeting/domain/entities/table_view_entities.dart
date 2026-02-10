@@ -1,5 +1,9 @@
 // lib/features/meeting/domain/entities/table_view.dart
 
+import 'package:test_wpa/features/meeting/views/meeting_page.dart';
+import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
+import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
+
 class TableDelegate {
   final int delegateId;
   final String delegateName;
@@ -48,4 +52,11 @@ class TableViewResponse {
     required this.timesToday,
     required this.days,
   });
+}
+
+class ScheduleWithStatus {
+  final Schedule schedule;
+  final ScheduleStatus status;
+
+  ScheduleWithStatus({required this.schedule, required this.status});
 }

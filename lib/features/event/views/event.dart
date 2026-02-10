@@ -34,7 +34,7 @@ class _EventPageState extends State<EventPage> {
                 children: [
                   Expanded(
                     child: Text(
-                      selectedDate.toLocal().toString().split(' ')[0],
+                      selectedDate.toUtc().toString().split(' ')[0],
                       style: const TextStyle(fontSize: 16),
                     ),
                   ),

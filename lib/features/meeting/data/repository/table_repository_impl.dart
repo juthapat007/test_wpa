@@ -17,7 +17,7 @@ class TableRepositoryImpl implements TableRepository {
       final model = TableViewResponseModel.fromJson(json);
       return model.toEntity();
     } catch (e) {
-      print('❌ TableRepositoryImpl error: $e');
+      print('TableRepositoryImpl error: $e');
       throw Exception('Failed to load table view: $e');
     }
   }

@@ -24,7 +24,7 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
       );
       emit(ScheduleLoaded(scheduleResponse));
     } catch (e) {
-      print('❌ ScheduleBloc error: $e');
+      print('ScheduleBloc error: $e');
       emit(ScheduleError('Cannot load schedules: $e'));
     }
   }
@@ -40,7 +40,7 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
       );
       emit(ScheduleLoaded(scheduleResponse));
     } catch (e) {
-      print('❌ ScheduleBloc error: $e');
+      print('ScheduleBloc error: $e');
       emit(ScheduleError('Cannot load schedules: $e'));
     }
   }

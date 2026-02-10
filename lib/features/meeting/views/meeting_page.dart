@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
+import 'package:test_wpa/core/utils/date_time_helper.dart';
+import 'package:test_wpa/features/meeting/domain/entities/table_view_entities.dart';
 import 'package:test_wpa/features/meeting/presentation/bloc/table_bloc.dart';
 import 'package:test_wpa/features/meeting/widgets/table_grid_widget.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_state.dart';
+import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/timeline_event_card.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
 import 'package:test_wpa/features/widgets/app_calendar_bottom_sheet.dart';
@@ -15,14 +18,7 @@ import 'package:flutter_modular/flutter_modular.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 
-enum ScheduleStatus { past, now, next, upcoming }
-
-class ScheduleWithStatus {
-  final Schedule schedule;
-  final ScheduleStatus status;
-
-  ScheduleWithStatus(this.schedule, this.status);
-}
+// enum ScheduleStatus { past, now, next, upcoming }
 
 class MeetingPage extends StatefulWidget {
   const MeetingPage({super.key});
@@ -44,7 +40,8 @@ class _MeetingPageState extends State<MeetingPage> {
       ReadContext(context).read<ScheduleBloc>().add(LoadSchedules(date: today));
 
       // โหลด TableView ของวันนี้ + เวลาปัจจุบัน
-      final currentTime = DateFormat('HH:mm').format(DateTime.now());
+      // ✅ ใช้ UTC time
+      final currentTime = DateFormat('h:mm a').format(DateTime.now().toUtc());
       Modular.get<TableBloc>().add(
         LoadTableView(date: today, time: currentTime),
       );
@@ -72,14 +69,14 @@ class _MeetingPageState extends State<MeetingPage> {
       context,
     ).read<ScheduleBloc>().add(LoadSchedules(date: dateString));
 
-    final currentTime = DateFormat('HH:mm').format(DateTime.now());
+    final currentTime = DateFormat('h:mm a').format(DateTime.now().toUtc());
     Modular.get<TableBloc>().add(
       LoadTableView(date: dateString, time: currentTime),
     );
   }
 
   // ========================================
-  // ✅ ตรวจสอบว่า schedule สามารถ tap ได้หรือไม่
+  //  ตรวจสอบว่า schedule สามารถ tap ได้หรือไม่
   // ========================================
   bool _canTapSchedule(Schedule schedule) {
     // ไม่ให้ tap: event, nomeeting, leave
@@ -99,13 +96,12 @@ class _MeetingPageState extends State<MeetingPage> {
   void _onScheduleTap(Schedule schedule) {
     if (!_canTapSchedule(schedule)) return;
 
-    final date = DateFormat('yyyy-MM-dd').format(schedule.startAt.toLocal());
-    final time = DateFormat('HH:mm').format(schedule.startAt.toLocal());
+    final date = DateTimeHelper.formatUtcDate(schedule.startAt);
+    final time = DateTimeHelper.formatUtcTime(schedule.startAt);
+    final timeEnd = DateTimeHelper.formatUtcTime(schedule.endAt);
+    print('🔍 Tapped schedule - Date: $date, Time: $time - $timeEnd');
 
     Modular.get<TableBloc>().add(LoadTableView(date: date, time: time));
-
-    // Scroll to top เพื่อดู table grid
-    // (Optional) สามารถเพิ่ม ScrollController ได้
   }
 
   List<ScheduleWithStatus> _getSchedulesWithStatus(List<Schedule> schedules) {
@@ -115,20 +111,19 @@ class _MeetingPageState extends State<MeetingPage> {
     for (var schedule in schedules) {
       ScheduleStatus status;
 
-      if (_currentTime.isBefore(schedule.startAt.toLocal())) {
+      if (_currentTime.isBefore(schedule.startAt)) {
         if (nextFound == null) {
           status = ScheduleStatus.next;
           nextFound = schedule;
         } else {
           status = ScheduleStatus.upcoming;
         }
-      } else if (_currentTime.isAfter(schedule.endAt.toLocal())) {
+      } else if (_currentTime.isAfter(schedule.endAt)) {
         status = ScheduleStatus.past;
       } else {
         status = ScheduleStatus.now;
       }
-
-      result.add(ScheduleWithStatus(schedule, status));
+      result.add(ScheduleWithStatus(schedule: schedule, status: status));
     }
 
     return result;
@@ -233,7 +228,7 @@ class _MeetingPageState extends State<MeetingPage> {
                         // ========== Current Meeting ==========
                         if (currentSchedule != null) ...[
                           Text(
-                            '📍 CURRENT MEETING',
+                            'CURRENT MEETING',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -255,7 +250,7 @@ class _MeetingPageState extends State<MeetingPage> {
                         // ========== Next Meeting ==========
                         if (nextSchedule != null) ...[
                           Text(
-                            '⏭️ NEXT MEETING',
+                            'NEXT MEETING',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,

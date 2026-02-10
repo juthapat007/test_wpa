@@ -3,27 +3,28 @@ import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:intl/intl.dart';
+import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 import 'timeline_event_card.dart';
 
 class TimelineRow extends StatelessWidget {
   final Schedule? schedule;
   final EventCardType cardType;
-  final bool isSelectionMode; // เพิ่ม
+  final bool isSelectionMode;
   final bool isSelected;
 
   const TimelineRow({
     super.key,
     this.schedule,
     required this.cardType,
-    this.isSelectionMode = false, // เปลี่ยน
-    this.isSelected = false, // เปลี่ยน
+    this.isSelectionMode = false,
+    this.isSelected = false,
   });
   String _formatTime(DateTime dateTime) {
-    return DateFormat('h:mm').format(dateTime.toLocal());
+    return DateFormat('HH:mm').format(dateTime);
   }
 
   String _formatPeriod(DateTime dateTime) {
-    return DateFormat('a').format(dateTime.toLocal()).toUpperCase();
+    return DateFormat('a').format(dateTime).toUpperCase();
   }
 
   @override
@@ -33,7 +34,6 @@ class TimelineRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Time indicator - เปลี่ยนจาก CrossAxisAlignment.end เป็น center
         SizedBox(
           width: 55,
           child: Column(
@@ -54,7 +54,7 @@ class TimelineRow extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey,
+                  color: color.AppColors.textSecondary,
                   height: 1,
                 ),
               ),

@@ -89,12 +89,8 @@ class _AttendanceStatusState extends State<AttendanceStatus> {
 
               // List of selected schedules
               ...widget.selectedSchedules.map((schedule) {
-                final startTime = DateFormat(
-                  'HH:mm',
-                ).format(schedule.startAt.toLocal());
-                final endTime = DateFormat(
-                  'HH:mm',
-                ).format(schedule.endAt.toLocal());
+                final startTime = DateFormat('h:mm a').format(schedule.startAt);
+                final endTime = DateFormat('h:mm a').format(schedule.endAt);
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
+import 'package:test_wpa/features/schedules/utils/schedule_card_helper.dart';
 import 'package:intl/intl.dart';
-
-enum EventCardType { meeting, empty, breakTime }
+import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 
 class TimelineEventCard extends StatelessWidget {
   final Schedule? schedule;
@@ -29,147 +29,18 @@ class _MeetingCard extends StatelessWidget {
 
   const _MeetingCard({required this.schedule});
 
-  // ========================================
-  // ✅ การจำแนกประเภท
-  // ========================================
-
-  // 1️⃣ ลา
-  bool _isOnLeave() {
-    return schedule.leave != null;
-  }
-
-  // 2️⃣ Event (Break Time, Coffee, Lunch, etc.)
-  bool _isEvent() {
-    return schedule.type == 'event';
-  }
-
-  // 3️⃣ No Meeting (ไม่มี meeting แต่ยังเป็นช่วงเวลาที่ว่าง)
-  bool _isNoMeeting() {
-    return schedule.type == 'nomeeting';
-  }
-
-  // 4️⃣ Meeting ปกติ
-  bool _isMeeting() {
-    return schedule.type == 'meeting';
-  }
-
-  // ========================================
-  // ✅ สีและสถานะ
-  // ========================================
-
-  Color _getStatusColor() {
-    // 1️⃣ ลา → สีแดง
-    if (_isOnLeave()) {
-      return Colors.red[600]!;
-    }
-
-    // 2️⃣ Event → สีเหลือง/ส้ม
-    if (_isEvent()) {
-      return Colors.amber[600]!;
-    }
-
-    // 3️⃣ No Meeting → สีเทาอ่อน
-    if (_isNoMeeting()) {
-      return Colors.grey[400]!;
-    }
-
-    // 4️⃣ Meeting ปกติ → ดูตามเวลา
-    final now = DateTime.now();
-    if (schedule.endAt.isBefore(now)) {
-      return Colors.green[600]!; // ผ่านไปแล้ว
-    } else if (schedule.startAt.isBefore(now) && schedule.endAt.isAfter(now)) {
-      return const Color(0xFF4F46E5); // กำลังเกิดขึ้น
-    } else {
-      return Colors.orange[600]!; // ยังไม่ถึง
-    }
-  }
-
-  String _getStatusText() {
-    if (_isOnLeave()) return 'LEAVE';
-    if (_isEvent()) return 'BREAK';
-    if (_isNoMeeting()) return 'FREE';
-
-    final now = DateTime.now();
-    if (schedule.endAt.isBefore(now)) {
-      return 'PASSED';
-    } else if (schedule.startAt.isBefore(now) && schedule.endAt.isAfter(now)) {
-      return 'ONGOING';
-    } else {
-      return 'UPCOMING';
-    }
-  }
-
-  Color _getBackgroundColor() {
-    if (_isOnLeave()) return Colors.red[50]!;
-    if (_isEvent()) return Colors.amber[50]!;
-    if (_isNoMeeting()) return Colors.grey[50]!;
-    return Colors.white;
-  }
-
-  Border? _getBorder() {
-    if (_isOnLeave()) return Border.all(color: Colors.red[200]!, width: 2);
-    if (_isEvent()) return Border.all(color: Colors.amber[200]!, width: 2);
-    if (_isNoMeeting()) return Border.all(color: Colors.grey[300]!, width: 2);
-    return null;
-  }
-
-  // ========================================
-  // ✅ ดึงข้อมูล Delegates
-  // ========================================
-
-  String _getDelegateInfo() {
-    // Event
-    if (_isEvent()) {
-      return schedule.title ?? 'Event';
-    }
-
-    // No Meeting
-    if (_isNoMeeting()) {
-      final teamDelegates = schedule.teamDelegates;
-      if (teamDelegates == null || teamDelegates.isEmpty) {
-        return 'Free time';
-      }
-      // แสดงชื่อคนแรก (หรือทั้งหมดถ้าต้องการ)
-      return teamDelegates.map((d) => d.name).join(', ');
-    }
-
-    // Meeting
-    if (_isMeeting()) {
-      final teamDelegates = schedule.teamDelegates;
-      if (teamDelegates == null || teamDelegates.isEmpty) {
-        return 'Unknown';
-      }
-      return teamDelegates.first.company;
-    }
-
-    return 'N/A';
-  }
-
-  String? _getDelegateName() {
-    if (!_isMeeting()) return null;
-
-    final teamDelegates = schedule.teamDelegates;
-    if (teamDelegates == null || teamDelegates.isEmpty) return null;
-
-    return teamDelegates.map((d) => d.name).join(', ');
-  }
-
-  // ========================================
-  // ✅ UI
-  // ========================================
-
   @override
   Widget build(BuildContext context) {
-    final startTime = DateFormat('HH:mm').format(schedule.startAt.toLocal());
-    final endTime = DateFormat('HH:mm').format(schedule.endAt.toLocal());
-    final statusColor = _getStatusColor();
+    final helper = ScheduleCardHelper(schedule);
+    final startTime = DateFormat('HH:mm').format(schedule.startAt.toUtc());
+    final endTime = DateFormat('HH:mm').format(schedule.endAt.toUtc());
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _getBackgroundColor(),
+        color: helper.backgroundColor,
         borderRadius: BorderRadius.circular(10),
-        border: _getBorder(),
+        border: helper.border,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -181,146 +52,133 @@ class _MeetingCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ========== Header Row ==========
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // เวลา
-                  Text(
-                    '$startTime - $endTime',
-                    style: const TextStyle(
-                      fontFamily: 'Playfair Display',
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-
-                  // Table number หรือ icon
-                  if (_isMeeting() && schedule.tableNumber != null)
-                    Text(
-                      'Table ${schedule.tableNumber}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-
-                  if (_isEvent())
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.coffee_outlined,
-                          size: 14,
-                          color: Colors.amber[700],
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Break Time',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.amber[700],
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                  if (_isNoMeeting())
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.free_breakfast,
-                          size: 14,
-                          color: Colors.grey[500],
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Free Time',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
-
-              // Status badge
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  _getStatusText(),
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                    color: statusColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
+          _buildHeader(helper, startTime, endTime),
           const SizedBox(height: 8),
-
-          // ========== Content ==========
-
-          // ข้อมูลหลัก (Company/Title/Name)
-          Text(
-            _getDelegateInfo(),
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: statusColor,
-            ),
-          ),
-
-          // ชื่อ delegate (ถ้ามี)
-          if (_getDelegateName() != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              _getDelegateName()!,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-          ],
-
-          // Country (ถ้ามี)
-          if (schedule.country.isNotEmpty && _isMeeting()) ...[
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(Icons.flag, size: 12, color: Colors.grey[400]),
-                const SizedBox(width: 4),
-                Text(
-                  schedule.country,
-                  style: TextStyle(fontSize: 11, color: Colors.grey[400]),
-                ),
-              ],
-            ),
-          ],
+          _buildContent(helper),
         ],
       ),
     );
   }
+
+  Widget _buildHeader(
+    ScheduleCardHelper helper,
+    String startTime,
+    String endTime,
+  ) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$startTime - $endTime',
+                style: const TextStyle(
+                  fontFamily: 'Playfair Display',
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4),
+              _buildSubtitle(helper),
+            ],
+          ),
+        ),
+        _buildStatusBadge(helper),
+      ],
+    );
+  }
+
+  Widget _buildSubtitle(ScheduleCardHelper helper) {
+    if (helper.isMeeting && schedule.tableNumber != null) {
+      return Text(
+        'Table ${schedule.tableNumber}',
+        style: TextStyle(
+          fontSize: 11,
+          color: AppColors.textSecondary,
+          fontWeight: FontWeight.w500,
+        ),
+      );
+    }
+
+    if (helper.leadingIcon != null) {
+      return Row(
+        children: [
+          Icon(helper.leadingIcon, size: 14, color: helper.leadingIconColor),
+          const SizedBox(width: 4),
+          Text(
+            helper.isEvent ? 'Break Time' : 'Free Time',
+            style: TextStyle(
+              fontSize: 11,
+              color: helper.leadingIconColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildStatusBadge(ScheduleCardHelper helper) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: helper.statusColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        helper.statusText,
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w900,
+          color: helper.statusColor,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent(ScheduleCardHelper helper) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          helper.primaryText,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: helper.statusColor,
+          ),
+        ),
+        if (helper.secondaryText != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            helper.secondaryText!,
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
+        ],
+        if (schedule.country.isNotEmpty && helper.isMeeting) ...[
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Icon(Icons.flag, size: 12, color: Colors.grey[400]),
+              const SizedBox(width: 4),
+              Text(
+                schedule.country,
+                style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
 }
 
-// ========================================
-// Empty Slot & Break Time Cards
-// ========================================
-
+// Empty & Break cards ไม่ต้องแก้
 class _EmptySlotCard extends StatelessWidget {
   const _EmptySlotCard();
 

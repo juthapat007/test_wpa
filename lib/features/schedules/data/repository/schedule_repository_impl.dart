@@ -18,10 +18,6 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
       return ScheduleResponseModel.fromJson(
         response.data,
       ).toEntity(status: ScheduleStatus.success);
-
-      // return ScheduleResponseModel.fromJson(
-      //   response.data,
-      // ).toEntity().copyWith(status: ScheduleStatus.success);
     } on DioException catch (e) {
       final code = e.response?.statusCode;
 

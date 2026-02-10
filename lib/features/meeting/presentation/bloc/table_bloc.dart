@@ -30,7 +30,7 @@ class TableBloc extends Bloc<TableEvent, TableState> {
       );
       emit(TableLoaded(response));
     } catch (e) {
-      print('❌ TableBloc error: $e');
+      print('TableBloc error: $e');
       emit(TableError('Cannot load table view: $e'));
     }
   }

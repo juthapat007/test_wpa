@@ -7,12 +7,12 @@ class Schedule {
   final String? tableNumber;
   final String country;
   final String conferenceDate;
-  final ScheduleDelegate? delegate; // เก่า - deprecated
-  final List<TeamDelegate>? teamDelegates; // ✅ ใหม่
+  final ScheduleDelegate? delegate;
+  final List<TeamDelegate>? teamDelegates;
   final int? durationMinutes;
   final dynamic leave;
   final String? type;
-  final String? title; // ✅ เพิ่มสำหรับ event
+  final String? title;
 
   Schedule({
     required this.id,
@@ -30,7 +30,6 @@ class Schedule {
   });
 }
 
-// ✅ Delegate แบบเก่า (อาจจะไม่ใช้แล้ว)
 class ScheduleDelegate {
   final int? id;
   final String? name;
@@ -43,7 +42,6 @@ class ScheduleDelegate {
   });
 }
 
-// ✅ Team Delegate แบบใหม่
 class TeamDelegate {
   final int id;
   final String name;
