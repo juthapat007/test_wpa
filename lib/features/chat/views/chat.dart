@@ -39,7 +39,7 @@ class _ChatPageState extends State<ChatPage> {
       currentIndex: 3,
       backgroundColor: const Color(0xFFF9FAFB),
       appBarStyle: AppBarStyle.elegant,
-     
+
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),

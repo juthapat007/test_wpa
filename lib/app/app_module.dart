@@ -42,10 +42,17 @@ import 'package:test_wpa/features/meeting/domain/repositories/table_repository.d
 import 'package:test_wpa/features/meeting/presentation/bloc/table_bloc.dart';
 import 'package:test_wpa/features/meeting/views/meeting_page.dart';
 
+// Chat
+import 'package:test_wpa/features/chat/data/repository/chat_repository_impl.dart';
+import 'package:test_wpa/features/chat/data/services/chat_api.dart';
+import 'package:test_wpa/features/chat/data/services/chat_websocket_service.dart';
+import 'package:test_wpa/features/chat/domain/repositories/chat_repository.dart';
+import 'package:test_wpa/features/chat/presentation/bloc/chat_bloc.dart';
+import 'package:test_wpa/features/chat/presentation/pages/chat_room_list_page.dart';
+import 'package:test_wpa/features/chat/presentation/pages/chat_conversation_page.dart';
+
 // Other features
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:test_wpa/features/chat/presentation/bloc/chat_bloc.dart';
-import 'package:test_wpa/features/chat/views/chat.dart';
 import 'package:test_wpa/features/event/presentation/bloc/event_bloc.dart';
 import 'package:test_wpa/features/event/views/event.dart';
 import 'package:test_wpa/features/notification/presentation/bloc/notification_bloc.dart';
@@ -105,9 +112,21 @@ class AppModule extends Module {
       () => TableBloc(tableRepository: Modular.get<TableRepository>()),
     );
 
+    /// ================= Chat =================
+    i.addLazySingleton<ChatApi>(() => ChatApi(Modular.get<Dio>()));
+    i.addLazySingleton<ChatWebSocketService>(() => ChatWebSocketService());
+    i.addLazySingleton<ChatRepository>(
+      () => ChatRepositoryImpl(
+        api: Modular.get<ChatApi>(),
+        webSocketService: Modular.get<ChatWebSocketService>(),
+        storage: Modular.get<FlutterSecureStorage>(),
+      ),
+    );
+    i.addLazySingleton<ChatBloc>(
+      () => ChatBloc(chatRepository: Modular.get<ChatRepository>()),
+    );
+
     /// ================= Other Feature Blocs =================
-    // i.addLazySingleton<MeetingBloc>(() => MeetingBloc());
-    i.addLazySingleton<ChatBloc>(() => ChatBloc());
     i.addLazySingleton<EventBloc>(() => EventBloc());
     i.addLazySingleton<ScanBloc>(() => ScanBloc());
     i.addLazySingleton<NotificationBloc>(() => NotificationBloc());
@@ -128,7 +147,7 @@ class AppModule extends Module {
 
     /// ===== Protected =====
 
-    //  Meeting - ต้อง provide ทั้ง ScheduleBloc และ TableBloc
+    //  Meeting
     r.child(
       '/meeting',
       child: (_) => MultiBlocProvider(
@@ -148,11 +167,21 @@ class AppModule extends Module {
       ),
     );
 
+    // Chat - รายการห้องแชท
     r.child(
       '/chat',
-      child: (_) => BlocProvider(
-        create: (_) => Modular.get<ChatBloc>(),
-        child: const ChatPage(),
+      child: (_) => BlocProvider.value(
+        value: Modular.get<ChatBloc>(),
+        child: const ChatRoomListPage(),
+      ),
+    );
+
+    // Chat - หน้าสนทนา
+    r.child(
+      '/chat/room',
+      child: (_) => BlocProvider.value(
+        value: Modular.get<ChatBloc>(),
+        child: const ChatConversationPage(),
       ),
     );
 
@@ -188,19 +217,10 @@ class AppModule extends Module {
       ),
     );
 
-    // r.child(
-    //   '/schedule',
-    //   child: (_) => BlocProvider.value(
-    //     value: Modular.get<ScheduleBloc>()..add(LoadSchedules()),
-    //     child: const ScheduleWidget(),
-    //   ),
-    // );
     r.child(
       '/schedule',
       child: (_) => BlocProvider.value(
-        value: Modular.get<ScheduleBloc>(),
-
-        // จะให้ trigger ใน initState ของ SchedulePage แทน
+        value: Modular.get<ScheduleBloc>()..add(LoadSchedules()),
         child: const ScheduleWidget(),
       ),
     );
