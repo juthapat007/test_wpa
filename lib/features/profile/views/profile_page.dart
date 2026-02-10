@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:test_wpa/core/theme/app_colors.dart' as color;
+import 'package:test_wpa/core/theme/app_colors.dart' as colors;
 import 'package:test_wpa/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:test_wpa/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
@@ -23,7 +25,7 @@ class _ProfilePageState extends State<ProfilePage> {
       title: 'Personal Information',
       currentIndex: -1,
       showAvatar: false,
-      backgroundColor: Colors.white,
+      backgroundColor: color.AppColors.background,
       body: BlocBuilder<ProfileBloc, ProfileState>(
         builder: (context, state) {
           if (state is ProfileLoading) {
@@ -57,7 +59,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 fit: BoxFit.cover,
                               ),
                               border: Border.all(
-                                color: Colors.grey[200]!,
+                                color: color.AppColors.background,
                                 width: 2,
                               ),
                             ),
@@ -224,7 +226,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-
   Widget _buildInfoCard({
     required String label,
     required String value,
@@ -311,7 +312,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 'My QR Code',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey[600],
+                  color: color.AppColors.textSecondary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -324,7 +325,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Center(
-                child: Icon(Icons.qr_code_2, size: 40, color: Colors.grey[400]),
+                child: Icon(
+                  Icons.qr_code_2,
+                  size: 40,
+                  color: color.AppColors.textSecondary,
+                ),
               ),
             ),
           ],
@@ -342,10 +347,10 @@ class _ProfilePageState extends State<ProfilePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: color.AppColors.surface),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: colors.AppColors.textPrimary.withAlpha(80),
             blurRadius: 4,
             offset: const Offset(0, 1),
           ),
@@ -360,7 +365,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 label,
                 style: const TextStyle(
                   fontSize: 15,
-                  color: Colors.black87,
+                  color: colors.AppColors.textPrimary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -393,7 +398,7 @@ class _ProfilePageState extends State<ProfilePage> {
             TextButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                // ✅ Logout using AuthBloc
+                //  Logout using AuthBloc
                 // Token จะถูกลบใน authRepository.logout()
                 // และ app_view.dart จะ navigate ไปหน้า login อัตโนมัติ
                 ReadContext(context).read<AuthBloc>().add(AuthLogout());

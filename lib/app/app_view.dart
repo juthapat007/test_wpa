@@ -16,7 +16,6 @@ class AppView extends StatelessWidget {
         }
       }, //ฟังก์ชันที่ใช้เพื่อตรวจสอบสถานะการล็อกอิน และควบคุม navigation
       child: const RouterOutlet(),
-      //แสดงหน้าตามการเปลี่ยนแปลงของ navigation
     );
   }
 }

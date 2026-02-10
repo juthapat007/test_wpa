@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:test_wpa/core/theme/app_colors.dart' as color;
 import 'app_calendar.dart';
 
 Future<void> showCalendarBottomSheet({
@@ -23,7 +24,7 @@ Future<void> showCalendarBottomSheet({
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade400,
+                color: color.AppColors.info,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

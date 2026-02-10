@@ -13,3 +13,5 @@ enum ScheduleStatus {
 }
 
 enum EventCardType { meeting, empty, breakTime }
+
+enum ScheduleCardStatus { leave, event, free, passed, ongoing, upcoming }

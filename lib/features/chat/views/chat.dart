@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_app_bar.dart';
 import 'package:test_wpa/core/theme/app_avatar.dart';
+import 'package:test_wpa/core/theme/app_colors.dart' as color;
 import 'package:test_wpa/features/widgets/app_bottom_navigation_bar.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
 import 'package:test_wpa/features/widgets/app_text_form_field.dart';
@@ -38,12 +39,7 @@ class _ChatPageState extends State<ChatPage> {
       currentIndex: 3,
       backgroundColor: const Color(0xFFF9FAFB),
       appBarStyle: AppBarStyle.elegant,
-      actions: [
-        IconButton(
-          onPressed: () => Modular.to.pushNamed('/notification'),
-          icon: const Icon(Icons.notifications_outlined, color: Colors.grey),
-        ),
-      ],
+     
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),

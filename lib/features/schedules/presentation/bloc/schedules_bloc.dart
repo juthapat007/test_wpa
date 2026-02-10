@@ -12,19 +12,46 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
     on<ChangeDate>(_onChangeDate);
   }
 
+  // Future<void> _onLoadSchedules(
+  //   LoadSchedules event,
+  //   Emitter<ScheduleState> emit,
+  // ) async {
+  //   emit(ScheduleLoading());
+  //   try {
+  //     final scheduleResponse = await scheduleRepository.getSchedule(
+  //       year: event.year,
+  //       date: event.date,
+  //     );
+  //     emit(ScheduleLoaded(scheduleResponse));
+  //   } catch (e) {
+  //     print('ScheduleBloc error: $e');
+  //     emit(ScheduleError('Cannot load schedules: $e'));
+  //   }
+  // }
   Future<void> _onLoadSchedules(
     LoadSchedules event,
     Emitter<ScheduleState> emit,
   ) async {
+    print(
+      '📥 ScheduleBloc: Loading with year=${event.year}, date=${event.date}',
+    );
     emit(ScheduleLoading());
+
     try {
       final scheduleResponse = await scheduleRepository.getSchedule(
         year: event.year,
         date: event.date,
       );
+
+      print(
+        '✅ ScheduleBloc: Loaded ${scheduleResponse.schedules.length} schedules',
+      );
+      print('✅ ScheduleBloc: Status = ${scheduleResponse.status}');
+
       emit(ScheduleLoaded(scheduleResponse));
-    } catch (e) {
-      print('ScheduleBloc error: $e');
+    } catch (e, stackTrace) {
+      print('❌ ScheduleBloc error: $e');
+      print('❌ StackTrace: $stackTrace');
       emit(ScheduleError('Cannot load schedules: $e'));
     }
   }

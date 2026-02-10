@@ -1,9 +1,9 @@
 // lib/features/meeting/widgets/table_grid_widget.dart
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
+import 'package:test_wpa/core/utils/date_time_helper.dart';
 import 'package:test_wpa/features/meeting/domain/entities/table_view_entities.dart';
 import 'package:test_wpa/features/meeting/widgets/table_detail_sheet.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
@@ -44,7 +44,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildDateTimeHeader(selectedDate, widget.currentSchedule),
+          // _buildDateTimeHeader(selectedDate, widget.currentSchedule),
           SizedBox(height: space.m),
 
           if (hasNoTable)
@@ -58,51 +58,52 @@ class _TableGridWidgetState extends State<TableGridWidget> {
 
   // ========================================
   // Date/Time Header
-  // ========================================
-  Widget _buildDateTimeHeader(DateTime date, Schedule? schedule) {
-    print('🧪 schedule is null? ${schedule == null}');
-    if (schedule != null) {
-      print('🧪 startAt: ${schedule.startAt}');
-      print('🧪 endAt: ${schedule.endAt}');
-    }
+  // // ========================================
+  // Widget _buildDateTimeHeader(DateTime date, Schedule? schedule) {
+  //   String displayText;
 
-    final dateText = DateFormat('EEE, d MMM yyyy').format(date);
+  //   if (schedule != null) {
+  //     displayText = DateTimeHelper.formatDateTimeRange(
+  //       date,
+  //       schedule.startAt,
+  //       schedule.endAt,
+  //     );
+  //   } else {
+  //     final dateText = DateTimeHelper.formatFullDate(date);
+  //     displayText = '$dateText  •  ${widget.response.time}';
+  //   }
 
-    final timeText = schedule != null
-        ? '${DateFormat('HH:mm').format(schedule.startAt.toUtc())}'
-              '–'
-              '${DateFormat('HH:mm').format(schedule.endAt.toUtc())}'
-        : widget.response.time;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue[200]!),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.calendar_today, size: 18, color: Colors.blue[700]),
-          const SizedBox(width: 8),
-          Text(
-            '$dateText  •  $timeText',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: color.AppColors.primary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  //   return Container(
+  //     padding: const EdgeInsets.all(16),
+  //     decoration: BoxDecoration(
+  //       color: color.AppColors.surface,
+  //       borderRadius: BorderRadius.circular(12),
+  //       border: Border.all(color: Colors.blue[200]!),
+  //     ),
+  //     child: Row(
+  //       mainAxisAlignment: MainAxisAlignment.center,
+  //       children: [
+  //         Icon(Icons.calendar_today, size: 18, color: Colors.blue[700]),
+  //         const SizedBox(width: 8),
+  //         Text(
+  //           displayText,
+  //           style: TextStyle(
+  //             fontSize: 14,
+  //             fontWeight: FontWeight.w600,
+  //             color: color.AppColors.primary,
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   // ========================================
   // No Table Section
   // ========================================
   Widget _buildNoTableSection(DateTime date, String time) {
+    final dateText = DateTimeHelper.formatFullDate(date);
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.only(top: 40),
@@ -134,7 +135,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                   ),
                 ),
                 Text(
-                  '${DateFormat('EEE, d MMM yyyy').format(date)} at $time',
+                  '$dateText at $time',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 13,
@@ -180,7 +181,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   }
 
   // ========================================
-  // Table Section (มีโต๊ะ)
+  // Table Section
   // ========================================
   Widget _buildTableSection(
     List<TableInfo> regularTables,
@@ -208,51 +209,57 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   }
 
   // ========================================
-  // Table Grid
+  // Table Grid - ใช้ layout จาก backend
   // ========================================
-  //ตอนนี้ยังไม่จัด ui ของโต๊ะอย่างถูกต้อง
   Widget _buildTableGrid(List<TableInfo> tables, String myTable) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // ✅ ปรับ columns ตามขนาดหน้าจอ
-        final columns = constraints.maxWidth > 600 ? 6 : 6;
-        final rows = (tables.length / columns).ceil();
+    // สร้าง map สำหรับ quick lookup
+    final tableMap = {for (var table in tables) table.tableNumber: table};
 
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!),
-          ),
-          child: Column(
-            children: List.generate(rows, (rowIndex) {
-              final startIndex = rowIndex * columns;
-              final endIndex = (startIndex + columns).clamp(0, tables.length);
-              final rowTables = tables.sublist(startIndex, endIndex);
+    // ใช้ layout จาก response ถ้ามี, ถ้าไม่มีใช้ค่า default
+    final layout = widget.response.layout;
+    final rows = layout?.rows ?? _calculateDefaultRows(tables.length, 6);
+    final columns = layout?.columns ?? 6;
 
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: rowTables.map((table) {
-                    return Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: _buildTableCell(
-                          table,
-                          table.tableNumber == myTable,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              );
-            }),
-          ),
-        );
-      },
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.AppColors.surface),
+      ),
+      child: Column(
+        children: List.generate(rows, (rowIndex) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: List.generate(columns, (colIndex) {
+                // คำนวณเลขโต๊ะจาก position (1-based indexing)
+                final tableNumber = (rowIndex * columns + colIndex + 1)
+                    .toString();
+                final table = tableMap[tableNumber];
+
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: table != null
+                        ? _buildTableCell(table, table.tableNumber == myTable)
+                        : _buildEmptyCell(tableNumber),
+                  ),
+                );
+              }),
+            ),
+          );
+        }),
+      ),
     );
+  }
+
+  // ========================================
+  // Helper: Calculate Default Rows
+  // ========================================
+  int _calculateDefaultRows(int tableCount, int columns) {
+    return (tableCount / columns).ceil();
   }
 
   // ========================================
@@ -261,8 +268,6 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   Widget _buildTableCell(TableInfo table, bool isMyTable) {
     final isSelected = selectedTableNumber == table.tableNumber;
     final isOccupied = table.isOccupied;
-
-    // ✅ ใช้ helper method เพื่อลด complexity
     final colors = _getTableCellColors(isMyTable, isSelected, isOccupied);
 
     return GestureDetector(
@@ -273,12 +278,21 @@ class _TableGridWidgetState extends State<TableGridWidget> {
         _showTableDetails(table, isMyTable);
       },
       child: AspectRatio(
-        aspectRatio: 1, // ✅ ทำให้เป็นสี่เหลี่ยมจัตุรัสเสมอ
+        aspectRatio: 1,
         child: Container(
           decoration: BoxDecoration(
             color: colors.background,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: colors.border, width: 2),
+            boxShadow: isMyTable || isSelected
+                ? [
+                    BoxShadow(
+                      color: colors.border.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -292,7 +306,10 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                 ),
               ),
               if (isOccupied && !isMyTable && !isSelected)
-                Icon(Icons.person, size: 12, color: Colors.green[900]),
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Icon(Icons.person, size: 12, color: Colors.green[900]),
+                ),
             ],
           ),
         ),
@@ -300,7 +317,39 @@ class _TableGridWidgetState extends State<TableGridWidget> {
     );
   }
 
-  // ✅ Helper method สำหรับสี
+  // ========================================
+  // Empty Cell (สำหรับช่องว่าง)
+  // ========================================
+  Widget _buildEmptyCell(String tableNumber) {
+    return AspectRatio(
+      aspectRatio: 1,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: Colors.grey[200]!,
+            width: 1,
+            style: BorderStyle.solid,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            tableNumber,
+            style: TextStyle(
+              fontSize: 10,
+              color: Colors.grey[400],
+              fontWeight: FontWeight.w300,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ========================================
+  // Helper: Get Table Cell Colors
+  // ========================================
   _TableCellColors _getTableCellColors(
     bool isMyTable,
     bool isSelected,
@@ -309,7 +358,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
     if (isMyTable) {
       return _TableCellColors(
         background: Colors.blue,
-        border: Colors.blue,
+        border: Colors.blue[700]!,
         text: Colors.white,
       );
     }
@@ -317,7 +366,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
     if (isSelected) {
       return _TableCellColors(
         background: Colors.orange,
-        border: Colors.orange,
+        border: Colors.orange[700]!,
         text: Colors.white,
       );
     }
@@ -343,6 +392,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   Widget _buildBoothCard(TableInfo booth) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
@@ -395,7 +445,14 @@ class _TableGridWidgetState extends State<TableGridWidget> {
           ),
         ),
         const SizedBox(width: 6),
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[700],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ],
     );
   }
@@ -417,7 +474,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
 }
 
 // ========================================
-// Helper Class
+// Helper Class: Table Cell Colors
 // ========================================
 class _TableCellColors {
   final Color background;

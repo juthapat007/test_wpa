@@ -20,7 +20,7 @@ class TimelineRow extends StatelessWidget {
     this.isSelected = false,
   });
   String _formatTime(DateTime dateTime) {
-    return DateFormat('HH:mm').format(dateTime);
+    return DateFormat('h:mm:a').format(dateTime);
   }
 
   String _formatPeriod(DateTime dateTime) {

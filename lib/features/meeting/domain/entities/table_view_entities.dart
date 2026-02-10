@@ -1,4 +1,4 @@
-// lib/features/meeting/domain/entities/table_view.dart
+// lib/features/meeting/domain/entities/table_view_entities.dart
 
 import 'package:test_wpa/features/meeting/views/meeting_page.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
@@ -24,14 +24,25 @@ class TableInfo {
   final int tableId;
   final String tableNumber;
   final List<TableDelegate> delegates;
+  final List<String> nearTables; // เพิ่ม field นี้
 
   TableInfo({
     required this.tableId,
     required this.tableNumber,
     required this.delegates,
+    this.nearTables = const [],
   });
 
   bool get isOccupied => delegates.isNotEmpty;
+}
+
+// เพิ่ม class สำหรับ layout
+class TableLayout {
+  final String type; // "grid", "custom", etc.
+  final int rows;
+  final int columns;
+
+  TableLayout({required this.type, required this.rows, required this.columns});
 }
 
 class TableViewResponse {
@@ -42,6 +53,7 @@ class TableViewResponse {
   final List<TableInfo> tables;
   final List<String> timesToday;
   final List<String> days;
+  final TableLayout? layout; // เพิ่ม field นี้
 
   TableViewResponse({
     required this.year,
@@ -51,6 +63,7 @@ class TableViewResponse {
     required this.tables,
     required this.timesToday,
     required this.days,
+    this.layout,
   });
 }
 

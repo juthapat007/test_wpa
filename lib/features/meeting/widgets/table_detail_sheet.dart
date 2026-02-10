@@ -1,6 +1,7 @@
 // lib/features/meeting/widgets/table_detail_sheet.dart
 
 import 'package:flutter/material.dart';
+import 'package:test_wpa/core/theme/app_colors.dart' as color;
 import 'package:test_wpa/features/meeting/domain/entities/table_view_entities.dart';
 
 class TableDetailSheet extends StatelessWidget {
@@ -45,7 +46,7 @@ class TableDetailSheet extends StatelessWidget {
         width: 40,
         height: 4,
         decoration: BoxDecoration(
-          color: Colors.grey[300],
+          color: color.AppColors.surface,
           borderRadius: BorderRadius.circular(2),
         ),
       ),
@@ -87,14 +88,14 @@ class TableDetailSheet extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.blue[100],
+                    color: color.AppColors.info,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     'Your Table',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.blue[900],
+                      color: color.AppColors.primaryDark,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

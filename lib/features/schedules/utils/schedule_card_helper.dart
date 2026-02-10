@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:test_wpa/core/theme/app_colors.dart' as color;
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
+import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 
 class ScheduleCardHelper {
   final Schedule schedule;
@@ -28,17 +30,17 @@ class ScheduleCardHelper {
   Color get statusColor {
     switch (status) {
       case ScheduleCardStatus.leave:
-        return Colors.red[600]!;
+        return color.AppColors.error;
       case ScheduleCardStatus.event:
-        return Colors.amber[600]!;
+        return color.AppColors.warning;
       case ScheduleCardStatus.free:
-        return Colors.grey[400]!;
+        return color.AppColors.info;
       case ScheduleCardStatus.passed:
-        return Colors.green[600]!;
+        return color.AppColors.success;
       case ScheduleCardStatus.ongoing:
-        return const Color(0xFF4F46E5);
+        return color.AppColors.primary;
       case ScheduleCardStatus.upcoming:
-        return Colors.orange[600]!;
+        return color.AppColors.warning;
     }
   }
 
@@ -50,9 +52,18 @@ class ScheduleCardHelper {
   }
 
   Border? get border {
-    if (isOnLeave) return Border.all(color: Colors.red[200]!, width: 2);
-    if (isEvent) return Border.all(color: Colors.amber[200]!, width: 2);
-    if (isNoMeeting) return Border.all(color: Colors.grey[300]!, width: 2);
+    if (isOnLeave)
+      return Border.all(color: color.AppColors.error.withAlpha(100), width: 2);
+    if (isEvent)
+      return Border.all(
+        color: color.AppColors.warning.withAlpha(100),
+        width: 2,
+      );
+    if (isNoMeeting)
+      return Border.all(
+        color: color.AppColors.textSecondary.withAlpha(100),
+        width: 2,
+      );
     return null;
   }
 
@@ -104,10 +115,8 @@ class ScheduleCardHelper {
   }
 
   Color? get leadingIconColor {
-    if (isEvent) return Colors.amber[700];
-    if (isNoMeeting) return Colors.grey[500];
+    if (isEvent) return color.AppColors.warning;
+    if (isNoMeeting) return color.AppColors.info;
     return null;
   }
 }
-
-enum ScheduleCardStatus { leave, event, free, passed, ongoing, upcoming }

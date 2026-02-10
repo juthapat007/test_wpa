@@ -52,18 +52,14 @@ class _SearchPageState extends State<SearchPage> {
       currentIndex: 1,
       backgroundColor: const Color(0xFFF9FAFB),
       appBarStyle: AppBarStyle.elegant,
-      actions: [
-        IconButton(
-          onPressed: () => Modular.to.pushNamed('/notification'),
-          icon: const Icon(Icons.notifications_outlined, color: Colors.grey),
-        ),
-      ],
+
       body: Column(
         children: [
           SizedBox(height: space.s),
 
           DelegateSearchBar(
             controller: _searchController,
+            icon: Icons.search,
             label: 'Search by name, email, or company',
             onSearch: _onSearch,
           ),

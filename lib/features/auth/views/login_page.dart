@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
+import 'package:test_wpa/core/theme/app_colors.dart' as color;
 import 'package:test_wpa/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:test_wpa/features/widgets/app_text_form_field.dart';
 import 'package:test_wpa/features/widgets/app_button.dart';
@@ -49,7 +50,10 @@ class _LoginPageState extends State<LoginPage> {
           Modular.to.navigate('/meeting');
         } else if (state is AuthError) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: color.AppColors.error,
+            ),
           );
         }
       },

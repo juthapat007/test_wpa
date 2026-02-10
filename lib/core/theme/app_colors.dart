@@ -11,7 +11,7 @@ class AppColors {
 
   // Background
   static const Color background = Color(0xFFF9FAFB);
-  static const Color surface = Colors.white;
+  static const Color surface = Color.fromARGB(255, 247, 245, 245);
 
   // Text
   static const Color textPrimary = Color(0xFF111827);
@@ -22,7 +22,7 @@ class AppColors {
   static const Color success = Color(0xFF22C55E);
   static const Color warning = Color(0xFFF59E0B);
   static const Color error = Color(0xFFEF4444);
-
+  static const Color info = Color.fromARGB(255, 198, 204, 215);
   // Border
   static const Color border = Color(0xFFE5E7EB);
 }

@@ -34,14 +34,27 @@ class _SchedulePageState extends State<SchedulePage> {
   Set<int> selectedScheduleIds = {};
 
   @override
+  // void initState() {
+  //   super.initState();
+  //   final today = DateTime.now();
+  //   final todayStr = DateFormat('yyyy-MM-dd').format(today);
+  //   selectedDate = today;
+  //   ReadContext(
+  //     context,
+  //   ).read<ScheduleBloc>().add(LoadSchedules(date: todayStr));
+  // }
+  @override
   void initState() {
     super.initState();
-    final today = DateTime.now();
-    final todayStr = DateFormat('yyyy-MM-dd').format(today);
-    selectedDate = today;
-    ReadContext(
-      context,
-    ).read<ScheduleBloc>().add(LoadSchedules(date: todayStr));
+    selectedDate = DateTime.now();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+      ReadContext(
+        context,
+      ).read<ScheduleBloc>().add(LoadSchedules(date: todayStr));
+    });
   }
 
   void _onDateSelected(DateTime date) {
@@ -139,34 +152,7 @@ class _SchedulePageState extends State<SchedulePage> {
         backgroundColor: const Color(0xFFF9FAFB),
         appBarStyle: AppBarStyle.elegant,
         showBottomNavBar: true,
-        actions: [
-          //  Show selected count when in selection mode
-          if (isSelectionMode && selectedScheduleIds.isNotEmpty)
-            Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: color.AppColors.success,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '${selectedScheduleIds.length} selected',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ),
-          IconButton(
-            onPressed: () => Modular.to.pushNamed('/notification'),
-            icon: const Icon(Icons.notifications_outlined, color: Colors.grey),
-          ),
-        ],
+
         body: Stack(
           children: [
             // Timeline vertical line

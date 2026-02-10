@@ -10,6 +10,7 @@ import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_state.dart';
+import 'package:test_wpa/features/schedules/presentation/widgets/date_header.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/timeline_event_card.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
@@ -152,26 +153,20 @@ class _MeetingPageState extends State<MeetingPage> {
       currentIndex: 0,
       appBarStyle: AppBarStyle.elegant,
       backgroundColor: color.AppColors.background,
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.today),
-          onPressed: () {
-            showCalendarBottomSheet(
-              context: context,
-              selectedDate: _selectedDate,
-              onDateSelected: _onDateSelected,
-            );
-          },
-          tooltip: 'Select date',
-        ),
-        const IconButton(
-          icon: Icon(Icons.notifications_outlined),
-          onPressed: null,
-        ),
-      ],
+
       body: SingleChildScrollView(
         child: Column(
           children: [
+            DateHeader(
+              selectedDate: _selectedDate,
+              onCalendarTap: () {
+                showCalendarBottomSheet(
+                  context: context,
+                  selectedDate: _selectedDate,
+                  onDateSelected: _onDateSelected,
+                );
+              },
+            ),
             // ========== Table Grid Section ==========
             BlocBuilder<TableBloc, TableState>(
               builder: (context, state) {
@@ -232,7 +227,7 @@ class _MeetingPageState extends State<MeetingPage> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              color: Colors.grey[700],
+                              color: color.AppColors.textSecondary,
                             ),
                           ),
                           SizedBox(height: space.s),
@@ -254,7 +249,7 @@ class _MeetingPageState extends State<MeetingPage> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              color: Colors.grey[700],
+                              color: color.AppColors.textSecondary,
                             ),
                           ),
                           SizedBox(height: space.s),
@@ -274,7 +269,7 @@ class _MeetingPageState extends State<MeetingPage> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: Colors.grey[700],
+                            color: color.AppColors.textSecondary,
                           ),
                         ),
                         SizedBox(height: space.s),
@@ -285,7 +280,9 @@ class _MeetingPageState extends State<MeetingPage> {
                               padding: const EdgeInsets.all(32),
                               child: Text(
                                 'No schedules for this date',
-                                style: TextStyle(color: Colors.grey),
+                                style: TextStyle(
+                                  color: color.AppColors.textSecondary,
+                                ),
                               ),
                             ),
                           )
@@ -319,13 +316,13 @@ class _MeetingPageState extends State<MeetingPage> {
                           Icon(
                             Icons.error_outline,
                             size: 64,
-                            color: Colors.red,
+                            color: color.AppColors.error,
                           ),
                           SizedBox(height: space.m),
                           Text(
                             state.message,
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.red),
+                            style: TextStyle(color: color.AppColors.error),
                           ),
                           SizedBox(height: space.m),
                           ElevatedButton(

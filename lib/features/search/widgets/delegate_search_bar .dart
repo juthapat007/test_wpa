@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:test_wpa/core/theme/app_colors.dart' as color;
 
 class DelegateSearchBar extends StatelessWidget {
   final TextEditingController controller;
@@ -29,7 +30,7 @@ class DelegateSearchBar extends StatelessWidget {
           prefixIcon: icon != null ? Icon(icon) : null,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           filled: true,
-          fillColor: Colors.grey[100],
+          fillColor: color.AppColors.surface,
         ),
       ),
     );

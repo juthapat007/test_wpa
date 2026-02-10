@@ -32,8 +32,8 @@ class _MeetingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final helper = ScheduleCardHelper(schedule);
-    final startTime = DateFormat('HH:mm').format(schedule.startAt.toUtc());
-    final endTime = DateFormat('HH:mm').format(schedule.endAt.toUtc());
+    final startTime = DateFormat('h:mm:a').format(schedule.startAt.toUtc());
+    final endTime = DateFormat('h:mm:a').format(schedule.endAt.toUtc());
 
     return Container(
       padding: const EdgeInsets.all(16),

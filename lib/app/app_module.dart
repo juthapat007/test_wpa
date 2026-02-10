@@ -188,10 +188,19 @@ class AppModule extends Module {
       ),
     );
 
+    // r.child(
+    //   '/schedule',
+    //   child: (_) => BlocProvider.value(
+    //     value: Modular.get<ScheduleBloc>()..add(LoadSchedules()),
+    //     child: const ScheduleWidget(),
+    //   ),
+    // );
     r.child(
       '/schedule',
       child: (_) => BlocProvider.value(
-        value: Modular.get<ScheduleBloc>()..add(LoadSchedules()),
+        value: Modular.get<ScheduleBloc>(),
+
+        // จะให้ trigger ใน initState ของ SchedulePage แทน
         child: const ScheduleWidget(),
       ),
     );
