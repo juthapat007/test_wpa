@@ -34,13 +34,14 @@ class DioClient {
     final dio = Dio(
       BaseOptions(
         baseUrl: 'https://wpa-docker.onrender.com/api/v1',
-        connectTimeout: const Duration(seconds: 60),
-        receiveTimeout: const Duration(seconds: 60),
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 30),
       ),
     );
     dio.interceptors.add(setupLogger());
     dio.interceptors.add(AuthInterceptor());
     return dio;
   }
+
   //สว่น dio ตัวนี้จะถูกใช้ในแต่ละ feature
 }

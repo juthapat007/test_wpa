@@ -19,8 +19,6 @@ import 'package:flutter_modular/flutter_modular.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 
-// enum ScheduleStatus { past, now, next, upcoming }
-
 class MeetingPage extends StatefulWidget {
   const MeetingPage({super.key});
 
@@ -40,8 +38,6 @@ class _MeetingPageState extends State<MeetingPage> {
       final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
       ReadContext(context).read<ScheduleBloc>().add(LoadSchedules(date: today));
 
-      // โหลด TableView ของวันนี้ + เวลาปัจจุบัน
-      // ✅ ใช้ UTC time
       final currentTime = DateFormat('h:mm a').format(DateTime.now().toUtc());
       Modular.get<TableBloc>().add(
         LoadTableView(date: today, time: currentTime),
@@ -172,7 +168,7 @@ class _MeetingPageState extends State<MeetingPage> {
               builder: (context, state) {
                 if (state is TableLoading) {
                   return Container(
-                    height: 400,
+                    height: 300,
                     child: const Center(child: CircularProgressIndicator()),
                   );
                 }
@@ -183,7 +179,7 @@ class _MeetingPageState extends State<MeetingPage> {
 
                 if (state is TableError) {
                   return Container(
-                    height: 400,
+                    height: 300,
                     child: Center(child: Text(state.message)),
                   );
                 }
@@ -191,8 +187,6 @@ class _MeetingPageState extends State<MeetingPage> {
                 return const SizedBox.shrink();
               },
             ),
-
-            const Divider(thickness: 2, height: 2),
 
             // ========== Schedule Section ==========
             BlocBuilder<ScheduleBloc, ScheduleState>(
@@ -218,8 +212,6 @@ class _MeetingPageState extends State<MeetingPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(height: space.l),
-
                         // ========== Current Meeting ==========
                         if (currentSchedule != null) ...[
                           Text(
@@ -239,7 +231,6 @@ class _MeetingPageState extends State<MeetingPage> {
                               type: EventCardType.meeting,
                             ),
                           ),
-                          SizedBox(height: space.l),
                         ],
 
                         // ========== Next Meeting ==========
@@ -260,7 +251,6 @@ class _MeetingPageState extends State<MeetingPage> {
                               type: EventCardType.meeting,
                             ),
                           ),
-                          SizedBox(height: space.l),
                         ],
 
                         // ========== Today's Schedule ==========
@@ -300,7 +290,7 @@ class _MeetingPageState extends State<MeetingPage> {
                             );
                           }).toList(),
 
-                        SizedBox(height: 100),
+                        // SizedBox(height: 100),
                       ],
                     ),
                   );

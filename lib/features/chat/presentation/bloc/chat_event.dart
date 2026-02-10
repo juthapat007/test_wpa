@@ -26,6 +26,8 @@ class SelectChatRoom extends ChatEvent {
   SelectChatRoom(this.room);
 }
 
+class BackToRoomList extends ChatEvent {}
+
 class CreateChatRoom extends ChatEvent {
   final String participantId;
   CreateChatRoom(this.participantId);

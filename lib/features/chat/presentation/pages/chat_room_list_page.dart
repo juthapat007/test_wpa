@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
@@ -7,7 +6,6 @@ import 'package:test_wpa/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:test_wpa/features/chat/presentation/widgets/chat_room_list_item.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
 import 'package:flutter_modular/flutter_modular.dart';
-import 'package:test_wpa/features/widgets/app_text_form_field.dart';
 
 class ChatRoomListPage extends StatefulWidget {
   const ChatRoomListPage({super.key});
@@ -17,30 +15,27 @@ class ChatRoomListPage extends StatefulWidget {
 }
 
 class _ChatRoomListPageState extends State<ChatRoomListPage> {
-  late TextEditingController usernameController;
   @override
   void initState() {
     super.initState();
-    usernameController = TextEditingController();
     // Load chat rooms และเชื่อมต่อ WebSocket
     ReadContext(context).read<ChatBloc>().add(LoadChatRooms());
     ReadContext(context).read<ChatBloc>().add(ConnectWebSocket());
   }
 
   @override
-  void dispose() {
-    usernameController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      title: 'Chat',
+      title: 'Messages',
       currentIndex: 3,
       backgroundColor: AppColors.background,
       appBarStyle: AppBarStyle.elegant,
-
+      actions: [
+        IconButton(
+          onPressed: () => Modular.to.pushNamed('/notification'),
+          icon: const Icon(Icons.notifications_outlined, color: Colors.grey),
+        ),
+      ],
       body: BlocConsumer<ChatBloc, ChatState>(
         listener: (context, state) {
           if (state is ChatError) {
@@ -74,11 +69,12 @@ class _ChatRoomListPageState extends State<ChatRoomListPage> {
                       style: TextStyle(
                         fontSize: 18,
                         color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     SizedBox(height: space.s),
                     Text(
-                      'Search for delegates to start chatting',
+                      'Start chatting with delegates',
                       style: TextStyle(
                         fontSize: 14,
                         color: AppColors.textSecondary,
@@ -100,7 +96,7 @@ class _ChatRoomListPageState extends State<ChatRoomListPage> {
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 8),
-                      color: AppColors.warning.withOpacity(0.2),
+                      color: AppColors.warning.withOpacity(0.1),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -115,34 +111,21 @@ class _ChatRoomListPageState extends State<ChatRoomListPage> {
                             style: TextStyle(
                               color: AppColors.warning,
                               fontSize: 12,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                       ),
                     ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: AppTextFormField(
-                      controller: usernameController,
-                      label: 'Search username...',
-                      icon: CupertinoIcons.search,
-                      textInputAction: TextInputAction.search,
-                    ),
-                  ),
 
-                  // Chat rooms list
+                  // Chat rooms list with Cards
                   Expanded(
-                    child: ListView.separated(
+                    child: ListView.builder(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       itemCount: state.rooms.length,
-                      separatorBuilder: (context, index) =>
-                          const Divider(height: 1, indent: 88),
                       itemBuilder: (context, index) {
                         final room = state.rooms[index];
-                        return ChatRoomListItem(
+                        return ChatRoomCard(
                           room: room,
                           onTap: () {
                             ReadContext(

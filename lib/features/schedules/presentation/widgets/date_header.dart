@@ -19,7 +19,7 @@ class DateHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.center,
 
         children: [
           Text(
@@ -27,8 +27,8 @@ class DateHeader extends StatelessWidget {
             style: TextStyle(
               fontFamily: 'Playfair Display',
               fontSize: 16,
-              color: AppColors.textSecondary,
-              backgroundColor: AppColors.surface,
+              color: AppColors.primary,
+              backgroundColor: AppColors.background,
             ),
           ),
           Material(

@@ -1,107 +1,180 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:test_wpa/core/theme/app_avatar.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 import 'package:test_wpa/features/chat/data/models/chat_room.dart';
 
-class ChatRoomListItem extends StatelessWidget {
+class ChatRoomCard extends StatelessWidget {
   final ChatRoom room;
   final VoidCallback onTap;
 
-  const ChatRoomListItem({super.key, required this.room, required this.onTap});
+  const ChatRoomCard({super.key, required this.room, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      onTap: onTap,
-      leading: Stack(
-        children: [
-          AppAvatar(imageUrl: room.participantAvatar, radius: 28),
-          // Online indicator (optional)
-          if (room.lastActiveAt != null &&
-              DateTime.now().difference(room.lastActiveAt!).inMinutes < 5)
-            Positioned(
-              right: 0,
-              bottom: 0,
-              child: Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: AppColors.success,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              // Avatar
+              _buildAvatar(),
+
+              const SizedBox(width: 12),
+
+              // Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Name & Time
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            room.participantName,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: room.unreadCount > 0
+                                  ? FontWeight.bold
+                                  : FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (room.lastMessage != null)
+                          Text(
+                            _formatTime(room.lastMessage!.createdAt),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: room.unreadCount > 0
+                                  ? AppColors.primary
+                                  : AppColors.textSecondary,
+                              fontWeight: room.unreadCount > 0
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    // Last Message
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            room.lastMessage?.content ?? 'No messages yet',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: room.unreadCount > 0
+                                  ? AppColors.textPrimary
+                                  : AppColors.textSecondary,
+                              fontWeight: room.unreadCount > 0
+                                  ? FontWeight.w500
+                                  : FontWeight.normal,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+
+                        // Unread Badge
+                        if (room.unreadCount > 0) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              room.unreadCount > 99
+                                  ? '99+'
+                                  : room.unreadCount.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
                 ),
               ),
-            ),
-        ],
-      ),
-      title: Row(
-        children: [
-          Expanded(
-            child: Text(
-              room.participantName,
-              style: TextStyle(
-                fontWeight: room.unreadCount > 0
-                    ? FontWeight.bold
-                    : FontWeight.w500,
-                fontSize: 16,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            ],
           ),
-          if (room.lastMessage != null)
-            Text(
-              _formatTime(room.lastMessage!.createdAt),
-              style: TextStyle(
-                fontSize: 12,
-                color: room.unreadCount > 0
-                    ? AppColors.primary
-                    : AppColors.textSecondary,
-                fontWeight: room.unreadCount > 0
-                    ? FontWeight.w600
-                    : FontWeight.normal,
-              ),
-            ),
-        ],
-      ),
-      subtitle: Row(
-        children: [
-          Expanded(
-            child: Text(
-              room.lastMessage?.content ?? 'No messages yet',
-              style: TextStyle(
-                color: room.unreadCount > 0
-                    ? AppColors.textPrimary
-                    : AppColors.textSecondary,
-                fontWeight: room.unreadCount > 0
-                    ? FontWeight.w600
-                    : FontWeight.normal,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          if (room.unreadCount > 0)
-            Container(
-              margin: const EdgeInsets.only(left: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                '${room.unreadCount}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-        ],
+        ),
       ),
     );
+  }
+
+  Widget _buildAvatar() {
+    return Stack(
+      children: [
+        // Avatar Circle
+        CircleAvatar(
+          radius: 28,
+          backgroundColor: AppColors.primary.withOpacity(0.1),
+          backgroundImage:
+              room.participantAvatar != null &&
+                  room.participantAvatar!.isNotEmpty
+              ? NetworkImage(room.participantAvatar!)
+              : null,
+          child:
+              room.participantAvatar == null || room.participantAvatar!.isEmpty
+              ? Text(
+                  _getInitials(room.participantName),
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                )
+              : null,
+        ),
+
+        // Online Indicator (optional)
+        if (room.lastActiveAt != null &&
+            DateTime.now().difference(room.lastActiveAt!).inMinutes < 5)
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(
+                color: AppColors.success,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  String _getInitials(String name) {
+    final parts = name.trim().split(' ');
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }
 
   String _formatTime(DateTime dateTime) {

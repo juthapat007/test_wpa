@@ -60,25 +60,28 @@ class ChatRepositoryImpl implements ChatRepository {
 
       return data.map((json) {
         // แปลง API response เป็น ChatRoom model
+        final delegate = json['delegate'];
+        final lastMessageText = json['last_message'] as String?;
+        final lastMessageAt = json['last_message_at'] as String?;
+
         return ChatRoom(
-          id: json['delegate']['id'].toString(),
-          participantId: json['delegate']['id'].toString(),
-          participantName: json['delegate']['name'] ?? 'Unknown',
-          participantAvatar: json['delegate']['avatar'],
-          lastMessage: json['last_message'] != null
+          id: delegate['id'].toString(),
+          participantId: delegate['id'].toString(),
+          participantName: delegate['name'] ?? 'Unknown',
+          participantAvatar: delegate['avatar_url'], // อาจจะไม่มีใน response
+          lastMessage: lastMessageText != null && lastMessageAt != null
               ? ChatMessage(
-                  id: json['last_message']['id'].toString(),
-                  senderId: json['last_message']['sender_id'].toString(),
-                  senderName: '',
-                  receiverId: json['last_message']['recipient_id'].toString(),
-                  content: json['last_message']['content'] ?? '',
-                  createdAt: DateTime.parse(json['last_message']['created_at']),
-                  isRead: json['last_message']['read_at'] != null,
+                  id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  senderId: delegate['id'].toString(),
+                  senderName: delegate['name'] ?? '',
+                  receiverId: '', // ไม่ทราบจาก response นี้
+                  content: lastMessageText,
+                  createdAt: DateTime.parse(lastMessageAt),
                 )
               : null,
           unreadCount: json['unread_count'] ?? 0,
-          lastActiveAt: json['last_message'] != null
-              ? DateTime.parse(json['last_message']['created_at'])
+          lastActiveAt: lastMessageAt != null
+              ? DateTime.parse(lastMessageAt)
               : null,
         );
       }).toList();

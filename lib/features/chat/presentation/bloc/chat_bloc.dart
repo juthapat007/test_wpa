@@ -31,6 +31,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     // Chat Room Events
     on<LoadChatRooms>(_onLoadChatRooms);
     on<SelectChatRoom>(_onSelectChatRoom);
+    on<BackToRoomList>(_onBackToRoomList);
     on<CreateChatRoom>(_onCreateChatRoom);
 
     // Message Events
@@ -136,6 +137,16 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
   }
 
+  void _onBackToRoomList(BackToRoomList event, Emitter<ChatState> emit) {
+    // กลับไปหน้า list โดยไม่ต้องโหลดใหม่
+    emit(
+      ChatRoomsLoaded(
+        rooms: _chatRooms,
+        isWebSocketConnected: _isWebSocketConnected,
+      ),
+    );
+  }
+
   Future<void> _onSelectChatRoom(
     SelectChatRoom event,
     Emitter<ChatState> emit,
@@ -159,6 +170,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       );
     } catch (e) {
       emit(ChatError('Failed to load chat history: $e'));
+      // กลับไปที่ ChatRoomsLoaded แทนการค้างที่ Error
+      emit(
+        ChatRoomsLoaded(
+          rooms: _chatRooms,
+          isWebSocketConnected: _isWebSocketConnected,
+        ),
+      );
     }
   }
 

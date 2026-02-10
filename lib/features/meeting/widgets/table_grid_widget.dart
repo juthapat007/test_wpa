@@ -45,8 +45,6 @@ class _TableGridWidgetState extends State<TableGridWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // _buildDateTimeHeader(selectedDate, widget.currentSchedule),
-          SizedBox(height: space.m),
-
           if (hasNoTable)
             _buildNoTableSection(selectedDate, widget.response.time)
           else
