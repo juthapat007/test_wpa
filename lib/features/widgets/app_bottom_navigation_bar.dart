@@ -59,22 +59,10 @@ class AppBottomNavigationBar extends StatelessWidget {
   }) {
     // ใช้ BlocBuilder จาก context โดยตรง (ChatBloc provide ที่ AppWidget level)
     return BlocBuilder<ChatBloc, ChatState>(
-      buildWhen: (previous, current) {
-        // Rebuild เฉพาะเมื่อ state ที่มี rooms data เปลี่ยน
-        return current is ChatRoomsLoaded ||
-            current is ChatRoomSelected ||
-            current is NewMessageReceived;
-      },
       builder: (context, state) {
-        int totalUnread = 0;
-
-        // นับ unread จากทุก state ที่มี rooms data
-        if (state is ChatRoomsLoaded) {
-          totalUnread = state.rooms.fold(
-            0,
-            (sum, room) => sum + room.unreadCount,
-          );
-        }
+        // ดึง unread count จาก ChatBloc internal state ผ่าน rooms
+        final chatBloc = context.read<ChatBloc>();
+        final totalUnread = chatBloc.totalUnreadCount;
 
         // ถ้าไม่มี unread แสดง icon ธรรมดา
         if (totalUnread == 0) {

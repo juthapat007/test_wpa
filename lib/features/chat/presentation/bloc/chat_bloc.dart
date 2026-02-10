@@ -21,6 +21,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   bool _isWebSocketConnected = false;
   String? _currentUserId; // จะได้จาก auth
 
+  /// Getter สำหรับ total unread count (ใช้ใน bottom nav badge)
+  int get totalUnreadCount =>
+      _chatRooms.fold(0, (sum, room) => sum + room.unreadCount);
+
   ChatBloc({required this.chatRepository}) : super(ChatInitial()) {
     // WebSocket Events
     on<ConnectWebSocket>(_onConnectWebSocket);

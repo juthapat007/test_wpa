@@ -16,7 +16,9 @@ class AppWidget extends StatelessWidget {
         BlocProvider<AuthBloc>(create: (_) => Modular.get<AuthBloc>()),
         // ChatBloc - ให้ทุกหน้าเข้าถึงได้ (สำหรับ badge ใน bottom nav)
         BlocProvider<ChatBloc>(
-          create: (_) => Modular.get<ChatBloc>()..add(ConnectWebSocket()),
+          create: (_) => Modular.get<ChatBloc>()
+            ..add(ConnectWebSocket())
+            ..add(LoadChatRooms()),
         ),
       ],
       child: MaterialApp.router(
