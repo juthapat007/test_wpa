@@ -247,14 +247,14 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
           );
         },
       ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.more_vert),
-          onPressed: () {
-            // TODO: options
-          },
-        ),
-      ],
+      // actions: [
+      //   IconButton(
+      //     icon: const Icon(Icons.more_vert),
+      //     onPressed: () {
+      //       // TODO: options
+      //     },
+      //   ),
+      // ],
     );
   }
 

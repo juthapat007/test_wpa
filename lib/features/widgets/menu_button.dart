@@ -35,7 +35,7 @@ class MenuButton extends StatelessWidget {
         backgroundColor: backgroundColor,
         foregroundColor: foregroundColor,
         padding: const EdgeInsets.symmetric(vertical: 20),
-        elevation: isDanger ? 6 : (isSelected ? 4 : 1),
+        // elevation: isDanger ? 6 : (isSelected ? 4 : 1),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       onPressed: onTap,

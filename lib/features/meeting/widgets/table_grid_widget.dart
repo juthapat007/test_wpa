@@ -107,7 +107,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
         padding: const EdgeInsets.only(top: 40),
         child: Card(
           color: color.AppColors.surface,
-          elevation: 2,
+          // elevation: 2,
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -390,7 +390,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   Widget _buildBoothCard(TableInfo booth) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
+      // elevation: 2,
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),

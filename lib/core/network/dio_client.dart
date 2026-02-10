@@ -34,8 +34,8 @@ class DioClient {
     final dio = Dio(
       BaseOptions(
         baseUrl: 'https://wpa-docker.onrender.com/api/v1',
-        connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 30),
+        connectTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 60),
       ),
     );
     dio.interceptors.add(setupLogger());

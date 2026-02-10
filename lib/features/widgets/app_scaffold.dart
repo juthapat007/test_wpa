@@ -98,14 +98,8 @@ class AppScaffold extends StatelessWidget {
                         height: 45,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 5,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                          border: Border.all(color: Colors.white),
+
                           image: avatarUrl != null && avatarUrl.isNotEmpty
                               ? DecorationImage(
                                   image: NetworkImage(avatarUrl),
@@ -145,12 +139,12 @@ class AppScaffold extends StatelessWidget {
   }
 
   Widget _buildBottomNavBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
-        border: Border(top: BorderSide(color: Colors.grey[100]!)),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 60), // ปรับเลขตรงนี้
+      child: Container(
+        decoration: BoxDecoration(),
+        child: AppBottomNavigationBar(currentIndex: currentIndex),
       ),
-      child: AppBottomNavigationBar(currentIndex: currentIndex),
     );
   }
 
@@ -160,7 +154,10 @@ class AppScaffold extends StatelessWidget {
         return [
           IconButton(
             onPressed: () => Modular.to.pushNamed('/notification'),
-            icon: const Icon(Icons.notifications_outlined, color: Colors.grey),
+            icon: const Icon(
+              Icons.notifications_outlined,
+              color: color.AppColors.textSecondary,
+            ),
           ),
         ];
 

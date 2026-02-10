@@ -80,11 +80,14 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   ) {
     final message = event.message;
 
-    // เพิ่มข้อความเข้าไปใน list
-    _messages = [..._messages, message];
+    // 📩 ถ้ากำลังอยู่ในห้องแชทนั้น
+    if (_selectedRoom != null &&
+        (message.senderId == _selectedRoom!.participantId ||
+            message.receiverId == _selectedRoom!.participantId)) {
+      // เพิ่มข้อความเข้าไปใน list
+      _messages = [..._messages, message];
 
-    // Update chat room's last message
-    if (_selectedRoom != null) {
+      // Update chat room's last message
       final updatedRoom = _selectedRoom!.copyWith(
         lastMessage: message,
         lastActiveAt: message.createdAt,
@@ -98,6 +101,51 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           messages: _messages,
         ),
       );
+
+      // 📖 Mark as read ถ้าข้อความมาจากคนอื่น
+      if (message.senderId == _selectedRoom!.participantId) {
+        add(MarkAsRead(_selectedRoom!.participantId));
+      }
+    }
+    // 🔔 ถ้าไม่ได้อยู่ในห้องนั้น = เพิ่ม unread count
+    else {
+      _updateChatRoomsWithNewMessage(message, emit);
+    }
+  }
+
+  // 🔔 Update chat rooms เมื่อมีข้อความใหม่เข้ามา (แต่ไม่ได้อยู่ในห้องนั้น)
+  void _updateChatRoomsWithNewMessage(
+    ChatMessage message,
+    Emitter<ChatState> emit,
+  ) {
+    // หา room ที่ข้อความมาจาก
+    final roomIndex = _chatRooms.indexWhere(
+      (room) => room.participantId == message.senderId,
+    );
+
+    if (roomIndex != -1) {
+      // อัพเดท room นั้น
+      final room = _chatRooms[roomIndex];
+      final updatedRoom = room.copyWith(
+        lastMessage: message,
+        lastActiveAt: message.createdAt,
+        unreadCount: room.unreadCount + 1, // 🔔 เพิ่ม unread
+      );
+
+      // ย้าย room นี้ขึ้นไปอันดับแรก (เรียงตาม lastActiveAt)
+      _chatRooms.removeAt(roomIndex);
+      _chatRooms.insert(0, updatedRoom);
+
+      // Emit state ใหม่
+      emit(
+        ChatRoomsLoaded(
+          rooms: _chatRooms,
+          isWebSocketConnected: _isWebSocketConnected,
+        ),
+      );
+    } else {
+      // ถ้าไม่มี room นี้ (คนใหม่ส่งข้อความมา) ให้โหลด rooms ใหม่
+      add(LoadChatRooms());
     }
   }
 
@@ -138,6 +186,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   }
 
   void _onBackToRoomList(BackToRoomList event, Emitter<ChatState> emit) {
+    // Clear selected room
+    _selectedRoom = null;
+    _messages = [];
+
     // กลับไปหน้า list โดยไม่ต้องโหลดใหม่
     emit(
       ChatRoomsLoaded(
@@ -281,6 +333,14 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       if (_selectedRoom?.id == event.roomId) {
         _selectedRoom = _selectedRoom!.copyWith(unreadCount: 0);
       }
+
+      // 🔔 Emit state ใหม่เพื่ออัพเดท badge
+      emit(
+        ChatRoomsLoaded(
+          rooms: _chatRooms,
+          isWebSocketConnected: _isWebSocketConnected,
+        ),
+      );
     } catch (e) {
       // Silent fail - not critical
       print('Failed to mark as read: $e');

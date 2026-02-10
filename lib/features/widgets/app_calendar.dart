@@ -30,7 +30,7 @@ class _AppCalendarState extends State<AppCalendar> {
   Widget build(BuildContext context) {
     return TableCalendar(
       firstDay: DateTime.utc(2020, 1, 1),
-      lastDay: DateTime.utc(2030, 12, 31),
+      lastDay: DateTime.utc(2120, 12, 31),
       focusedDay: _focusedDay,
       selectedDayPredicate: (day) {
         return isSameDay(_selectedDay, day);

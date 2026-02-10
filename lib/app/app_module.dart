@@ -167,23 +167,17 @@ class AppModule extends Module {
       ),
     );
 
-    // Chat - รายการห้องแชท
-    r.child(
-      '/chat',
-      child: (_) => BlocProvider.value(
-        value: Modular.get<ChatBloc>(),
-        child: const ChatRoomListPage(),
-      ),
-    );
+    //  Chat - ไม่ต้อง provide ChatBloc ซ้ำเพราะ provide ที่ AppWidget แล้ว
+    r.child('/chat', child: (_) => const ChatRoomListPage());
+    // r.child(
+    //   '/chat',
+    //   child: (_) => BlocProvider<ChatBloc>(
+    //     create: (_) => Modular.get<ChatBloc>()..add(ConnectWebSocket()),
+    //     child: const ChatRoomListPage(),
+    //   ),
+    // );
 
-    // Chat - หน้าสนทนา
-    r.child(
-      '/chat/room',
-      child: (_) => BlocProvider.value(
-        value: Modular.get<ChatBloc>(),
-        child: const ChatConversationPage(),
-      ),
-    );
+    r.child('/chat/room', child: (_) => const ChatConversationPage());
 
     r.child(
       '/event',

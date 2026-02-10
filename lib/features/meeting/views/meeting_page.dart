@@ -38,10 +38,8 @@ class _MeetingPageState extends State<MeetingPage> {
       final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
       ReadContext(context).read<ScheduleBloc>().add(LoadSchedules(date: today));
 
-      final currentTime = DateFormat('h:mm a').format(DateTime.now().toUtc());
-      Modular.get<TableBloc>().add(
-        LoadTableView(date: today, time: currentTime),
-      );
+      // ⏰ รอให้ schedule โหลดเสร็จก่อน แล้วค่อยหาเวลาที่เหมาะสม
+      _loadInitialTableView();
     });
 
     _timer = Timer.periodic(Duration(minutes: 1), (timer) {
@@ -49,6 +47,60 @@ class _MeetingPageState extends State<MeetingPage> {
         _currentTime = DateTime.now();
       });
     });
+  }
+
+  // 🔍 หา current/next schedule แล้วยิง table view ด้วย start_time ของมัน
+  void _loadInitialTableView() async {
+    await Future.delayed(
+      Duration(milliseconds: 500),
+    ); // รอ schedule bloc โหลดเสร็จ
+
+    final scheduleState = ReadContext(context).read<ScheduleBloc>().state;
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+    String timeToUse;
+
+    if (scheduleState is ScheduleLoaded) {
+      final schedules = scheduleState.scheduleResponse.schedules;
+      final now = DateTime.now();
+
+      // หา schedule ที่ปัจจุบันอยู่ในช่วง หรือ schedule ถัดไป
+      Schedule? targetSchedule;
+
+      // 1. หา ongoing schedule (กำลังเกิดขึ้นอยู่)
+      for (var s in schedules) {
+        if (now.isAfter(s.startAt) && now.isBefore(s.endAt)) {
+          targetSchedule = s;
+          break;
+        }
+      }
+
+      // 2. ถ้าไม่มี ongoing ให้หา next schedule (schedule ถัดไปที่จะมาถึง)
+      if (targetSchedule == null) {
+        for (var s in schedules) {
+          if (now.isBefore(s.startAt)) {
+            targetSchedule = s;
+            break;
+          }
+        }
+      }
+
+      // ใช้ start_time ของ schedule ที่เจอ
+      if (targetSchedule != null) {
+        timeToUse = DateFormat('h:mm a').format(targetSchedule.startAt.toUtc());
+        print('🎯 Using schedule time: $timeToUse (from ${targetSchedule.id})');
+      } else {
+        // ถ้าไม่มี schedule เลย (ทุก schedule ผ่านไปแล้ว) ใช้เวลาปัจจุบัน
+        timeToUse = DateFormat('h:mm a').format(DateTime.now().toUtc());
+        print('⚠️ No upcoming schedule, using current time: $timeToUse');
+      }
+    } else {
+      // ถ้า schedule ยังไม่โหลด ใช้เวลาปัจจุบัน
+      timeToUse = DateFormat('h:mm a').format(DateTime.now().toUtc());
+      print('⚠️ Schedule not loaded yet, using current time: $timeToUse');
+    }
+
+    Modular.get<TableBloc>().add(LoadTableView(date: today, time: timeToUse));
   }
 
   @override

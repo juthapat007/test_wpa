@@ -30,12 +30,7 @@ class _ChatRoomListPageState extends State<ChatRoomListPage> {
       currentIndex: 3,
       backgroundColor: AppColors.background,
       appBarStyle: AppBarStyle.elegant,
-      actions: [
-        IconButton(
-          onPressed: () => Modular.to.pushNamed('/notification'),
-          icon: const Icon(Icons.notifications_outlined, color: Colors.grey),
-        ),
-      ],
+
       body: BlocConsumer<ChatBloc, ChatState>(
         listener: (context, state) {
           if (state is ChatError) {

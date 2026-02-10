@@ -58,7 +58,7 @@ class ChatRepositoryImpl implements ChatRepository {
       final response = await api.getChatRooms();
       final List<dynamic> data = response.data;
 
-      return data.map((json) {
+      final rooms = data.map((json) {
         // แปลง API response เป็น ChatRoom model
         final delegate = json['delegate'];
         final lastMessageText = json['last_message'] as String?;
@@ -85,6 +85,16 @@ class ChatRepositoryImpl implements ChatRepository {
               : null,
         );
       }).toList();
+
+      // 📌 เรียงตาม lastActiveAt (ล่าสุดก่อน)
+      rooms.sort((a, b) {
+        if (a.lastActiveAt == null && b.lastActiveAt == null) return 0;
+        if (a.lastActiveAt == null) return 1;
+        if (b.lastActiveAt == null) return -1;
+        return b.lastActiveAt!.compareTo(a.lastActiveAt!);
+      });
+
+      return rooms;
     } catch (e) {
       throw Exception('Failed to load chat rooms: $e');
     }
@@ -99,7 +109,7 @@ class ChatRepositoryImpl implements ChatRepository {
       final response = await api.getChatHistory(partnerId: partnerId);
       final List<dynamic> data = response.data;
 
-      return data.map((json) {
+      final messages = data.map((json) {
         return ChatMessage(
           id: json['id'].toString(),
           senderId: json['sender']['id'].toString(),
@@ -111,6 +121,11 @@ class ChatRepositoryImpl implements ChatRepository {
           isRead: json['read_at'] != null,
         );
       }).toList();
+
+      // 📌 เรียงตาม createdAt (เก่าสุดก่อน เพื่อแสดงจากบนลงล่าง)
+      messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+      return messages;
     } catch (e) {
       throw Exception('Failed to load chat history: $e');
     }
