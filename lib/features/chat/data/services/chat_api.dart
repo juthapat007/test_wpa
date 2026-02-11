@@ -20,13 +20,26 @@ class ChatApi {
 
   /// ดึงประวัติข้อความกับคนใดคนหนึ่ง
   /// partnerId = ID ของคู่สนทนา
-  Future<Response> getChatHistory({required String partnerId}) async {
+  /// page = หน้าที่ต้องการ (default = 1 คือหน้าล่าสุด)
+  /// perPage = จำนวนข้อความต่อหน้า
+  Future<Response> getChatHistory({
+    required String partnerId,
+    int? page,
+    int? perPage,
+  }) async {
     try {
-      final response = await dio.get('/messages/conversation/$partnerId');
-      debugPrint('💬 Chat history loaded for partner $partnerId');
+      final queryParams = <String, dynamic>{};
+      if (page != null) queryParams['page'] = page;
+      if (perPage != null) queryParams['per_page'] = perPage;
+
+      final response = await dio.get(
+        '/messages/conversation/$partnerId',
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+      debugPrint('Chat history loaded for partner $partnerId');
       return response;
     } catch (e) {
-      debugPrint('❌ Error loading chat history: $e');
+      debugPrint('Error loading chat history: $e');
       rethrow;
     }
   }

@@ -106,8 +106,76 @@ class ChatRepositoryImpl implements ChatRepository {
     int? limit,
   }) async {
     try {
-      final response = await api.getChatHistory(partnerId: partnerId);
-      final List<dynamic> data = response.data;
+      // ขอข้อความล่าสุด: ใช้ per_page เพื่อจำกัดจำนวน
+      // หลาย Rails API จะ default page=1 = หน้าแรก (เก่าสุด)
+      // ดังนั้นเราต้องขอ page สูง หรือเปลี่ยนวิธี
+
+      // ขั้นตอน: เรียก API แบบไม่ระบุ page ก่อน เพื่อดู response format
+      final response = await api.getChatHistory(
+        partnerId: partnerId,
+        perPage: limit ?? 50,
+      );
+
+      // รองรับทั้ง response แบบ List ตรงๆ และแบบ paginated object
+      List<dynamic> data;
+      int? totalPages;
+      int? currentPage;
+
+      if (response.data is List) {
+        data = response.data;
+      } else if (response.data is Map) {
+        // อาจเป็น { messages: [...], meta: { total_pages: N, current_page: 1 } }
+        final mapData = response.data as Map<String, dynamic>;
+        data = mapData['messages'] ?? mapData['data'] ?? [];
+        totalPages = mapData['meta']?['total_pages'] ??
+            mapData['pagination']?['total_pages'];
+        currentPage = mapData['meta']?['current_page'] ??
+            mapData['pagination']?['current_page'];
+      } else {
+        data = [];
+      }
+
+      // เช็ค pagination จาก response headers ด้วย (Rails kaminari/will_paginate style)
+      if (totalPages == null) {
+        final headers = response.headers;
+        final totalPagesHeader = headers.value('x-total-pages') ??
+            headers.value('X-Total-Pages');
+        final currentPageHeader = headers.value('x-page') ??
+            headers.value('X-Page') ??
+            headers.value('x-current-page');
+        if (totalPagesHeader != null) {
+          totalPages = int.tryParse(totalPagesHeader);
+        }
+        if (currentPageHeader != null) {
+          currentPage = int.tryParse(currentPageHeader);
+        }
+      }
+
+      debugPrint('[v0] Pagination info: currentPage=$currentPage, totalPages=$totalPages, dataLength=${data.length}');
+
+      // ถ้ามี pagination และไม่ได้อยู่หน้าสุดท้าย ให้โหลดหน้าสุดท้าย
+      if (totalPages != null && totalPages > 1 && currentPage != totalPages) {
+        debugPrint('[v0] Loading latest page: $totalPages');
+        final latestResponse = await api.getChatHistory(
+          partnerId: partnerId,
+          page: totalPages,
+          perPage: limit ?? 50,
+        );
+
+        if (latestResponse.data is List) {
+          data = latestResponse.data;
+        } else if (latestResponse.data is Map) {
+          final mapData = latestResponse.data as Map<String, dynamic>;
+          data = mapData['messages'] ?? mapData['data'] ?? [];
+        }
+      }
+
+      debugPrint('Loaded ${data.length} messages for partner $partnerId');
+      if (data.isNotEmpty) {
+        final lastMsg = data.last;
+        final content = lastMsg is Map ? (lastMsg['content'] ?? '') : '';
+        debugPrint('Latest message: $content');
+      }
 
       final messages = data.map((json) {
         return ChatMessage(
@@ -122,7 +190,7 @@ class ChatRepositoryImpl implements ChatRepository {
         );
       }).toList();
 
-      // 📌 เรียงตาม createdAt (เก่าสุดก่อน เพื่อแสดงจากบนลงล่าง)
+      // เรียงตาม createdAt (เก่าสุดก่อน เพื่อแสดงจากบนลงล่าง)
       messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
       return messages;
