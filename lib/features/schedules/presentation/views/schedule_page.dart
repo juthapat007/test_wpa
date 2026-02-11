@@ -5,16 +5,14 @@ import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dar
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_state.dart';
 import 'package:test_wpa/features/schedules/presentation/views/attendance_status.dart';
-import 'package:test_wpa/features/schedules/presentation/widgets/date_header.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/timeline_row.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/timeline_event_card.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/empty_schedule_view.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/error_schedule_view.dart';
-import 'package:test_wpa/features/widgets/app_calendar_bottom_sheet.dart';
+import 'package:test_wpa/features/widgets/date_tab_bar.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
 import 'package:flutter_modular/flutter_modular.dart';
-import 'package:intl/intl.dart';
 
 class SchedulePage extends StatefulWidget {
   const SchedulePage({super.key});
@@ -24,58 +22,46 @@ class SchedulePage extends StatefulWidget {
 }
 
 class _SchedulePageState extends State<SchedulePage> {
-  DateTime selectedDate = DateTime.now();
-
-  // ปรับตรงนี้เพื่อขยับเส้น timeline
+  // Timeline offset for the vertical line
   static const double timelineOffset = 42.0;
 
-  //  Selection mode state
+  // Selection mode state
   bool isSelectionMode = false;
   Set<int> selectedScheduleIds = {};
 
-  @override
-  // void initState() {
-  //   super.initState();
-  //   final today = DateTime.now();
-  //   final todayStr = DateFormat('yyyy-MM-dd').format(today);
-  //   selectedDate = today;
-  //   ReadContext(
-  //     context,
-  //   ).read<ScheduleBloc>().add(LoadSchedules(date: todayStr));
-  // }
+  // Tracks the currently selected date string from available_dates
+  String _selectedDateStr = '';
+
   @override
   void initState() {
     super.initState();
-    selectedDate = DateTime.now();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
-
-      ReadContext(
-        context,
-      ).read<ScheduleBloc>().add(LoadSchedules(date: todayStr));
+      // Load without date param -- backend returns default date + available_dates
+      ReadContext(context).read<ScheduleBloc>().add(LoadSchedules());
     });
   }
 
-  void _onDateSelected(DateTime date) {
+  void _onDateSelected(String dateString) {
     setState(() {
-      selectedDate = date;
-      // Clear selection when changing date
+      _selectedDateStr = dateString;
       isSelectionMode = false;
       selectedScheduleIds.clear();
     });
-    final dateString = DateFormat('yyyy-MM-dd').format(date);
     ReadContext(context).read<ScheduleBloc>().add(ChangeDate(dateString));
   }
 
   void _onRetry() {
-    final dateString = DateFormat('yyyy-MM-dd').format(selectedDate);
-    ReadContext(
-      context,
-    ).read<ScheduleBloc>().add(LoadSchedules(date: dateString));
+    if (_selectedDateStr.isNotEmpty) {
+      ReadContext(
+        context,
+      ).read<ScheduleBloc>().add(LoadSchedules(date: _selectedDateStr));
+    } else {
+      ReadContext(context).read<ScheduleBloc>().add(LoadSchedules());
+    }
   }
 
-  //  Toggle selection mode
+  // Toggle selection mode
   void _toggleSelectionMode() {
     setState(() {
       isSelectionMode = !isSelectionMode;
@@ -85,7 +71,7 @@ class _SchedulePageState extends State<SchedulePage> {
     });
   }
 
-  //  Toggle schedule selection
+  // Toggle schedule selection
   void _toggleScheduleSelection(int scheduleId) {
     if (!isSelectionMode) return;
 
@@ -102,7 +88,6 @@ class _SchedulePageState extends State<SchedulePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: color.AppColors.surface,
-      // Floating Action Button - ส่งข้อมูลไปหน้า AttendanceStatus
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 100, right: 20),
         child: FloatingActionButton(
@@ -122,15 +107,12 @@ class _SchedulePageState extends State<SchedulePage> {
                 return;
               }
 
-              //  ดึงข้อมูล Schedule จาก BlocState
               final state = ReadContext(context).read<ScheduleBloc>().state;
               if (state is ScheduleLoaded) {
-                // กรอง schedules ที่ถูกเลือก
                 final selectedSchedules = state.scheduleResponse.schedules
                     .where((s) => selectedScheduleIds.contains(s.id))
                     .toList();
 
-                // ไปหน้า AttendanceStatus พร้อมส่งข้อมูล
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -140,7 +122,6 @@ class _SchedulePageState extends State<SchedulePage> {
                 );
               }
             } else {
-              // ถ้ายังไม่ได้เปิด selection mode = เปิด selection mode
               _toggleSelectionMode();
             }
           },
@@ -152,7 +133,6 @@ class _SchedulePageState extends State<SchedulePage> {
         backgroundColor: const Color(0xFFF9FAFB),
         appBarStyle: AppBarStyle.elegant,
         showBottomNavBar: true,
-
         body: Stack(
           children: [
             // Timeline vertical line
@@ -165,16 +145,41 @@ class _SchedulePageState extends State<SchedulePage> {
             // Content
             Column(
               children: [
-                DateHeader(
-                  selectedDate: selectedDate,
-                  onCalendarTap: () {
-                    showCalendarBottomSheet(
-                      context: context,
-                      selectedDate: selectedDate,
-                      onDateSelected: _onDateSelected,
-                    );
+                // BlocBuilder to get available_dates for the DateTabBar
+                BlocBuilder<ScheduleBloc, ScheduleState>(
+                  buildWhen: (prev, curr) {
+                    // Only rebuild the date bar when the loaded response changes
+                    if (curr is ScheduleLoaded) return true;
+                    return false;
+                  },
+                  builder: (context, state) {
+                    if (state is ScheduleLoaded) {
+                      final response = state.scheduleResponse;
+
+                      // Sync _selectedDateStr on first load
+                      if (_selectedDateStr.isEmpty &&
+                          response.date.isNotEmpty) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          setState(() {
+                            _selectedDateStr = response.date;
+                          });
+                        });
+                      }
+
+                      return DateTabBar(
+                        availableDates: response.availableDates,
+                        selectedDate:
+                            _selectedDateStr.isNotEmpty
+                                ? _selectedDateStr
+                                : response.date,
+                        onDateSelected: _onDateSelected,
+                      );
+                    }
+                    // While loading or error, show nothing for the tab bar
+                    return const SizedBox(height: 16);
                   },
                 ),
+                // Schedule list
                 Expanded(
                   child: BlocBuilder<ScheduleBloc, ScheduleState>(
                     builder: (context, state) {
@@ -188,14 +193,9 @@ class _SchedulePageState extends State<SchedulePage> {
 
                       if (state is ScheduleLoaded) {
                         final response = state.scheduleResponse;
+                        final schedules = response.schedules;
 
-                        final todayOnlySchedules = response.schedules.where((
-                          s,
-                        ) {
-                          return DateUtils.isSameDay(s.startAt, selectedDate);
-                        }).toList();
-
-                        if (todayOnlySchedules.isEmpty) {
+                        if (schedules.isEmpty) {
                           return const EmptyScheduleView();
                         }
 
@@ -205,16 +205,15 @@ class _SchedulePageState extends State<SchedulePage> {
                             right: 16,
                             bottom: 100,
                           ),
-                          itemCount: todayOnlySchedules.length,
+                          itemCount: schedules.length,
                           separatorBuilder: (context, index) =>
                               const SizedBox(height: 16),
                           itemBuilder: (context, index) {
-                            final schedule = todayOnlySchedules[index];
+                            final schedule = schedules[index];
                             final isSelected = selectedScheduleIds.contains(
                               schedule.id,
                             );
 
-                            //  Wrap with GestureDetector for tap handling
                             return GestureDetector(
                               onTap: () =>
                                   _toggleScheduleSelection(schedule.id),
