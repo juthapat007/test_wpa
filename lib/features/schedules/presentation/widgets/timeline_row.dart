@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
+import 'package:test_wpa/core/utils/date_time_helper.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:intl/intl.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
@@ -20,7 +21,7 @@ class TimelineRow extends StatelessWidget {
     this.isSelected = false,
   });
   String _formatTime(DateTime dateTime) {
-    return DateFormat('h:mm:a').format(dateTime);
+    return DateTimeHelper.formatTime12(dateTime);
   }
 
   String _formatPeriod(DateTime dateTime) {

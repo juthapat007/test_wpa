@@ -27,7 +27,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedDate = DateTime.parse(widget.response.date);
+    final selectedDate = DateTimeHelper.parseSafeDate(widget.response.date);
     final hasNoTable = widget.response.myTable.isEmpty;
 
     // แยก regular tables กับ booths

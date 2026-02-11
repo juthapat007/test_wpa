@@ -10,13 +10,11 @@ import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_state.dart';
-import 'package:test_wpa/features/schedules/presentation/widgets/date_header.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/timeline_event_card.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
-import 'package:test_wpa/features/widgets/app_calendar_bottom_sheet.dart';
+import 'package:test_wpa/features/widgets/date_tab_bar.dart';
 import 'package:flutter_modular/flutter_modular.dart';
-import 'package:intl/intl.dart';
 import 'dart:async';
 
 class MeetingPage extends StatefulWidget {
@@ -29,109 +27,80 @@ class MeetingPage extends StatefulWidget {
 class _MeetingPageState extends State<MeetingPage> {
   Timer? _timer;
   DateTime _currentTime = DateTime.now();
-  DateTime _selectedDate = DateTime.now();
+  String _selectedDateStr = '';
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-      ReadContext(context).read<ScheduleBloc>().add(LoadSchedules(date: today));
+      // Load without date param -- backend returns default date + available_dates
+      ReadContext(context).read<ScheduleBloc>().add(LoadSchedules());
 
-      // ⏰ รอให้ schedule โหลดเสร็จก่อน แล้วค่อยหาเวลาที่เหมาะสม
+      // Wait for schedule to load, then load table view with the best matching time
       _loadInitialTableView();
     });
 
-    _timer = Timer.periodic(Duration(minutes: 1), (timer) {
+    _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
       setState(() {
         _currentTime = DateTime.now();
       });
     });
   }
 
-  // 🔍 หา current/next schedule แล้วยิง table view ด้วย start_time ของมัน
+  /// Find the current/next schedule and load the table view using its start_time.
   void _loadInitialTableView() async {
-    await Future.delayed(
-      Duration(milliseconds: 500),
-    ); // รอ schedule bloc โหลดเสร็จ
+    await Future.delayed(const Duration(milliseconds: 500));
 
     final scheduleState = ReadContext(context).read<ScheduleBloc>().state;
-    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
+    String dateToUse;
     String timeToUse;
 
     if (scheduleState is ScheduleLoaded) {
-      final schedules = scheduleState.scheduleResponse.schedules;
-      final now = DateTime.now()
-          .toUtc(); // 🔧 แปลง now เป็น UTC เพื่อเปรียบเทียบกับ schedule
+      final response = scheduleState.scheduleResponse;
+      final schedules = response.schedules;
+      dateToUse = response.date;
 
-      print('🕐 Current UTC time: $now');
-      print('📋 Available schedules: ${schedules.length}');
-
-      // Debug: แสดงเวลาของทุก schedule
-      for (var s in schedules) {
-        print('   Schedule ${s.id}: ${s.startAt} to ${s.endAt}');
+      // Sync the selected date
+      if (_selectedDateStr.isEmpty && dateToUse.isNotEmpty) {
+        setState(() {
+          _selectedDateStr = dateToUse;
+        });
       }
 
-      // หา schedule ที่ปัจจุบันอยู่ในช่วง หรือ schedule ถัดไป
-      Schedule? targetSchedule;
+      final now = DateTime.now();
 
-      // 1. หา ongoing schedule (กำลังเกิดขึ้นอยู่)
+      // Find ongoing or next schedule
+      Schedule? targetSchedule;
       for (var s in schedules) {
         if (now.isAfter(s.startAt) && now.isBefore(s.endAt)) {
           targetSchedule = s;
-          print('✅ Found ONGOING schedule: ${s.id}');
           break;
         }
       }
-
-      // 2. ถ้าไม่มี ongoing ให้หา next schedule (schedule ถัดไปที่จะมาถึง)
       if (targetSchedule == null) {
         for (var s in schedules) {
           if (now.isBefore(s.startAt)) {
             targetSchedule = s;
-            print('✅ Found NEXT schedule: ${s.id}');
             break;
           }
         }
       }
 
-      // ใช้ start_time ของ schedule ที่เจอ
       if (targetSchedule != null) {
-        // 🔧 Debug: ลองทั้ง 3 format
-        final format1 = DateFormat(
-          'h:mm a',
-        ).format(targetSchedule.startAt); // "10:01 AM"
-        final format2 = DateFormat(
-          'h:mm:a',
-        ).format(targetSchedule.startAt); // "10:01:AM"
-        final format3 = DateFormat(
-          'HH:mm',
-        ).format(targetSchedule.startAt); // "10:01"
-
-        print('🔍 Time formats:');
-        print('   Format 1 (h:mm a):  $format1');
-        print('   Format 2 (h:mm:a):  $format2');
-        print('   Format 3 (HH:mm):   $format3');
-
-        // ใช้ formatApiTime ซึ่งเป็น h:mm:a
-        timeToUse = DateTimeHelper.formatApiTime(targetSchedule.startAt);
-        print(
-          '🎯 Using schedule time: $timeToUse (from schedule ${targetSchedule.id})',
-        );
+        timeToUse = DateTimeHelper.formatApiTime12(targetSchedule.startAt);
       } else {
-        // ถ้าไม่มี schedule เลย (ทุก schedule ผ่านไปแล้ว) ใช้เวลาปัจจุบัน
-        timeToUse = DateTimeHelper.formatApiTime(DateTime.now().toUtc());
-        print('⚠️ No upcoming schedule, using current time: $timeToUse');
+        timeToUse = DateTimeHelper.formatApiTime12(DateTime.now());
       }
     } else {
-      // ถ้า schedule ยังไม่โหลด ใช้เวลาปัจจุบัน
-      timeToUse = DateTimeHelper.formatApiTime(DateTime.now().toUtc());
-      print('⚠️ Schedule not loaded yet, using current time: $timeToUse');
+      // Schedule not loaded yet, use defaults
+      dateToUse = DateTimeHelper.formatApiDate(DateTime.now());
+      timeToUse = DateTimeHelper.formatApiTime12(DateTime.now());
     }
 
-    print('📤 Sending to TableBloc: date=$today, time=$timeToUse');
-    Modular.get<TableBloc>().add(LoadTableView(date: today, time: timeToUse));
+    Modular.get<TableBloc>().add(
+      LoadTableView(date: dateToUse, time: timeToUse),
+    );
   }
 
   @override
@@ -140,46 +109,38 @@ class _MeetingPageState extends State<MeetingPage> {
     super.dispose();
   }
 
-  void _onDateSelected(DateTime date) {
+  void _onDateSelected(String dateString) {
     setState(() {
-      _selectedDate = date;
+      _selectedDateStr = dateString;
     });
-    final dateString = DateFormat('yyyy-MM-dd').format(date);
     ReadContext(
       context,
     ).read<ScheduleBloc>().add(LoadSchedules(date: dateString));
 
-    final currentTime = DateTimeHelper.formatApiTime(DateTime.now().toUtc());
+    final currentTime = DateTimeHelper.formatApiTime12(DateTime.now());
     Modular.get<TableBloc>().add(
       LoadTableView(date: dateString, time: currentTime),
     );
   }
 
   // ========================================
-  //  ตรวจสอบว่า schedule สามารถ tap ได้หรือไม่
+  // Check if schedule can be tapped to load table
   // ========================================
   bool _canTapSchedule(Schedule schedule) {
-    // ไม่ให้ tap: event, nomeeting, leave
     if (schedule.type == 'event') return false;
     if (schedule.type == 'nomeeting') return false;
     if (schedule.leave != null) return false;
-
-    // ไม่ให้ tap: ถ้าไม่มี table_number
     if (schedule.tableNumber == null || schedule.tableNumber!.isEmpty) {
       return false;
     }
-
-    // ให้ tap: meeting ปกติที่มี table_number
     return true;
   }
 
   void _onScheduleTap(Schedule schedule) {
     if (!_canTapSchedule(schedule)) return;
 
-    final date = DateTimeHelper.formatUtcDate(schedule.startAt);
-    final time = DateTimeHelper.formatUtcTime(schedule.startAt);
-    final timeEnd = DateTimeHelper.formatUtcTime(schedule.endAt);
-    print('🔍 Tapped schedule - Date: $date, Time: $time - $timeEnd');
+    final date = DateTimeHelper.formatApiDate(schedule.startAt);
+    final time = DateTimeHelper.formatApiTime12(schedule.startAt);
 
     Modular.get<TableBloc>().add(LoadTableView(date: date, time: time));
   }
@@ -232,27 +193,43 @@ class _MeetingPageState extends State<MeetingPage> {
       currentIndex: 0,
       appBarStyle: AppBarStyle.elegant,
       backgroundColor: color.AppColors.background,
-
       body: SingleChildScrollView(
         child: Column(
           children: [
-            DateHeader(
-              selectedDate: _selectedDate,
-              onCalendarTap: () {
-                showCalendarBottomSheet(
-                  context: context,
-                  selectedDate: _selectedDate,
-                  onDateSelected: _onDateSelected,
-                );
+            // ========== Date Tab Bar ==========
+            BlocBuilder<ScheduleBloc, ScheduleState>(
+              buildWhen: (prev, curr) => curr is ScheduleLoaded,
+              builder: (context, state) {
+                if (state is ScheduleLoaded) {
+                  final response = state.scheduleResponse;
+
+                  if (_selectedDateStr.isEmpty && response.date.isNotEmpty) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      setState(() {
+                        _selectedDateStr = response.date;
+                      });
+                    });
+                  }
+
+                  return DateTabBar(
+                    availableDates: response.availableDates,
+                    selectedDate: _selectedDateStr.isNotEmpty
+                        ? _selectedDateStr
+                        : response.date,
+                    onDateSelected: _onDateSelected,
+                  );
+                }
+                return const SizedBox(height: 16);
               },
             ),
+
             // ========== Table Grid Section ==========
             BlocBuilder<TableBloc, TableState>(
               builder: (context, state) {
                 if (state is TableLoading) {
-                  return Container(
+                  return const SizedBox(
                     height: 300,
-                    child: const Center(child: CircularProgressIndicator()),
+                    child: Center(child: CircularProgressIndicator()),
                   );
                 }
 
@@ -261,7 +238,7 @@ class _MeetingPageState extends State<MeetingPage> {
                 }
 
                 if (state is TableError) {
-                  return Container(
+                  return SizedBox(
                     height: 300,
                     child: Center(child: Text(state.message)),
                   );
@@ -275,9 +252,9 @@ class _MeetingPageState extends State<MeetingPage> {
             BlocBuilder<ScheduleBloc, ScheduleState>(
               builder: (context, state) {
                 if (state is ScheduleLoading) {
-                  return Container(
+                  return const SizedBox(
                     height: 300,
-                    child: const Center(child: CircularProgressIndicator()),
+                    child: Center(child: CircularProgressIndicator()),
                   );
                 }
 
@@ -314,6 +291,7 @@ class _MeetingPageState extends State<MeetingPage> {
                               type: EventCardType.meeting,
                             ),
                           ),
+                          SizedBox(height: space.m),
                         ],
 
                         // ========== Next Meeting ==========
@@ -334,6 +312,7 @@ class _MeetingPageState extends State<MeetingPage> {
                               type: EventCardType.meeting,
                             ),
                           ),
+                          SizedBox(height: space.m),
                         ],
 
                         // ========== Today's Schedule ==========
@@ -361,26 +340,28 @@ class _MeetingPageState extends State<MeetingPage> {
                           )
                         else
                           ...schedulesWithStatus.map((s) {
+                            final canTap = _canTapSchedule(s.schedule);
                             return GestureDetector(
                               onTap: () => _onScheduleTap(s.schedule),
-                              child: Padding(
-                                padding: const EdgeInsets.only(bottom: 16),
-                                child: TimelineEventCard(
-                                  schedule: s.schedule,
-                                  type: EventCardType.meeting,
+                              child: Opacity(
+                                opacity: canTap ? 1.0 : 0.7,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: TimelineEventCard(
+                                    schedule: s.schedule,
+                                    type: EventCardType.meeting,
+                                  ),
                                 ),
                               ),
                             );
-                          }).toList(),
-
-                        // SizedBox(height: 100),
+                          }),
                       ],
                     ),
                   );
                 }
 
                 if (state is ScheduleError) {
-                  return Container(
+                  return SizedBox(
                     height: 300,
                     child: Center(
                       child: Column(
@@ -400,14 +381,17 @@ class _MeetingPageState extends State<MeetingPage> {
                           SizedBox(height: space.m),
                           ElevatedButton(
                             onPressed: () {
-                              final dateStr = DateFormat(
-                                'yyyy-MM-dd',
-                              ).format(_selectedDate);
-                              ReadContext(context).read<ScheduleBloc>().add(
-                                LoadSchedules(date: dateStr),
-                              );
+                              if (_selectedDateStr.isNotEmpty) {
+                                ReadContext(context).read<ScheduleBloc>().add(
+                                  LoadSchedules(date: _selectedDateStr),
+                                );
+                              } else {
+                                ReadContext(
+                                  context,
+                                ).read<ScheduleBloc>().add(LoadSchedules());
+                              }
                             },
-                            child: Text('Retry'),
+                            child: const Text('Retry'),
                           ),
                         ],
                       ),
