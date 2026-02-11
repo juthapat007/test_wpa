@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:test_wpa/features/chat/data/models/chat_message.dart';
 import 'package:test_wpa/features/chat/data/models/chat_room.dart';
@@ -40,6 +41,16 @@ class ChatRepositoryImpl implements ChatRepository {
   Future<void> sendMessage(ChatMessage message) async {
     // ส่งผ่าน WebSocket (real-time)
     await webSocketService.sendMessage(message);
+
+    // หรือใช้ REST API (ถ้า WebSocket ไม่ได้เชื่อมต่อ)
+    // try {
+    //   await api.sendMessage(
+    //     recipientId: message.receiverId,
+    //     content: message.content,
+    //   );
+    // } catch (e) {
+    //   throw Exception('Failed to send message: $e');
+    // }
   }
 
   @override
@@ -49,6 +60,7 @@ class ChatRepositoryImpl implements ChatRepository {
       final List<dynamic> data = response.data;
 
       final rooms = data.map((json) {
+        // แปลง API response เป็น ChatRoom model
         final delegate = json['delegate'];
         final lastMessageText = json['last_message'] as String?;
         final lastMessageAt = json['last_message_at'] as String?;
@@ -57,13 +69,13 @@ class ChatRepositoryImpl implements ChatRepository {
           id: delegate['id'].toString(),
           participantId: delegate['id'].toString(),
           participantName: delegate['name'] ?? 'Unknown',
-          participantAvatar: delegate['avatar_url'],
+          participantAvatar: delegate['avatar_url'], // อาจจะไม่มีใน response
           lastMessage: lastMessageText != null && lastMessageAt != null
               ? ChatMessage(
                   id: DateTime.now().millisecondsSinceEpoch.toString(),
                   senderId: delegate['id'].toString(),
                   senderName: delegate['name'] ?? '',
-                  receiverId: '',
+                  receiverId: '', // ไม่ทราบจาก response นี้
                   content: lastMessageText,
                   createdAt: DateTime.parse(lastMessageAt),
                 )
@@ -88,6 +100,7 @@ class ChatRepositoryImpl implements ChatRepository {
       throw Exception('Failed to load chat rooms: $e');
     }
   }
+  // ใน lib/features/chat/data/repository/chat_repository_impl.dart
 
   @override
   Future<List<ChatMessage>> getChatHistory(
@@ -97,6 +110,14 @@ class ChatRepositoryImpl implements ChatRepository {
     try {
       final response = await api.getChatHistory(partnerId: partnerId);
       final List<dynamic> data = response.data;
+
+      // 🔍 เพิ่ม debug log ตรงนี้
+      print('🔍 RAW API Response for partner $partnerId:');
+      print('   Total messages: ${data.length}');
+      if (data.isNotEmpty) {
+        print('   First (oldest): ${data.first}');
+        print('   Last (newest): ${data.last}');
+      }
 
       final messages = data.map((json) {
         return ChatMessage(
@@ -111,22 +132,134 @@ class ChatRepositoryImpl implements ChatRepository {
         );
       }).toList();
 
-      // 📌 เรียงตาม createdAt (เก่าสุดก่อน เพื่อแสดงจากบนลงล่าง)
       messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
-      print('📩 Loaded ${messages.length} messages for partner $partnerId');
-      print(
-        '📩 Latest message: ${messages.isNotEmpty ? messages.last.content : "none"}',
-      );
+      // 🔍 เพิ่ม debug log หลัง sort
+      if (messages.isNotEmpty) {
+        print('📩 After sorting:');
+        print(
+          '   First: id=${messages.first.id}, content="${messages.first.content}"',
+        );
+        print(
+          '   Last: id=${messages.last.id}, content="${messages.last.content}"',
+        );
+      }
 
       return messages;
     } catch (e) {
       throw Exception('Failed to load chat history: $e');
     }
   }
+  // @override
+  // Future<List<ChatMessage>> getChatHistory(
+  //   String partnerId, {
+  //   int? limit,
+  // }) async {
+  //   try {
+  //     // ขอข้อความล่าสุด: ใช้ per_page เพื่อจำกัดจำนวน
+  //     // หลาย Rails API จะ default page=1 = หน้าแรก (เก่าสุด)
+  //     // ดังนั้นเราต้องขอ page สูง หรือเปลี่ยนวิธี
+
+  //     // ขั้นตอน: เรียก API แบบไม่ระบุ page ก่อน เพื่อดู response format
+  //     final response = await api.getChatHistory(
+  //       partnerId: partnerId,
+  //       perPage: limit ?? 50,
+  //     );
+
+  //     // รองรับทั้ง response แบบ List ตรงๆ และแบบ paginated object
+  //     List<dynamic> data;
+  //     int? totalPages;
+  //     int? currentPage;
+
+  //     if (response.data is List) {
+  //       data = response.data;
+  //     } else if (response.data is Map) {
+  //       // อาจเป็น { messages: [...], meta: { total_pages: N, current_page: 1 } }
+  //       final mapData = response.data as Map<String, dynamic>;
+  //       data = mapData['messages'] ?? mapData['data'] ?? [];
+  //       totalPages =
+  //           mapData['meta']?['total_pages'] ??
+  //           mapData['pagination']?['total_pages'];
+  //       currentPage =
+  //           mapData['meta']?['current_page'] ??
+  //           mapData['pagination']?['current_page'];
+  //     } else {
+  //       data = [];
+  //     }
+
+  //     // เช็ค pagination จาก response headers ด้วย (Rails kaminari/will_paginate style)
+  //     if (totalPages == null) {
+  //       final headers = response.headers;
+  //       final totalPagesHeader =
+  //           headers.value('x-total-pages') ?? headers.value('X-Total-Pages');
+  //       final currentPageHeader =
+  //           headers.value('x-page') ??
+  //           headers.value('X-Page') ??
+  //           headers.value('x-current-page');
+  //       if (totalPagesHeader != null) {
+  //         totalPages = int.tryParse(totalPagesHeader);
+  //       }
+  //       if (currentPageHeader != null) {
+  //         currentPage = int.tryParse(currentPageHeader);
+  //       }
+  //     }
+
+  //     debugPrint(
+  //       '[v0] Pagination info: currentPage=$currentPage, totalPages=$totalPages, dataLength=${data.length}',
+  //     );
+
+  //     // ถ้ามี pagination และไม่ได้อยู่หน้าสุดท้าย ให้โหลดหน้าสุดท้าย
+  //     if (totalPages != null && totalPages > 1 && currentPage != totalPages) {
+  //       debugPrint('[v0] Loading latest page: $totalPages');
+  //       final latestResponse = await api.getChatHistory(
+  //         partnerId: partnerId,
+  //         page: totalPages,
+  //         perPage: limit ?? 50,
+  //       );
+
+  //       if (latestResponse.data is List) {
+  //         data = latestResponse.data;
+  //       } else if (latestResponse.data is Map) {
+  //         final mapData = latestResponse.data as Map<String, dynamic>;
+  //         data = mapData['messages'] ?? mapData['data'] ?? [];
+  //       }
+  //     }
+
+  //     debugPrint('Loaded ${data.length} messages for partner $partnerId');
+  //     if (data.isNotEmpty) {
+  //       final lastMsg = data.last;
+  //       final content = lastMsg is Map ? (lastMsg['content'] ?? '') : '';
+  //       debugPrint('Latest message: $content');
+  //     }
+
+  //     final messages = data.map((json) {
+  //       return ChatMessage(
+  //         id: json['id'].toString(),
+  //         senderId: json['sender']['id'].toString(),
+  //         senderName: json['sender']['name'] ?? '',
+  //         senderAvatar: json['sender']['avatar_url'],
+  //         receiverId: json['recipient']['id'].toString(),
+  //         content: json['content'] ?? '',
+  //         createdAt: DateTime.parse(json['created_at']),
+  //         isRead: json['read_at'] != null,
+  //       );
+  //     }).toList();
+
+  //     // เรียงตาม createdAt (เก่าสุดก่อน เพื่อแสดงจากบนลงล่าง)
+  //     messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+  //     return messages;
+  //   } catch (e) {
+  //     throw Exception('Failed to load chat history: $e');
+  //   }
+  // }
 
   @override
   Future<ChatRoom> createChatRoom(String participantId) async {
+    // สำหรับ 1:1 chat ไม่จำเป็นต้องสร้างห้อง
+    // แค่ส่งข้อความไปหาคนนั้นเลย
+    // ระบบจะสร้างห้องอัตโนมัติ
+
     return ChatRoom(
       id: participantId,
       participantId: participantId,
@@ -139,16 +272,17 @@ class ChatRepositoryImpl implements ChatRepository {
   Future<void> markAsRead(String partnerId) async {
     try {
       await api.markAllAsRead(partnerId);
-      print('✅ Marked all messages as read for partner $partnerId');
     } catch (e) {
       throw Exception('Failed to mark as read: $e');
     }
   }
 
+  /// เพิ่ม methods สำหรับ typing indicator
   Future<void> sendTypingIndicator(String recipientId, bool isTyping) async {
     await webSocketService.sendTypingIndicator(recipientId, isTyping);
   }
 
+  /// เข้า/ออกจากห้องแชท
   Future<void> enterRoom(String userId) async {
     await webSocketService.enterRoom(userId);
   }
@@ -157,6 +291,7 @@ class ChatRepositoryImpl implements ChatRepository {
     await webSocketService.leaveRoom(userId);
   }
 
+  /// แก้ไข/ลบข้อความ
   Future<void> updateMessage(String messageId, String content) async {
     try {
       await api.updateMessage(messageId: messageId, content: content);

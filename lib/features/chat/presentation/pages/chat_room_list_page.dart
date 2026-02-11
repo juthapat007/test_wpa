@@ -20,6 +20,10 @@ class _ChatRoomListPageState extends State<ChatRoomListPage> {
     super.initState();
     // Load chat rooms (WebSocket เชื่อมต่อแล้วจาก AppWidget)
     ReadContext(context).read<ChatBloc>().add(LoadChatRooms());
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    // ✅ เพิ่มบรรทัดนี้
+    ReadContext(context).read<ChatBloc>().add(ConnectWebSocket());
+    // });
   }
 
   @override

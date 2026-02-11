@@ -49,6 +49,9 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
 
     bloc.add(SendMessage(roomId: room.id, content: content));
     _messageController.clear();
+
+    // Scroll to bottom after sending
+    _scrollToBottom();
   }
 
   @override
@@ -82,7 +85,13 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
                 state is NewMessageReceived) {
               final room = _getRoom(state);
               final messages = _getMessages(state);
-              final currentUserId = '1'; // TODO: Get from AuthBloc
+
+              // ✅ ใช้ currentUserId จาก ChatBloc แทนการ hardcode
+              final currentUserId = context.read<ChatBloc>().currentUserId;
+
+              print('🎨 Building UI:');
+              print('   - Current user ID: $currentUserId');
+              print('   - Total messages: ${messages.length}');
 
               return Column(
                 children: [
@@ -110,7 +119,16 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
                               // ดังนั้นต้องกลับ index เพื่อให้ข้อความล่าสุดอยู่ล่าง
                               final reversedIndex = messages.length - 1 - index;
                               final message = messages[reversedIndex];
+
+                              // ✅ Check isMe โดยเปรียบเทียบกับ current user ID จริง
                               final isMe = message.senderId == currentUserId;
+
+                              // Debug log
+                              if (index < 3) {
+                                print(
+                                  '   - Message $reversedIndex: sender=${message.senderId}, isMe=$isMe',
+                                );
+                              }
 
                               return ChatMessageBubble(
                                 message: message,
@@ -257,14 +275,6 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
           );
         },
       ),
-      // actions: [
-      //   IconButton(
-      //     icon: const Icon(Icons.more_vert),
-      //     onPressed: () {
-      //       // TODO: options
-      //     },
-      //   ),
-      // ],
     );
   }
 

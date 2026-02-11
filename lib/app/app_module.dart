@@ -15,7 +15,7 @@ import 'package:test_wpa/features/auth/views/login_page.dart';
 
 // Profile
 import 'package:test_wpa/features/profile/data/repository/profile_repository_impl.dart';
-import 'package:test_wpa/features/profile/data/repository/service/profile_api.dart';
+import 'package:test_wpa/features/profile/data/service/profile_api.dart';
 import 'package:test_wpa/features/profile/domain/repositories/profile_repository.dart';
 import 'package:test_wpa/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:test_wpa/features/profile/presentation/page/profile_widget.dart';

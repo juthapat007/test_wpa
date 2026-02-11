@@ -37,7 +37,7 @@ class CreateChatRoom extends ChatEvent {
 class LoadChatHistory extends ChatEvent {
   final String roomId;
   final int? limit;
-  LoadChatHistory(this.roomId, {this.limit});
+  LoadChatHistory(this.roomId, { this.limit});
 }
 
 class SendMessage extends ChatEvent {
