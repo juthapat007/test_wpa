@@ -6,6 +6,7 @@ import 'package:test_wpa/core/utils/date_time_helper.dart';
 import 'package:test_wpa/features/meeting/domain/entities/table_view_entities.dart';
 import 'package:test_wpa/features/meeting/presentation/bloc/table_bloc.dart';
 import 'package:test_wpa/features/meeting/widgets/table_grid_widget.dart';
+import 'package:test_wpa/features/meeting/widgets/time_slot_selector.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
@@ -33,10 +34,7 @@ class _MeetingPageState extends State<MeetingPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Load without date param -- backend returns default date + available_dates
       ReadContext(context).read<ScheduleBloc>().add(LoadSchedules());
-
-      // Wait for schedule to load, then load table view with the best matching time
       _loadInitialTableView();
     });
 
@@ -47,7 +45,6 @@ class _MeetingPageState extends State<MeetingPage> {
     });
   }
 
-  /// Find the current/next schedule and load the table view using its start_time.
   void _loadInitialTableView() async {
     await Future.delayed(const Duration(milliseconds: 500));
 
@@ -61,7 +58,6 @@ class _MeetingPageState extends State<MeetingPage> {
       final schedules = response.schedules;
       dateToUse = response.date;
 
-      // Sync the selected date
       if (_selectedDateStr.isEmpty && dateToUse.isNotEmpty) {
         setState(() {
           _selectedDateStr = dateToUse;
@@ -70,7 +66,6 @@ class _MeetingPageState extends State<MeetingPage> {
 
       final now = DateTime.now();
 
-      // Find ongoing or next schedule
       Schedule? targetSchedule;
       for (var s in schedules) {
         if (now.isAfter(s.startAt) && now.isBefore(s.endAt)) {
@@ -93,7 +88,6 @@ class _MeetingPageState extends State<MeetingPage> {
         timeToUse = DateTimeHelper.formatApiTime12(DateTime.now());
       }
     } else {
-      // Schedule not loaded yet, use defaults
       dateToUse = DateTimeHelper.formatApiDate(DateTime.now());
       timeToUse = DateTimeHelper.formatApiTime12(DateTime.now());
     }
@@ -123,21 +117,9 @@ class _MeetingPageState extends State<MeetingPage> {
     );
   }
 
-  // ========================================
-  // Check if schedule can be tapped to load table
-  // ========================================
-  bool _canTapSchedule(Schedule schedule) {
-    if (schedule.type == 'event') return false;
-    if (schedule.type == 'nomeeting') return false;
-    if (schedule.leave != null) return false;
-    if (schedule.tableNumber == null || schedule.tableNumber!.isEmpty) {
-      return false;
-    }
-    return true;
-  }
-
   void _onScheduleTap(Schedule schedule) {
-    if (!_canTapSchedule(schedule)) return;
+    if (schedule.type != 'meeting') return;
+    if (schedule.tableNumber == null || schedule.tableNumber!.isEmpty) return;
 
     final date = DateTimeHelper.formatApiDate(schedule.startAt);
     final time = DateTimeHelper.formatApiTime12(schedule.startAt);
@@ -145,42 +127,22 @@ class _MeetingPageState extends State<MeetingPage> {
     Modular.get<TableBloc>().add(LoadTableView(date: date, time: time));
   }
 
-  List<ScheduleWithStatus> _getSchedulesWithStatus(List<Schedule> schedules) {
-    final result = <ScheduleWithStatus>[];
-    Schedule? nextFound;
-
-    for (var schedule in schedules) {
-      ScheduleStatus status;
-
-      if (_currentTime.isBefore(schedule.startAt)) {
-        if (nextFound == null) {
-          status = ScheduleStatus.next;
-          nextFound = schedule;
-        } else {
-          status = ScheduleStatus.upcoming;
-        }
-      } else if (_currentTime.isAfter(schedule.endAt)) {
-        status = ScheduleStatus.past;
-      } else {
-        status = ScheduleStatus.now;
-      }
-      result.add(ScheduleWithStatus(schedule: schedule, status: status));
-    }
-
-    return result;
-  }
-
-  ScheduleWithStatus? _getCurrentSchedule(List<ScheduleWithStatus> schedules) {
+  Schedule? _getCurrentSchedule(List<Schedule> schedules) {
     try {
-      return schedules.firstWhere((s) => s.status == ScheduleStatus.now);
+      return schedules.firstWhere((s) {
+        return _currentTime.isAfter(s.startAt) &&
+            _currentTime.isBefore(s.endAt);
+      });
     } catch (e) {
       return null;
     }
   }
 
-  ScheduleWithStatus? _getNextSchedule(List<ScheduleWithStatus> schedules) {
+  Schedule? _getNextSchedule(List<Schedule> schedules) {
     try {
-      return schedules.firstWhere((s) => s.status == ScheduleStatus.next);
+      return schedules.firstWhere((s) {
+        return _currentTime.isBefore(s.startAt);
+      });
     } catch (e) {
       return null;
     }
@@ -248,116 +210,109 @@ class _MeetingPageState extends State<MeetingPage> {
               },
             ),
 
-            // ========== Schedule Section ==========
+            SizedBox(height: space.l),
+
+            // ========== Current/Next Meeting Cards ==========
             BlocBuilder<ScheduleBloc, ScheduleState>(
               builder: (context, state) {
                 if (state is ScheduleLoading) {
                   return const SizedBox(
-                    height: 300,
+                    height: 200,
                     child: Center(child: CircularProgressIndicator()),
                   );
                 }
 
                 if (state is ScheduleLoaded) {
-                  final schedulesWithStatus = _getSchedulesWithStatus(
-                    state.scheduleResponse.schedules,
-                  );
-                  final currentSchedule = _getCurrentSchedule(
-                    schedulesWithStatus,
-                  );
-                  final nextSchedule = _getNextSchedule(schedulesWithStatus);
+                  final schedules = state.scheduleResponse.schedules;
+                  final currentSchedule = _getCurrentSchedule(schedules);
+                  final nextSchedule = _getNextSchedule(schedules);
+                  return Column(children: [Text('test')]);
+                  // return Column(
+                  //   children: [
+                  //     // Current & Next Meeting Cards
+                  //     if (currentSchedule != null || nextSchedule != null)
+                  //       Padding(
+                  //         padding: const EdgeInsets.symmetric(horizontal: 16),
+                  //         child: Row(
+                  //           children: [
+                  //             // Current Meeting
+                  //             if (currentSchedule != null)
+                  //               Expanded(
+                  //                 child: Column(
+                  //                   crossAxisAlignment:
+                  //                       CrossAxisAlignment.start,
+                  //                   children: [
+                  //                     Text(
+                  //                       'CURRENT',
+                  //                       style: TextStyle(
+                  //                         fontSize: 11,
+                  //                         fontWeight: FontWeight.bold,
+                  //                         color: color.AppColors.textSecondary,
+                  //                         letterSpacing: 0.5,
+                  //                       ),
+                  //                     ),
+                  //                     SizedBox(height: space.xs),
+                  //                     GestureDetector(
+                  //                       onTap: () =>
+                  //                           _onScheduleTap(currentSchedule),
+                  //                       child: _buildCompactCard(
+                  //                         currentSchedule,
+                  //                         color.AppColors.primary,
+                  //                         'NOW',
+                  //                       ),
+                  //                     ),
+                  //                   ],
+                  //                 ),
+                  //               ),
+                  //             if (currentSchedule != null &&
+                  //                 nextSchedule != null)
+                  //               SizedBox(width: space.m),
+                  //             // Next Meeting
+                  //             if (nextSchedule != null)
+                  //               Expanded(
+                  //                 child: Column(
+                  //                   crossAxisAlignment:
+                  //                       CrossAxisAlignment.start,
+                  //                   children: [
+                  //                     Text(
+                  //                       'NEXT',
+                  //                       style: TextStyle(
+                  //                         fontSize: 11,
+                  //                         fontWeight: FontWeight.bold,
+                  //                         color: color.AppColors.textSecondary,
+                  //                         letterSpacing: 0.5,
+                  //                       ),
+                  //                     ),
+                  //                     SizedBox(height: space.xs),
+                  //                     GestureDetector(
+                  //                       onTap: () =>
+                  //                           _onScheduleTap(nextSchedule),
+                  //                       child: _buildCompactCard(
+                  //                         nextSchedule,
+                  //                         color.AppColors.warning,
+                  //                         'NEXT',
+                  //                       ),
+                  //                     ),
+                  //                   ],
+                  //                 ),
+                  //               ),
+                  //           ],
+                  //         ),
+                  //       ),
 
-                  return Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // ========== Current Meeting ==========
-                        if (currentSchedule != null) ...[
-                          Text(
-                            'CURRENT MEETING',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: color.AppColors.textSecondary,
-                            ),
-                          ),
-                          SizedBox(height: space.s),
-                          GestureDetector(
-                            onTap: () =>
-                                _onScheduleTap(currentSchedule.schedule),
-                            child: TimelineEventCard(
-                              schedule: currentSchedule.schedule,
-                              type: EventCardType.meeting,
-                            ),
-                          ),
-                          SizedBox(height: space.m),
-                        ],
+                  //     SizedBox(height: space.l),
 
-                        // ========== Next Meeting ==========
-                        if (nextSchedule != null) ...[
-                          Text(
-                            'NEXT MEETING',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: color.AppColors.textSecondary,
-                            ),
-                          ),
-                          SizedBox(height: space.s),
-                          GestureDetector(
-                            onTap: () => _onScheduleTap(nextSchedule.schedule),
-                            child: TimelineEventCard(
-                              schedule: nextSchedule.schedule,
-                              type: EventCardType.meeting,
-                            ),
-                          ),
-                          SizedBox(height: space.m),
-                        ],
+                  //     // Time Slot Selector
+                  //     TimeSlotSelector(
+                  //       schedules: schedules,
+                  //       onSlotTap: _onScheduleTap,
+                  //       currentSchedule: currentSchedule,
+                  //       nextSchedule: nextSchedule,
+                  //     ),
 
-                        // ========== Today's Schedule ==========
-                        Text(
-                          'TODAY\'S SCHEDULE',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: color.AppColors.textSecondary,
-                          ),
-                        ),
-                        SizedBox(height: space.s),
-
-                        if (schedulesWithStatus.isEmpty)
-                          Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(32),
-                              child: Text(
-                                'No schedules for this date',
-                                style: TextStyle(
-                                  color: color.AppColors.textSecondary,
-                                ),
-                              ),
-                            ),
-                          )
-                        else
-                          ...schedulesWithStatus.map((s) {
-                            final canTap = _canTapSchedule(s.schedule);
-                            return GestureDetector(
-                              onTap: () => _onScheduleTap(s.schedule),
-                              child: Opacity(
-                                opacity: canTap ? 1.0 : 0.7,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(bottom: 16),
-                                  child: TimelineEventCard(
-                                    schedule: s.schedule,
-                                    type: EventCardType.meeting,
-                                  ),
-                                ),
-                              ),
-                            );
-                          }),
-                      ],
-                    ),
-                  );
+                  //     SizedBox(height: space.xl),
+                  //   ],
+                  // );
                 }
 
                 if (state is ScheduleError) {
@@ -404,6 +359,99 @@ class _MeetingPageState extends State<MeetingPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildCompactCard(Schedule schedule, Color accentColor, String label) {
+    final startTime = DateTimeHelper.formatTime12(schedule.startAt);
+    final endTime = DateTimeHelper.formatTime12(schedule.endAt);
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: accentColor.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: accentColor, width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Time & Status Badge
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '$startTime - $endTime',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: accentColor,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 8,
+                    fontWeight: FontWeight.w900,
+                    color: accentColor,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: space.xs),
+
+          // Company/Delegate
+          if (schedule.teamDelegates?.isNotEmpty ?? false) ...[
+            Text(
+              schedule.teamDelegates!.first.company,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: accentColor,
+              ),
+            ),
+            Text(
+              schedule.teamDelegates!.map((d) => d.name).join(', '),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10,
+                color: color.AppColors.textSecondary,
+              ),
+            ),
+          ],
+
+          // Table
+          if (schedule.tableNumber != null) ...[
+            SizedBox(height: space.xs),
+            Row(
+              children: [
+                Icon(Icons.table_restaurant, size: 10, color: accentColor),
+                const SizedBox(width: 4),
+                Text(
+                  'Table ${schedule.tableNumber}',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: accentColor,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }
