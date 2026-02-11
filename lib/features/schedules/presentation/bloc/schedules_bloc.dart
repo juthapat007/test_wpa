@@ -12,34 +12,16 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
     on<ChangeDate>(_onChangeDate);
   }
 
-  // Future<void> _onLoadSchedules(
-  //   LoadSchedules event,
-  //   Emitter<ScheduleState> emit,
-  // ) async {
-  //   emit(ScheduleLoading());
-  //   try {
-  //     final scheduleResponse = await scheduleRepository.getSchedule(
-  //       year: event.year,
-  //       date: event.date,
-  //     );
-  //     emit(ScheduleLoaded(scheduleResponse));
-  //   } catch (e) {
-  //     print('ScheduleBloc error: $e');
-  //     emit(ScheduleError('Cannot load schedules: $e'));
-  //   }
-  // }
   Future<void> _onLoadSchedules(
     LoadSchedules event,
     Emitter<ScheduleState> emit,
   ) async {
-    print(
-      '📥 ScheduleBloc: Loading with year=${event.year}, date=${event.date}',
-    );
+    print('📥 ScheduleBloc: Loading with date=${event.date}'); // 🔧 ลบ year ออก
     emit(ScheduleLoading());
 
     try {
+      // 🔧 ไม่ส่ง year ไปเพราะ backend fix ไว้ที่ 2025 แล้ว
       final scheduleResponse = await scheduleRepository.getSchedule(
-        year: event.year,
         date: event.date,
       );
 

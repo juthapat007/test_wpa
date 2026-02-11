@@ -9,10 +9,12 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
   final ScheduleApi api;
 
   ScheduleRepositoryImpl({required this.api});
+
   @override
   Future<ScheduleResponse> getSchedule({String? year, String? date}) async {
     try {
-      final response = await api.getMySchedule(year: year, date: date);
+      // 🔧 ไม่ส่ง year ไปเพราะ backend fix ไว้ที่ 2025 แล้ว
+      final response = await api.getMySchedule(date: date);
 
       return ScheduleResponseModel.fromJson(
         response.data,
@@ -55,42 +57,4 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
       );
     }
   }
-  // @override
-  // Future<ScheduleResponse> getSchedule({String? year, String? date}) async {
-  //   try {
-  //     final response = await api.getMySchedule(year: year, date: date);
-
-  //     return ScheduleResponseModel.fromJson(
-  //       response.data,
-  //     ).toEntity(status: ScheduleStatus.success);
-  //   } on DioException catch (e) {
-  //     final code = e.response?.statusCode;
-
-  //     if (code == 404) {
-  //       return ScheduleResponse.empty(year: year, date: date);
-  //     }
-
-  //     if (code == 401) {
-  //       return const ScheduleResponse(
-  //         status: ScheduleStatus.unauthorized,
-  //         availableYears: [],
-  //         year: '',
-  //         availableDates: [],
-  //         date: '',
-  //         schedules: [],
-  //         message: 'Unauthorized',
-  //       );
-  //     }
-
-  //     return const ScheduleResponse(
-  //       status: ScheduleStatus.error,
-  //       availableYears: [],
-  //       year: '',
-  //       availableDates: [],
-  //       date: '',
-  //       schedules: [],
-  //       message: 'Something went wrong',
-  //     );
-  //   }
-  // }
 }

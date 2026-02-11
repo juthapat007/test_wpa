@@ -11,12 +11,14 @@ class DateTimeHelper {
 
   /// แสดงเวลาแบบ 24-hour: "09:30"
   static String formatTime24(DateTime dateTime) {
-    return DateFormat('h:mm:a').format(dateTime);
+    return DateFormat(
+      'HH:mm',
+    ).format(dateTime); // 🔧 แก้เป็น HH:mm สำหรับ 24-hour จริงๆ
   }
 
   /// แสดงเวลาแบบ 12-hour + AM/PM: "9:30 AM"
   static String formatTime12(DateTime dateTime) {
-    return DateFormat('h:mm a').format(dateTime);
+    return DateFormat('h:mm a').format(dateTime); // มีเว้นวรรค สำหรับแสดงผล UI
   }
 
   /// แสดงช่วงเวลา 24-hour: "09:30–10:15"
@@ -47,12 +49,14 @@ class DateTimeHelper {
     return DateFormat('yyyy-MM-dd').format(dateTime);
   }
 
-  /// Format เวลาสำหรับ API (24-hour): "09:30"
+  /// Format เวลาสำหรับ API (12-hour + AM/PM ไม่มีเว้นวรรค): "9:30:AM"
   static String formatApiTime(DateTime dateTime) {
-    return DateFormat('h:mm:a').format(dateTime);
+    return DateFormat('h:mm:a').format(
+      dateTime,
+    ); // ใช้ 'h:mm:a' (มี colon, ไม่มีเว้นวรรค) → "10:01:AM"
   }
 
-  /// Format เวลาสำหรับ API (12-hour + AM/PM): "9:30 AM"
+  /// Format เวลาสำหรับ API (12-hour + AM/PM มีเว้นวรรค): "9:30 AM"
   static String formatApiTime12(DateTime dateTime) {
     return DateFormat('h:mm a').format(dateTime);
   }

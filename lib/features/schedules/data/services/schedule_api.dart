@@ -7,13 +7,11 @@ class ScheduleApi {
   final Dio dio;
   ScheduleApi(this.dio);
 
-  Future<Response> getMySchedule({String? year, String? date}) {
+  // 🔧 เอา year params ออกเพราะ backend fix ปีไว้ที่ 2025 แล้ว
+  Future<Response> getMySchedule({String? date}) {
     return dio.get(
       '/schedules/my_schedule',
-      queryParameters: {
-        if (year != null) 'year': year,
-        if (date != null) 'date': date,
-      },
+      queryParameters: {if (date != null) 'date': date},
     );
   }
 }

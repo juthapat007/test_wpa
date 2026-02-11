@@ -4,10 +4,9 @@ import 'package:flutter/foundation.dart';
 sealed class ScheduleEvent {}
 
 class LoadSchedules extends ScheduleEvent {
-  final String? year;
   final String? date;
 
-  LoadSchedules({this.year, this.date});
+  LoadSchedules({this.date}); 
 }
 
 class ChangeDate extends ScheduleEvent {

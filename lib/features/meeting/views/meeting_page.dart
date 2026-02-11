@@ -62,7 +62,16 @@ class _MeetingPageState extends State<MeetingPage> {
 
     if (scheduleState is ScheduleLoaded) {
       final schedules = scheduleState.scheduleResponse.schedules;
-      final now = DateTime.now();
+      final now = DateTime.now()
+          .toUtc(); // 🔧 แปลง now เป็น UTC เพื่อเปรียบเทียบกับ schedule
+
+      print('🕐 Current UTC time: $now');
+      print('📋 Available schedules: ${schedules.length}');
+
+      // Debug: แสดงเวลาของทุก schedule
+      for (var s in schedules) {
+        print('   Schedule ${s.id}: ${s.startAt} to ${s.endAt}');
+      }
 
       // หา schedule ที่ปัจจุบันอยู่ในช่วง หรือ schedule ถัดไป
       Schedule? targetSchedule;
@@ -71,6 +80,7 @@ class _MeetingPageState extends State<MeetingPage> {
       for (var s in schedules) {
         if (now.isAfter(s.startAt) && now.isBefore(s.endAt)) {
           targetSchedule = s;
+          print('✅ Found ONGOING schedule: ${s.id}');
           break;
         }
       }
@@ -80,6 +90,7 @@ class _MeetingPageState extends State<MeetingPage> {
         for (var s in schedules) {
           if (now.isBefore(s.startAt)) {
             targetSchedule = s;
+            print('✅ Found NEXT schedule: ${s.id}');
             break;
           }
         }
@@ -87,19 +98,39 @@ class _MeetingPageState extends State<MeetingPage> {
 
       // ใช้ start_time ของ schedule ที่เจอ
       if (targetSchedule != null) {
-        timeToUse = DateFormat('h:mm a').format(targetSchedule.startAt.toUtc());
-        print('🎯 Using schedule time: $timeToUse (from ${targetSchedule.id})');
+        // 🔧 Debug: ลองทั้ง 3 format
+        final format1 = DateFormat(
+          'h:mm a',
+        ).format(targetSchedule.startAt); // "10:01 AM"
+        final format2 = DateFormat(
+          'h:mm:a',
+        ).format(targetSchedule.startAt); // "10:01:AM"
+        final format3 = DateFormat(
+          'HH:mm',
+        ).format(targetSchedule.startAt); // "10:01"
+
+        print('🔍 Time formats:');
+        print('   Format 1 (h:mm a):  $format1');
+        print('   Format 2 (h:mm:a):  $format2');
+        print('   Format 3 (HH:mm):   $format3');
+
+        // ใช้ formatApiTime ซึ่งเป็น h:mm:a
+        timeToUse = DateTimeHelper.formatApiTime(targetSchedule.startAt);
+        print(
+          '🎯 Using schedule time: $timeToUse (from schedule ${targetSchedule.id})',
+        );
       } else {
         // ถ้าไม่มี schedule เลย (ทุก schedule ผ่านไปแล้ว) ใช้เวลาปัจจุบัน
-        timeToUse = DateFormat('h:mm a').format(DateTime.now().toUtc());
+        timeToUse = DateTimeHelper.formatApiTime(DateTime.now().toUtc());
         print('⚠️ No upcoming schedule, using current time: $timeToUse');
       }
     } else {
       // ถ้า schedule ยังไม่โหลด ใช้เวลาปัจจุบัน
-      timeToUse = DateFormat('h:mm a').format(DateTime.now().toUtc());
+      timeToUse = DateTimeHelper.formatApiTime(DateTime.now().toUtc());
       print('⚠️ Schedule not loaded yet, using current time: $timeToUse');
     }
 
+    print('📤 Sending to TableBloc: date=$today, time=$timeToUse');
     Modular.get<TableBloc>().add(LoadTableView(date: today, time: timeToUse));
   }
 
@@ -118,7 +149,7 @@ class _MeetingPageState extends State<MeetingPage> {
       context,
     ).read<ScheduleBloc>().add(LoadSchedules(date: dateString));
 
-    final currentTime = DateFormat('h:mm a').format(DateTime.now().toUtc());
+    final currentTime = DateTimeHelper.formatApiTime(DateTime.now().toUtc());
     Modular.get<TableBloc>().add(
       LoadTableView(date: dateString, time: currentTime),
     );
