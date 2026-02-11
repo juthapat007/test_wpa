@@ -62,10 +62,9 @@ class _MeetingPageState extends State<MeetingPage> {
 
     if (scheduleState is ScheduleLoaded) {
       final schedules = scheduleState.scheduleResponse.schedules;
-      final now = DateTime.now()
-          .toUtc(); // 🔧 แปลง now เป็น UTC เพื่อเปรียบเทียบกับ schedule
+      final now = DateTime.now(); // ใช้ local time เพราะ schedule เป็น local time แล้ว
 
-      print('🕐 Current UTC time: $now');
+      print('🕐 Current local time: $now');
       print('📋 Available schedules: ${schedules.length}');
 
       // Debug: แสดงเวลาของทุก schedule
@@ -114,19 +113,19 @@ class _MeetingPageState extends State<MeetingPage> {
         print('   Format 2 (h:mm:a):  $format2');
         print('   Format 3 (HH:mm):   $format3');
 
-        // ใช้ formatApiTime ซึ่งเป็น h:mm:a
-        timeToUse = DateTimeHelper.formatApiTime(targetSchedule.startAt);
+        // ใช้ formatApiTime12 ซึ่งเป็น "h:mm a" (เช่น "9:00 AM")
+        timeToUse = DateTimeHelper.formatApiTime12(targetSchedule.startAt);
         print(
           '🎯 Using schedule time: $timeToUse (from schedule ${targetSchedule.id})',
         );
       } else {
         // ถ้าไม่มี schedule เลย (ทุก schedule ผ่านไปแล้ว) ใช้เวลาปัจจุบัน
-        timeToUse = DateTimeHelper.formatApiTime(DateTime.now().toUtc());
+        timeToUse = DateTimeHelper.formatApiTime12(DateTime.now());
         print('⚠️ No upcoming schedule, using current time: $timeToUse');
       }
     } else {
       // ถ้า schedule ยังไม่โหลด ใช้เวลาปัจจุบัน
-      timeToUse = DateTimeHelper.formatApiTime(DateTime.now().toUtc());
+      timeToUse = DateTimeHelper.formatApiTime12(DateTime.now());
       print('⚠️ Schedule not loaded yet, using current time: $timeToUse');
     }
 
@@ -149,7 +148,7 @@ class _MeetingPageState extends State<MeetingPage> {
       context,
     ).read<ScheduleBloc>().add(LoadSchedules(date: dateString));
 
-    final currentTime = DateTimeHelper.formatApiTime(DateTime.now().toUtc());
+    final currentTime = DateTimeHelper.formatApiTime12(DateTime.now());
     Modular.get<TableBloc>().add(
       LoadTableView(date: dateString, time: currentTime),
     );
@@ -176,9 +175,9 @@ class _MeetingPageState extends State<MeetingPage> {
   void _onScheduleTap(Schedule schedule) {
     if (!_canTapSchedule(schedule)) return;
 
-    final date = DateTimeHelper.formatUtcDate(schedule.startAt);
-    final time = DateTimeHelper.formatUtcTime(schedule.startAt);
-    final timeEnd = DateTimeHelper.formatUtcTime(schedule.endAt);
+    final date = DateTimeHelper.formatApiDate(schedule.startAt);
+    final time = DateTimeHelper.formatApiTime12(schedule.startAt);
+    final timeEnd = DateTimeHelper.formatApiTime12(schedule.endAt);
     print('🔍 Tapped schedule - Date: $date, Time: $time - $timeEnd');
 
     Modular.get<TableBloc>().add(LoadTableView(date: date, time: time));

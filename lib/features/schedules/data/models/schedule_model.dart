@@ -1,3 +1,4 @@
+import 'package:test_wpa/core/utils/date_time_helper.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 
@@ -9,11 +10,11 @@ class ScheduleModel {
   final String country;
   final String conferenceDate;
   final ScheduleDelegateModel? delegate;
-  final List<TeamDelegateModel>? teamDelegates; // ✅ เพิ่ม
+  final List<TeamDelegateModel>? teamDelegates;
   final int? durationMinutes;
   final dynamic leave;
   final String? type;
-  final String? title; // ✅ เพิ่ม
+  final String? title;
 
   ScheduleModel({
     required this.id,
@@ -31,13 +32,22 @@ class ScheduleModel {
   });
 
   factory ScheduleModel.fromJson(Map<String, dynamic> json) {
+    // ดึง conference_date เพื่อใช้ประกอบ parse เวลา human time
+    final conferenceDate = json['conference_date'] as String? ?? '';
+
     return ScheduleModel(
       id: json['id'],
-      startAt: DateTime.parse(json['start_at']),
-      endAt: DateTime.parse(json['end_at']),
+      startAt: DateTimeHelper.parseFlexibleDateTime(
+        json['start_at'].toString(),
+        conferenceDate,
+      ),
+      endAt: DateTimeHelper.parseFlexibleDateTime(
+        json['end_at'].toString(),
+        conferenceDate,
+      ),
       tableNumber: json['table_number'],
       country: json['country'] ?? '',
-      conferenceDate: json['conference_date'] ?? '',
+      conferenceDate: conferenceDate,
       delegate: json['delegate'] != null
           ? ScheduleDelegateModel.fromJson(json['delegate'])
           : null,
@@ -49,7 +59,7 @@ class ScheduleModel {
       durationMinutes: json['duration_minutes'],
       leave: json['leave'],
       type: json['type'],
-      title: json['title'], // ✅ สำหรับ event
+      title: json['title'],
     );
   }
 

@@ -86,6 +86,81 @@ class DateTimeHelper {
   }
 
   // ========================================
+  // Smart Parsers (รองรับทั้ง ISO และ Human Time)
+  // ========================================
+
+  /// Parse time string ที่อาจเป็น ISO datetime หรือ human time เช่น "9:00 AM"
+  /// ถ้าเป็น human time จะรวมกับ conferenceDate เพื่อสร้าง DateTime ที่สมบูรณ์
+  static DateTime parseFlexibleDateTime(
+    String timeString,
+    String? conferenceDate,
+  ) {
+    // 1. ลอง ISO datetime ก่อน (เช่น "2025-02-05T09:00:00.000Z")
+    final isoResult = DateTime.tryParse(timeString);
+    if (isoResult != null) return isoResult;
+
+    // 2. ถ้าไม่ใช่ ISO ให้ parse เป็น human time (เช่น "9:00 AM", "9:00:AM")
+    return _parseHumanTime(timeString, conferenceDate);
+  }
+
+  /// Parse human time string เช่น "9:00 AM", "9:00:AM", "10:30 PM"
+  /// รวมกับ conferenceDate (เช่น "2025-02-05") เพื่อสร้าง DateTime
+  static DateTime _parseHumanTime(String timeStr, String? conferenceDate) {
+    // Normalize: เปลี่ยน "9:00:AM" -> "9:00 AM"
+    String normalized = timeStr.trim();
+    // จัดการ format "h:mm:a" (colon ก่อน AM/PM)
+    final colonAmPmRegex = RegExp(r'(\d{1,2}:\d{2}):(AM|PM)', caseSensitive: false);
+    final colonMatch = colonAmPmRegex.firstMatch(normalized);
+    if (colonMatch != null) {
+      normalized = '${colonMatch.group(1)} ${colonMatch.group(2)}';
+    }
+
+    // Parse ด้วย intl
+    try {
+      final timeOnly = DateFormat('h:mm a').parse(normalized);
+
+      // สร้าง base date จาก conferenceDate หรือใช้วันนี้
+      DateTime baseDate;
+      if (conferenceDate != null && conferenceDate.isNotEmpty) {
+        baseDate = DateTime.tryParse(conferenceDate) ?? DateTime.now();
+      } else {
+        baseDate = DateTime.now();
+      }
+
+      return DateTime(
+        baseDate.year,
+        baseDate.month,
+        baseDate.day,
+        timeOnly.hour,
+        timeOnly.minute,
+      );
+    } catch (e) {
+      // Fallback: ถ้า parse ไม่ได้เลย ใช้วันนี้
+      print('⚠️ DateTimeHelper: Cannot parse time "$timeStr", using now()');
+      return DateTime.now();
+    }
+  }
+
+  /// Parse date string ที่อาจเป็น ISO date หรือ format อื่น
+  /// Safety wrapper รอบ DateTime.parse
+  static DateTime parseSafeDate(String dateString) {
+    final result = DateTime.tryParse(dateString);
+    if (result != null) return result;
+
+    // ลอง format อื่นๆ
+    try {
+      return DateFormat('yyyy-MM-dd').parse(dateString);
+    } catch (_) {}
+
+    try {
+      return DateFormat('dd/MM/yyyy').parse(dateString);
+    } catch (_) {}
+
+    print('⚠️ DateTimeHelper: Cannot parse date "$dateString", using now()');
+    return DateTime.now();
+  }
+
+  // ========================================
   // Helper Methods
   // ========================================
 
