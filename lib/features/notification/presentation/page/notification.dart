@@ -1,8 +1,8 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:test_wpa/features/notification/views/notification_page.dart';
 
-class Notification extends StatelessWidget {
-  const Notification({super.key});
+class NotificationWidget extends StatelessWidget {
+  const NotificationWidget({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -398,10 +398,11 @@ class _ProfilePageState extends State<ProfilePage> {
             TextButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                //  Logout using AuthBloc
-                // Token จะถูกลบใน authRepository.logout()
-                // และ app_view.dart จะ navigate ไปหน้า login อัตโนมัติ
+                // Dispatch logout to clear token
                 ReadContext(context).read<AuthBloc>().add(AuthLogout());
+                // Navigate to login directly (profile page is pushed on stack,
+                // so AppView's BlocListener may not catch the state change)
+                Modular.to.navigate('/');
               },
               child: const Text('Log Out', style: TextStyle(color: Colors.red)),
             ),

@@ -230,7 +230,12 @@ class _MeetingPageState extends State<MeetingPage> {
                 }
 
                 if (state is TableLoaded) {
-                  return TableGridWidget(response: state.response);
+                  return TableGridWidget(
+                    response: state.response,
+                    onTimeSlotChanged: (time) {
+                      Modular.get<TableBloc>().add(ChangeTimeSlot(time));
+                    },
+                  );
                 }
 
                 if (state is TableError) {
