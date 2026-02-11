@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:test_wpa/core/theme/app_avatar.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 import 'package:test_wpa/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:test_wpa/features/chat/presentation/widgets/chat_message_bubble.dart';
@@ -16,17 +15,66 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
+  // ✨ เพิ่ม flag เพื่อป้องกันการโหลดซ้ำ
+  bool _isLoadingMore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // ✨ เพิ่ม listener สำหรับ infinite scroll
+    _scrollController.addListener(_onScroll);
+
+    print('✅ ChatConversationPage initialized with scroll listener');
+  }
+
   @override
   void dispose() {
     _messageController.dispose();
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  // ✨ Infinite scroll logic
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+
+    // เมื่อเลื่อนถึงจุดบนสุด (reverse: true ทำให้ maxScrollExtent คือด้านบน)
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+
+    // Debug log (comment out ถ้าไม่ต้องการ log เยอะ)
+    // print('📊 Scroll: $currentScroll / $maxScroll');
+
+    // ถ้าเลื่อนใกล้ถึงจุดบนสุดแล้ว (เหลือ 200 pixels)
+    if (currentScroll >= maxScroll - 200 && !_isLoadingMore) {
+      final state = context.read<ChatBloc>().state;
+
+      print('🔍 State: ${state.runtimeType}');
+
+      if (state is ChatRoomSelected && state.hasMoreMessages) {
+        final room = state.room;
+        final nextPage = state.currentPage + 1;
+
+        print(
+          '🔄 Loading page $nextPage (current: ${state.currentPage}, total messages: ${state.messages.length})',
+        );
+
+        // ตั้ง flag ป้องกันโหลดซ้ำ
+        _isLoadingMore = true;
+
+        context.read<ChatBloc>().add(
+          LoadMoreMessages(roomId: room.id, page: nextPage),
+        );
+      } else if (state is ChatRoomSelected && !state.hasMoreMessages) {
+        print('⚠️ No more messages to load');
+      }
+    }
   }
 
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
       Future.delayed(const Duration(milliseconds: 100), () {
-        // reverse: true ทำให้ position 0 คือด้านล่างสุด (ข้อความล่าสุด)
         _scrollController.animateTo(
           0.0,
           duration: const Duration(milliseconds: 300),
@@ -43,14 +91,12 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
     final bloc = context.read<ChatBloc>();
     final state = bloc.state;
 
-    // ดึง room จากทุก state ที่เป็นไปได้ (ไม่ใช่แค่ ChatRoomSelected)
     final room = _getRoom(state);
     if (room == null) return;
 
     bloc.add(SendMessage(roomId: room.id, content: content));
     _messageController.clear();
 
-    // Scroll to bottom after sending
     _scrollToBottom();
   }
 
@@ -58,7 +104,8 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        // เรียก BackToRoomList ก่อนที่จะ pop
+        // ✨ Reset page เมื่อ back
+        print('⬅️ Back pressed - resetting pagination');
         context.read<ChatBloc>().add(BackToRoomList());
         return true;
       },
@@ -67,8 +114,16 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
         appBar: _buildAppBar(),
         body: BlocConsumer<ChatBloc, ChatState>(
           listener: (context, state) {
-            if (state is ChatRoomSelected ||
-                state is NewMessageReceived ||
+            // ✨ รีเซ็ต loading flag เมื่อโหลดเสร็จ
+            if (state is ChatRoomSelected) {
+              _isLoadingMore = false;
+              print(
+                '✅ Loading complete. Has more: ${state.hasMoreMessages}, Page: ${state.currentPage}',
+              );
+            }
+
+            // Scroll to bottom เมื่อมีข้อความใหม่
+            if (state is NewMessageReceived ||
                 state is MessageSent ||
                 state is MessageSending) {
               _scrollToBottom();
@@ -80,18 +135,20 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
             }
 
             if (state is ChatRoomSelected ||
+                state is LoadingMoreMessages ||
                 state is MessageSending ||
                 state is MessageSent ||
                 state is NewMessageReceived) {
               final room = _getRoom(state);
               final messages = _getMessages(state);
-
-              // ✅ ใช้ currentUserId จาก ChatBloc แทนการ hardcode
               final currentUserId = context.read<ChatBloc>().currentUserId;
 
-              print('🎨 Building UI:');
-              print('   - Current user ID: $currentUserId');
-              print('   - Total messages: ${messages.length}');
+              // ✨ เช็คว่ากำลังโหลดข้อความเพิ่มหรือไม่
+              final isLoadingMore = state is LoadingMoreMessages;
+
+              print(
+                '🎨 Building chat UI: ${messages.length} messages, isLoadingMore: $isLoadingMore',
+              );
 
               return Column(
                 children: [
@@ -108,33 +165,72 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
                               ),
                             ),
                           )
-                        : ListView.builder(
-                            controller: _scrollController,
-                            reverse:
-                                true, // แสดงข้อความล่าสุดที่ด้านล่าง (เลื่อนขึ้นดูเก่า)
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            itemCount: messages.length,
-                            itemBuilder: (context, index) {
-                              // reverse: true จะแสดง index 0 ที่ด้านล่างสุด
-                              // ดังนั้นต้องกลับ index เพื่อให้ข้อความล่าสุดอยู่ล่าง
-                              final reversedIndex = messages.length - 1 - index;
-                              final message = messages[reversedIndex];
+                        : Stack(
+                            children: [
+                              ListView.builder(
+                                controller: _scrollController,
+                                reverse: true, // ข้อความใหม่อยู่ด้านล่าง
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                itemCount: messages.length,
+                                itemBuilder: (context, index) {
+                                  final reversedIndex =
+                                      messages.length - 1 - index;
+                                  final message = messages[reversedIndex];
+                                  final isMe =
+                                      message.senderId == currentUserId;
 
-                              // ✅ Check isMe โดยเปรียบเทียบกับ current user ID จริง
-                              final isMe = message.senderId == currentUserId;
+                                  return ChatMessageBubble(
+                                    message: message,
+                                    isMe: isMe,
+                                  );
+                                },
+                              ),
 
-                              // Debug log
-                              if (index < 3) {
-                                print(
-                                  '   - Message $reversedIndex: sender=${message.senderId}, isMe=$isMe',
-                                );
-                              }
-
-                              return ChatMessageBubble(
-                                message: message,
-                                isMe: isMe,
-                              );
-                            },
+                              // ✨ Loading indicator ตอนโหลดข้อความเพิ่ม
+                              if (isLoadingMore)
+                                Positioned(
+                                  top: 0,
+                                  left: 0,
+                                  right: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.background.withOpacity(
+                                        0.9,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.05),
+                                          blurRadius: 4,
+                                        ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: const [
+                                        SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          'Loading more messages...',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                   ),
 
@@ -208,6 +304,8 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
       leading: IconButton(
         icon: const Icon(Icons.arrow_back),
         onPressed: () {
+          // ✨ Reset page เมื่อกด back
+          print('⬅️ Back button pressed - resetting pagination');
           context.read<ChatBloc>().add(BackToRoomList());
           Navigator.of(context).pop();
         },
@@ -287,6 +385,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
 
   dynamic _getRoom(ChatState state) {
     if (state is ChatRoomSelected) return state.room;
+    if (state is LoadingMoreMessages) return state.room;
     if (state is MessageSending) return state.room;
     if (state is MessageSent) return state.room;
     if (state is NewMessageReceived) return state.room;
@@ -295,6 +394,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
 
   List _getMessages(ChatState state) {
     if (state is ChatRoomSelected) return state.messages;
+    if (state is LoadingMoreMessages) return state.messages;
     if (state is MessageSending) return state.messages;
     if (state is MessageSent) return state.messages;
     if (state is NewMessageReceived) return state.messages;

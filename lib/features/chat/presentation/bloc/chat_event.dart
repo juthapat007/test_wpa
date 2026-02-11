@@ -37,7 +37,16 @@ class CreateChatRoom extends ChatEvent {
 class LoadChatHistory extends ChatEvent {
   final String roomId;
   final int? limit;
-  LoadChatHistory(this.roomId, { this.limit});
+  LoadChatHistory(this.roomId, {this.limit});
+}
+
+// ✨ NEW: Event สำหรับโหลดข้อความเก่าเพิ่ม (infinite scroll)
+class LoadMoreMessages extends ChatEvent {
+  final String roomId;
+  final int page;
+  final int limit;
+
+  LoadMoreMessages({required this.roomId, required this.page, this.limit = 50});
 }
 
 class SendMessage extends ChatEvent {

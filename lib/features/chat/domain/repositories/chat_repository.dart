@@ -11,7 +11,14 @@ abstract class ChatRepository {
 
   // REST API
   Future<List<ChatRoom>> getChatRooms();
-  Future<List<ChatMessage>> getChatHistory(String roomId, {int? limit});
+
+  // ✨ UPDATED: Return Map ที่มี messages และ metadata สำหรับ pagination
+  Future<Map<String, dynamic>> getChatHistory(
+    String roomId, {
+    int? page,
+    int? limit,
+  });
+
   Future<ChatRoom> createChatRoom(String participantId);
   Future<void> markAsRead(String roomId);
 }
