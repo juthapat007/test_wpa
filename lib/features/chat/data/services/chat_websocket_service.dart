@@ -315,27 +315,57 @@ class ChatWebSocketService {
   }
 
   /// Handle a single message read receipt from WebSocket
+
+  // void _handleMessageRead(Map<String, dynamic> data) {
+  //   try {
+  //     final msgData = data['message'] ?? data;
+  //     final messageId = (msgData['id'] ?? msgData['message_id'] ?? '')
+  //         .toString();
+  //     final readAtStr = msgData['read_at'] as String?;
+  //     final readAt = readAtStr != null
+  //         ? DateTime.parse(readAtStr)
+  //         : DateTime.now();
+
+  //     if (messageId.isNotEmpty) {
+  //       print('📗 [Processing Read Receipt] Message $messageId');
+  //       _readReceiptController.add(
+  //         ReadReceiptEvent(messageId: messageId, readAt: readAt),
+  //       );
+  //       debugPrint('Read receipt received for message $messageId');
+  //     } else {
+  //       print('⚠️ [Read Receipt] Empty message ID: ${jsonEncode(msgData)}');
+  //     }
+  //   } catch (e) {
+  //     debugPrint('Error handling message_read: $e');
+  //     print('❌ [Error Data] ${jsonEncode(data)}');
+  //   }
+  // }
+
   void _handleMessageRead(Map<String, dynamic> data) {
     try {
-      final msgData = data['message'] ?? data;
-      final messageId = (msgData['id'] ?? msgData['message_id'] ?? '')
-          .toString();
-      final readAtStr = msgData['read_at'] as String?;
+      // 🔥 FIX: Backend ส่งมาเป็น top-level field โดยตรง
+      // Format จาก backend: {"type":"message_read","message_id":147,"read_at":"2026-02-12T11:47:35.202Z"}
+      // ไม่มี wrapper object 'message' อีกชั้น
+
+      final messageId = (data['message_id'] ?? data['id'] ?? '').toString();
+      final readAtStr = data['read_at'] as String?;
       final readAt = readAtStr != null
           ? DateTime.parse(readAtStr)
           : DateTime.now();
 
       if (messageId.isNotEmpty) {
-        print('📗 [Processing Read Receipt] Message $messageId');
+        print('📗 [Processing Read Receipt] Message $messageId at $readAt');
         _readReceiptController.add(
           ReadReceiptEvent(messageId: messageId, readAt: readAt),
         );
-        debugPrint('Read receipt received for message $messageId');
+        debugPrint('✅ Read receipt received for message $messageId');
       } else {
-        print('⚠️ [Read Receipt] Empty message ID: ${jsonEncode(msgData)}');
+        print(
+          '⚠️ [Read Receipt] Empty message ID in data: ${jsonEncode(data)}',
+        );
       }
     } catch (e) {
-      debugPrint('Error handling message_read: $e');
+      debugPrint('❌ Error handling message_read: $e');
       print('❌ [Error Data] ${jsonEncode(data)}');
     }
   }

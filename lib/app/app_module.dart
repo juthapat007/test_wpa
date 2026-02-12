@@ -19,6 +19,9 @@ import 'package:test_wpa/features/profile/data/service/profile_api.dart';
 import 'package:test_wpa/features/profile/domain/repositories/profile_repository.dart';
 import 'package:test_wpa/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:test_wpa/features/profile/presentation/page/profile_widget.dart';
+import 'package:test_wpa/features/scan/data/repositories/qr_repository_impl.dart';
+import 'package:test_wpa/features/scan/data/services/qr_api.dart';
+import 'package:test_wpa/features/scan/domain/repositories/qr_repository.dart';
 
 // Schedule
 import 'package:test_wpa/features/schedules/data/repository/schedule_repository_impl.dart';
@@ -142,8 +145,14 @@ class AppModule extends Module {
       ),
     );
 
-    /// ================= Other Feature Blocs =================
-    i.addLazySingleton<ScanBloc>(() => ScanBloc());
+    /// ================= Scan / QR Code =================
+    i.addLazySingleton<QrApi>(() => QrApi(Modular.get<Dio>()));
+    i.addLazySingleton<QrRepository>(
+      () => QrRepositoryImpl(api: Modular.get<QrApi>()),
+    );
+    i.addLazySingleton<ScanBloc>(
+      () => ScanBloc(qrRepository: Modular.get<QrRepository>()),
+    );
   }
 
   @override
@@ -192,11 +201,10 @@ class AppModule extends Module {
     // );
 
     r.child('/chat/room', child: (_) => const ChatConversationPage());
-
     r.child(
       '/scan',
-      child: (_) => BlocProvider(
-        create: (_) => Modular.get<ScanBloc>(),
+      child: (_) => BlocProvider.value(
+        value: Modular.get<ScanBloc>(),
         child: const Scan(),
       ),
     );

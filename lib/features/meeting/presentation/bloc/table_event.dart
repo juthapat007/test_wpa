@@ -23,3 +23,5 @@ class ChangeDate extends TableEvent {
 
   ChangeDate(this.date);
 }
+
+class ResetTable extends TableEvent {}

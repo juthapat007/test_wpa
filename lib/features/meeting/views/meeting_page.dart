@@ -46,6 +46,17 @@ class _MeetingPageState extends State<MeetingPage> {
       });
     });
   }
+    @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // Refresh ทุกครั้งที่กลับมาที่หน้านี้
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ReadContext(context).read<TableBloc>().add(LoadTableView());
+      }
+    });
+  }
 
   /// Find the current/next schedule and load the table view using its start_time.
   void _loadInitialTableView() async {
@@ -225,36 +236,27 @@ class _MeetingPageState extends State<MeetingPage> {
 
             // ========== Table Grid Section ==========
             BlocBuilder<TableBloc, TableState>(
-              builder: (context, tableState) {
-                if (tableState is TableLoading) {
+              builder: (context, state) {
+                if (state is TableLoading) {
                   return const SizedBox(
                     height: 300,
                     child: Center(child: CircularProgressIndicator()),
                   );
                 }
 
-                if (tableState is TableLoaded) {
-                  // Get schedules from ScheduleBloc to pass to TableGridWidget
-                  final scheduleState = ReadContext(
-                    context,
-                  ).read<ScheduleBloc>().state;
-                  final schedules = scheduleState is ScheduleLoaded
-                      ? scheduleState.scheduleResponse.schedules
-                      : <Schedule>[];
-
+                if (state is TableLoaded) {
                   return TableGridWidget(
-                    response: tableState.response,
-                    schedules: schedules, // Pass schedules here
+                    response: state.response,
                     onTimeSlotChanged: (time) {
                       Modular.get<TableBloc>().add(ChangeTimeSlot(time));
                     },
                   );
                 }
 
-                if (tableState is TableError) {
+                if (state is TableError) {
                   return SizedBox(
                     height: 300,
-                    child: Center(child: Text(tableState.message)),
+                    child: Center(child: Text(state.message)),
                   );
                 }
 

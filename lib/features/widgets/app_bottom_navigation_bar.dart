@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_wpa/core/navigation/bottom_nav_config.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 import 'package:test_wpa/features/chat/presentation/bloc/chat_bloc.dart';
+import 'package:test_wpa/features/meeting/presentation/bloc/table_bloc.dart';
 
 class AppBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
@@ -19,7 +20,38 @@ class AppBottomNavigationBar extends StatelessWidget {
     return BottomNavigationBar(
       currentIndex: validIndex,
       onTap: (index) {
-        Modular.to.navigate(bottomNavItems[index].route);
+        final route = bottomNavItems[index].route;
+
+        // ✅ ถ้ากดหน้า chat ให้ reload rooms ก่อน navigate
+        if (route == '/chat') {
+          try {
+            ModularWatchExtension(
+              context,
+            ).read<ChatBloc>().add(LoadChatRooms());
+          } catch (e) {
+            print('ChatBloc not found: $e');
+          }
+        }
+        if (route == '/meeting') {
+          try {
+            ModularWatchExtension(
+              context,
+            ).read<TableBloc>().add(LoadTableView());
+          } catch (e) {
+            print('TableBloc not found: $e');
+          }
+        }
+
+        // ✅ Force refresh ทุกหน้า เพื่อให้ state reset
+        Modular.to.navigate(route);
+
+        // ✅ ถ้ากดหน้าเดิม ให้ pop แล้ว push ใหม่เพื่อ rebuild
+        if (index == currentIndex) {
+          // Delay เล็กน้อยเพื่อให้ navigate เสร็จก่อน
+          Future.delayed(const Duration(milliseconds: 50), () {
+            Modular.to.navigate(route);
+          });
+        }
       },
       backgroundColor: AppColors.surface,
       selectedItemColor: AppColors.primary,
@@ -57,19 +89,15 @@ class AppBottomNavigationBar extends StatelessWidget {
     IconData icon, {
     bool isActive = false,
   }) {
-    // ใช้ BlocBuilder จาก context โดยตรง (ChatBloc provide ที่ AppWidget level)
     return BlocBuilder<ChatBloc, ChatState>(
       builder: (context, state) {
-        // ดึง unread count จาก ChatBloc internal state ผ่าน rooms
         final chatBloc = ModularWatchExtension(context).read<ChatBloc>();
         final totalUnread = chatBloc.totalUnreadCount;
 
-        // ถ้าไม่มี unread แสดง icon ธรรมดา
         if (totalUnread == 0) {
           return Icon(icon);
         }
 
-        // ถ้ามี unread แสดง badge
         return Stack(
           clipBehavior: Clip.none,
           children: [
