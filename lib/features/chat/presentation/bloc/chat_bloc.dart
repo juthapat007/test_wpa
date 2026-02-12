@@ -5,7 +5,8 @@ import 'package:meta/meta.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:test_wpa/features/chat/data/models/chat_message.dart';
 import 'package:test_wpa/features/chat/data/models/chat_room.dart';
-import 'package:test_wpa/features/chat/data/services/chat_websocket_service.dart' show ReadReceiptEvent;
+import 'package:test_wpa/features/chat/data/services/chat_websocket_service.dart'
+    show ReadReceiptEvent;
 import 'package:test_wpa/features/chat/domain/repositories/chat_repository.dart';
 
 part 'chat_event.dart';
@@ -24,7 +25,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   List<ChatMessage> _messages = [];
   bool _isWebSocketConnected = false;
   String? _currentUserId;
-  
+
   // ✨ NEW: Pagination state
   int _currentPage = 1;
   bool _hasMoreMessages = true;
@@ -62,6 +63,86 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<MarkMessagesAsReadInConversation>(_onMarkMessagesAsReadInConversation);
     on<MessageReadReceived>(_onMessageReadReceived);
   }
+  Future<void> _onConnectWebSocket(
+    ConnectWebSocket event,
+    Emitter<ChatState> emit,
+  ) async {
+    try {
+      // Cancel existing subscriptions
+      await _messageSubscription?.cancel();
+      await _connectionSubscription?.cancel();
+      await _readReceiptSubscription?.cancel(); // ✅ เพิ่มบรรทัดนี้
+
+      await chatRepository.connectWebSocket();
+
+      _messageSubscription = chatRepository.messageStream.listen(
+        (message) => add(WebSocketMessageReceived(message)),
+      );
+
+      _connectionSubscription = chatRepository.connectionStream.listen(
+        (isConnected) => add(WebSocketConnectionChanged(isConnected)),
+      );
+
+      // ✅ เพิ่ม listener สำหรับ read receipt
+      _readReceiptSubscription = chatRepository.readReceiptStream.listen(
+        (receipt) => add(
+          MessageReadReceived(
+            messageId: receipt.messageId,
+            readAt: receipt.readAt,
+          ),
+        ),
+      );
+    } catch (e) {
+      emit(ChatError('Failed to connect WebSocket: $e'));
+    }
+  }
+
+  // ✅ เพิ่ม handler สำหรับ read receipt event
+  void _onMessageReadReceived(
+    MessageReadReceived event,
+    Emitter<ChatState> emit,
+  ) {
+    print(
+      '📗 Read receipt received: Message ${event.messageId} read at ${event.readAt}',
+    );
+
+    // Update local message state
+    bool hasChanges = false;
+    _messages = _messages.map((m) {
+      if (m.id == event.messageId && !m.isRead) {
+        hasChanges = true;
+        return m.copyWith(isRead: true);
+      }
+      return m;
+    }).toList();
+
+    // Emit updated state if in conversation
+    if (hasChanges && _selectedRoom != null) {
+      print('✅ Updating UI with read receipt for message ${event.messageId}');
+      emit(
+        ChatRoomSelected(
+          room: _selectedRoom!,
+          messages: _messages,
+          isWebSocketConnected: _isWebSocketConnected,
+          hasMoreMessages: _hasMoreMessages,
+          currentPage: _currentPage,
+        ),
+      );
+    }
+  }
+
+  // ✅ อย่าลืม cancel ตอน disconnect
+  Future<void> _onDisconnectWebSocket(
+    DisconnectWebSocket event,
+    Emitter<ChatState> emit,
+  ) async {
+    await _messageSubscription?.cancel();
+    await _connectionSubscription?.cancel();
+    await _readReceiptSubscription?.cancel(); // ✅ เพิ่มบรรทัดนี้
+    await chatRepository.disconnectWebSocket();
+    _isWebSocketConnected = false;
+    emit(WebSocketDisconnected());
+  }
 
   /// Initialize current user ID from secure storage
   Future<void> _initializeCurrentUserId() async {
@@ -83,52 +164,52 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
   // ==================== WebSocket Handlers ====================
 
-  Future<void> _onConnectWebSocket(
-    ConnectWebSocket event,
-    Emitter<ChatState> emit,
-  ) async {
-    try {
-      // Cancel any existing subscriptions to prevent duplicate listeners
-      // that multiply notification counts on re-navigation
-      await _messageSubscription?.cancel();
-      _messageSubscription = null;
-      await _connectionSubscription?.cancel();
-      _connectionSubscription = null;
-      await _readReceiptSubscription?.cancel();
-      _readReceiptSubscription = null;
+  // Future<void> _onConnectWebSocket(
+  //   ConnectWebSocket event,
+  //   Emitter<ChatState> emit,
+  // ) async {
+  //   try {
+  //     // Cancel any existing subscriptions to prevent duplicate listeners
+  //     // that multiply notification counts on re-navigation
+  //     await _messageSubscription?.cancel();
+  //     _messageSubscription = null;
+  //     await _connectionSubscription?.cancel();
+  //     _connectionSubscription = null;
+  //     await _readReceiptSubscription?.cancel();
+  //     _readReceiptSubscription = null;
 
-      await chatRepository.connectWebSocket();
+  //     await chatRepository.connectWebSocket();
 
-      _messageSubscription = chatRepository.messageStream.listen(
-        (message) => add(WebSocketMessageReceived(message)),
-      );
+  //     _messageSubscription = chatRepository.messageStream.listen(
+  //       (message) => add(WebSocketMessageReceived(message)),
+  //     );
 
-      _connectionSubscription = chatRepository.connectionStream.listen(
-        (isConnected) => add(WebSocketConnectionChanged(isConnected)),
-      );
+  //     _connectionSubscription = chatRepository.connectionStream.listen(
+  //       (isConnected) => add(WebSocketConnectionChanged(isConnected)),
+  //     );
 
-      _readReceiptSubscription = chatRepository.readReceiptStream.listen(
-        (receipt) => add(MessageReadReceived(
-          messageId: receipt.messageId,
-          readAt: receipt.readAt,
-        )),
-      );
-    } catch (e) {
-      emit(ChatError('Failed to connect WebSocket: $e'));
-    }
-  }
+  //     _readReceiptSubscription = chatRepository.readReceiptStream.listen(
+  //       (receipt) => add(MessageReadReceived(
+  //         messageId: receipt.messageId,
+  //         readAt: receipt.readAt,
+  //       )),
+  //     );
+  //   } catch (e) {
+  //     emit(ChatError('Failed to connect WebSocket: $e'));
+  //   }
+  // }
 
-  Future<void> _onDisconnectWebSocket(
-    DisconnectWebSocket event,
-    Emitter<ChatState> emit,
-  ) async {
-    await _messageSubscription?.cancel();
-    await _connectionSubscription?.cancel();
-    await _readReceiptSubscription?.cancel();
-    await chatRepository.disconnectWebSocket();
-    _isWebSocketConnected = false;
-    emit(WebSocketDisconnected());
-  }
+  // Future<void> _onDisconnectWebSocket(
+  //   DisconnectWebSocket event,
+  //   Emitter<ChatState> emit,
+  // ) async {
+  //   await _messageSubscription?.cancel();
+  //   await _connectionSubscription?.cancel();
+  //   await _readReceiptSubscription?.cancel();
+  //   await chatRepository.disconnectWebSocket();
+  //   _isWebSocketConnected = false;
+  //   emit(WebSocketDisconnected());
+  // }
 
   void _onWebSocketMessageReceived(
     WebSocketMessageReceived event,
@@ -313,7 +394,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       _selectedRoom = event.room;
       _currentPage = 1;
       _hasMoreMessages = true;
-      
+
       // โหลดข้อความหน้าแรก (page 1)
       final response = await chatRepository.getChatHistory(
         event.room.id,
@@ -370,7 +451,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   ) async {
     // ป้องกันการโหลดซ้ำ
     if (_isLoadingMore || !_hasMoreMessages || _selectedRoom == null) {
-      print('⚠️ Skip loading more: isLoading=$_isLoadingMore, hasMore=$_hasMoreMessages');
+      print(
+        '⚠️ Skip loading more: isLoading=$_isLoadingMore, hasMore=$_hasMoreMessages',
+      );
       return;
     }
 
@@ -380,11 +463,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     print('📥 Loading more messages: page $nextPage');
 
     // Emit loading state
-    emit(LoadingMoreMessages(
-      room: _selectedRoom!,
-      messages: _messages,
-      currentPage: _currentPage,
-    ));
+    emit(
+      LoadingMoreMessages(
+        room: _selectedRoom!,
+        messages: _messages,
+        currentPage: _currentPage,
+      ),
+    );
 
     try {
       final response = await chatRepository.getChatHistory(
@@ -402,7 +487,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         _currentPage = nextPage;
         _hasMoreMessages = nextPage < totalPages;
 
-        print('✅ Loaded ${newMessages.length} more messages (page $nextPage/$totalPages)');
+        print(
+          '✅ Loaded ${newMessages.length} more messages (page $nextPage/$totalPages)',
+        );
       } else {
         _hasMoreMessages = false;
         print('⚠️ No more messages to load');
@@ -420,7 +507,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     } catch (e) {
       print('❌ Error loading more messages: $e');
       emit(ChatError('Failed to load more messages: $e'));
-      
+
       // กลับไปยัง state เดิม
       if (_selectedRoom != null) {
         emit(
@@ -465,7 +552,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         page: 1,
         limit: event.limit ?? 50,
       );
-      
+
       _messages = response['messages'];
       _currentPage = 1;
       _hasMoreMessages = _currentPage < (response['totalPages'] ?? 1);
@@ -613,31 +700,31 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
   /// Handles incoming read receipt from WebSocket.
   /// When the other user reads our message, update the local isRead status.
-  void _onMessageReadReceived(
-    MessageReadReceived event,
-    Emitter<ChatState> emit,
-  ) {
-    bool changed = false;
-    _messages = _messages.map((m) {
-      if (m.id == event.messageId && !m.isRead) {
-        changed = true;
-        return m.copyWith(isRead: true);
-      }
-      return m;
-    }).toList();
+  // void _onMessageReadReceived(
+  //   MessageReadReceived event,
+  //   Emitter<ChatState> emit,
+  // ) {
+  //   bool changed = false;
+  //   _messages = _messages.map((m) {
+  //     if (m.id == event.messageId && !m.isRead) {
+  //       changed = true;
+  //       return m.copyWith(isRead: true);
+  //     }
+  //     return m;
+  //   }).toList();
 
-    if (changed && _selectedRoom != null) {
-      emit(
-        ChatRoomSelected(
-          room: _selectedRoom!,
-          messages: _messages,
-          isWebSocketConnected: _isWebSocketConnected,
-          hasMoreMessages: _hasMoreMessages,
-          currentPage: _currentPage,
-        ),
-      );
-    }
-  }
+  //   if (changed && _selectedRoom != null) {
+  //     emit(
+  //       ChatRoomSelected(
+  //         room: _selectedRoom!,
+  //         messages: _messages,
+  //         isWebSocketConnected: _isWebSocketConnected,
+  //         hasMoreMessages: _hasMoreMessages,
+  //         currentPage: _currentPage,
+  //       ),
+  //     );
+  //   }
+  // }
 
   @override
   Future<void> close() {
