@@ -19,14 +19,7 @@ class AppBottomNavigationBar extends StatelessWidget {
     return BottomNavigationBar(
       currentIndex: validIndex,
       onTap: (index) {
-        final route = bottomNavItems[index].route;
-
-        // ถ้ากดหน้าเดิมที่อยู่อยู่แล้ว ให้ popAndPushNamed เพื่อ refresh
-        if (index == currentIndex) {
-          Modular.to.popAndPushNamed(route);
-        } else {
-          Modular.to.navigate(route);
-        }
+        Modular.to.navigate(bottomNavItems[index].route);
       },
       backgroundColor: AppColors.surface,
       selectedItemColor: AppColors.primary,

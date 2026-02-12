@@ -1,5 +1,6 @@
 // lib/features/meeting/widgets/table_grid_widget.dart
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
@@ -7,17 +8,20 @@ import 'package:test_wpa/core/utils/date_time_helper.dart';
 import 'package:test_wpa/features/meeting/domain/entities/table_view_entities.dart';
 import 'package:test_wpa/features/meeting/widgets/table_detail_sheet.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
+import 'package:test_wpa/features/schedules/presentation/widgets/schedule_card_helper.dart';
 
 class TableGridWidget extends StatefulWidget {
   final TableViewResponse response;
   final Schedule? currentSchedule;
   final ValueChanged<String>? onTimeSlotChanged;
+  final List<Schedule>? schedules; // เพิ่ม schedules
 
   const TableGridWidget({
     super.key,
     required this.response,
     this.currentSchedule,
     this.onTimeSlotChanged,
+    this.schedules, // เพิ่มใน constructor
   });
 
   @override
@@ -28,11 +32,64 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   String? selectedTableNumber;
   final TransformationController _transformController =
       TransformationController();
+  double _currentScale = 1.0;
+  bool _showZoomControls = true;
+  Timer? _hideControlsTimer;
 
   @override
   void dispose() {
     _transformController.dispose();
+    _hideControlsTimer?.cancel();
     super.dispose();
+  }
+
+  void _zoomIn() {
+    setState(() {
+      _currentScale = (_currentScale * 1.2).clamp(0.5, 4.0);
+      _transformController.value = Matrix4.identity()..scale(_currentScale);
+      _showZoomControls = true;
+    });
+    _resetHideTimer();
+  }
+
+  void _zoomOut() {
+    setState(() {
+      _currentScale = (_currentScale / 1.2).clamp(0.5, 4.0);
+      _transformController.value = Matrix4.identity()..scale(_currentScale);
+      _showZoomControls = true;
+    });
+    _resetHideTimer();
+  }
+
+  void _resetZoom() {
+    setState(() {
+      _currentScale = 1.0;
+      _transformController.value = Matrix4.identity();
+      _showZoomControls = true;
+    });
+    _resetHideTimer();
+  }
+
+  void _resetHideTimer() {
+    _hideControlsTimer?.cancel();
+    _hideControlsTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _showZoomControls = false;
+        });
+      }
+    });
+  }
+
+  void _onInteractionStart() {
+    setState(() {
+      _showZoomControls = true;
+    });
+    _hideControlsTimer?.cancel();
+  }
+
+  void _onInteractionEnd() {
+    _resetHideTimer();
   }
 
   @override
@@ -160,95 +217,168 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   void _showTimeSlotPopup(List<String> timesToday, String currentTime) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Handle
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Select Time Slot',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Choose a time to view table assignments',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: color.AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: timesToday.map((time) {
-                    final isSelected = time == currentTime;
-                    return Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(10),
-                        onTap: () {
-                          Navigator.of(ctx).pop();
-                          widget.onTimeSlotChanged?.call(time);
-                        },
+        return DraggableScrollableSheet(
+          initialChildSize: 0.5,
+          minChildSize: 0.3,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return SingleChildScrollView(
+              controller: scrollController,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Handle
+                      Center(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
-                          ),
+                          width: 40,
+                          height: 4,
                           decoration: BoxDecoration(
-                            color: isSelected
-                                ? color.AppColors.primary
-                                : Colors.grey[100],
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: isSelected
-                                  ? color.AppColors.primary
-                                  : color.AppColors.border,
-                            ),
-                          ),
-                          child: Text(
-                            time,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.w500,
-                              color: isSelected
-                                  ? Colors.white
-                                  : color.AppColors.textPrimary,
-                            ),
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(2),
                           ),
                         ),
                       ),
-                    );
-                  }).toList(),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Select Time Slot',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Choose a time to view table assignments',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: color.AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: timesToday.map((time) {
+                          final isSelected = time == currentTime;
+
+                          // Find schedule for this time slot to get status
+                          final scheduleForTime = _findScheduleForTime(time);
+                          final helper = scheduleForTime != null
+                              ? ScheduleCardHelper(scheduleForTime)
+                              : null;
+
+                          // Determine colors based on schedule status
+                          Color backgroundColor;
+                          Color borderColor;
+                          Color textColor;
+
+                          if (isSelected) {
+                            backgroundColor = color.AppColors.primary;
+                            borderColor = color.AppColors.primary;
+                            textColor = Colors.white;
+                          } else if (helper != null) {
+                            // Use status colors from helper
+                            backgroundColor = helper.backgroundColor;
+                            borderColor = helper.statusColor;
+                            textColor = helper.statusColor;
+                          } else {
+                            // Default colors for slots without schedule
+                            backgroundColor = Colors.grey[100]!;
+                            borderColor = color.AppColors.border;
+                            textColor = color.AppColors.textPrimary;
+                          }
+
+                          return Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(10),
+                              onTap: () {
+                                Navigator.of(ctx).pop();
+                                widget.onTimeSlotChanged?.call(time);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: backgroundColor,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: borderColor,
+                                    width: isSelected ? 2 : 1.5,
+                                  ),
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      time,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.w600,
+                                        color: textColor,
+                                      ),
+                                    ),
+                                    if (helper != null && !isSelected) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        helper.statusText,
+                                        style: TextStyle(
+                                          fontSize: 8,
+                                          fontWeight: FontWeight.w900,
+                                          color: helper.statusColor.withOpacity(
+                                            0.7,
+                                          ),
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
+  }
+
+  // Helper method to find schedule for a specific time
+  Schedule? _findScheduleForTime(String time) {
+    if (widget.schedules == null || widget.schedules!.isEmpty) {
+      return null;
+    }
+
+    try {
+      return widget.schedules!.firstWhere((schedule) {
+        final scheduleTime = DateTimeHelper.formatTime12(schedule.startAt);
+        return scheduleTime == time;
+      });
+    } catch (e) {
+      return null;
+    }
   }
 
   // ========================================
@@ -259,11 +389,15 @@ class _TableGridWidgetState extends State<TableGridWidget> {
       for (var table in regularTables) table.tableNumber: table,
     };
     final layout = widget.response.layout;
-    final rows = layout?.rows ?? _calculateDefaultRows(regularTables.length, 6);
     final columns = layout?.columns ?? 6;
 
+    // Calculate rows based on the maximum table number, not just the count.
+    // This ensures all tables are visible even if numbering has gaps or 
+    // the count differs from the highest table number (e.g., 66 tables need 11 rows of 6).
+    final rows = layout?.rows ?? _calculateRowsFromMaxTableNumber(regularTables, columns);
+
     return Container(
-      constraints: const BoxConstraints(maxHeight: 360),
+      constraints: const BoxConstraints(maxHeight: 450),
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
@@ -275,62 +409,179 @@ class _TableGridWidgetState extends State<TableGridWidget> {
           children: [
             InteractiveViewer(
               transformationController: _transformController,
-              minScale: 0.6,
-              maxScale: 3.0,
-              boundaryMargin: const EdgeInsets.all(40),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: List.generate(rows, (rowIndex) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: List.generate(columns, (colIndex) {
-                          final tableNumber =
-                              (rowIndex * columns + colIndex + 1).toString();
-                          final table = tableMap[tableNumber];
+              minScale: 0.5,
+              maxScale: 4.0,
+              boundaryMargin: const EdgeInsets.all(80),
+              onInteractionStart: (details) {
+                _onInteractionStart();
+              },
+              onInteractionEnd: (details) {
+                // Track current scale when user stops interacting
+                setState(() {
+                  _currentScale = _transformController.value
+                      .getMaxScaleOnAxis();
+                });
+                _onInteractionEnd();
+              },
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    physics: const NeverScrollableScrollPhysics(),
+                    child: SizedBox(
+                      width: constraints.maxWidth,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(rows, (rowIndex) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: IntrinsicHeight(
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: List.generate(columns, (colIndex) {
+                                    final tableNumber =
+                                        (rowIndex * columns + colIndex + 1)
+                                            .toString();
+                                    final table = tableMap[tableNumber];
 
-                          return Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 3,
+                                    return Expanded(
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 4,
+                                        ),
+                                        child: table != null
+                                            ? _buildTableCell(
+                                                table,
+                                                table.tableNumber ==
+                                                    widget.response.myTable,
+                                              )
+                                            : _buildEmptyCell(tableNumber),
+                                      ),
+                                    );
+                                  }),
+                                ),
                               ),
-                              child: table != null
-                                  ? _buildTableCell(
-                                      table,
-                                      table.tableNumber ==
-                                          widget.response.myTable,
-                                    )
-                                  : _buildEmptyCell(tableNumber),
-                            ),
-                          );
-                        }),
+                            );
+                          }),
+                        ),
                       ),
-                    );
-                  }),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            // Zoom Controls (right side) - with auto-hide
+            AnimatedOpacity(
+              opacity: _showZoomControls ? 0.85 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              child: Positioned(
+                right: 8,
+                top: 8,
+                child: IgnorePointer(
+                  ignoring: !_showZoomControls,
+                  child: GestureDetector(
+                    onTap: () {
+                      // Show controls when tapped
+                      setState(() {
+                        _showZoomControls = true;
+                      });
+                      _resetHideTimer();
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 12,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.add, size: 20),
+                            onPressed: _zoomIn,
+                            tooltip: 'Zoom In',
+                            padding: const EdgeInsets.all(8),
+                            constraints: const BoxConstraints(
+                              minWidth: 36,
+                              minHeight: 36,
+                            ),
+                            color: color.AppColors.primary,
+                          ),
+                          Container(
+                            width: 36,
+                            height: 1,
+                            color: Colors.grey[200],
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.remove, size: 20),
+                            onPressed: _zoomOut,
+                            tooltip: 'Zoom Out',
+                            padding: const EdgeInsets.all(8),
+                            constraints: const BoxConstraints(
+                              minWidth: 36,
+                              minHeight: 36,
+                            ),
+                            color: color.AppColors.primary,
+                          ),
+                          Container(
+                            width: 36,
+                            height: 1,
+                            color: Colors.grey[200],
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.crop_free, size: 18),
+                            onPressed: _resetZoom,
+                            tooltip: 'Reset Zoom',
+                            padding: const EdgeInsets.all(8),
+                            constraints: const BoxConstraints(
+                              minWidth: 36,
+                              minHeight: 36,
+                            ),
+                            color: color.AppColors.textSecondary,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
-            // Zoom hint overlay (bottom-right)
+
+            // Zoom hint overlay (bottom-left)
             Positioned(
               bottom: 8,
-              right: 8,
+              left: 8,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withOpacity(0.6),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.pinch, size: 14, color: Colors.white70),
-                    SizedBox(width: 4),
+                    const Icon(Icons.pinch, size: 14, color: Colors.white70),
+                    const SizedBox(width: 6),
                     Text(
-                      'Pinch to zoom',
-                      style: TextStyle(fontSize: 10, color: Colors.white70),
+                      'Pinch or use controls to zoom • ${_currentScale.toStringAsFixed(1)}x',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.white70,
+                      ),
                     ),
                   ],
                 ),
@@ -433,6 +684,31 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   }
 
   // ========================================
+  // Helper: Calculate Rows from Max Table Number
+  // ========================================
+  /// Determines the number of rows needed by finding the highest numeric 
+  /// table number. This ensures all tables are rendered even when the total 
+  /// count differs from the highest table number (e.g., 66 items need 11 rows of 6).
+  int _calculateRowsFromMaxTableNumber(List<TableInfo> tables, int columns) {
+    if (tables.isEmpty) return 0;
+
+    int maxNumber = 0;
+    for (final table in tables) {
+      final num = int.tryParse(table.tableNumber);
+      if (num != null && num > maxNumber) {
+        maxNumber = num;
+      }
+    }
+
+    // If we couldn't parse any numbers, fall back to count-based calculation
+    if (maxNumber == 0) {
+      return _calculateDefaultRows(tables.length, columns);
+    }
+
+    return (maxNumber / columns).ceil();
+  }
+
+  // ========================================
   // Table Cell
   // ========================================
   Widget _buildTableCell(TableInfo table, bool isMyTable) {
@@ -450,6 +726,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
       child: AspectRatio(
         aspectRatio: 1,
         child: Container(
+          constraints: const BoxConstraints(minWidth: 45, minHeight: 45),
           decoration: BoxDecoration(
             color: colors.background,
             borderRadius: BorderRadius.circular(8),
@@ -464,28 +741,51 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                   ]
                 : null,
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                table.tableNumber,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: colors.text,
+          child: Padding(
+            padding: const EdgeInsets.all(2),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      table.tableNumber,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: colors.text,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ),
-              ),
-              if (isMyTable)
-                const Padding(
-                  padding: EdgeInsets.only(top: 2),
-                  child: Icon(Icons.person_pin, size: 14, color: Colors.white),
-                )
-              else if (isOccupied)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Icon(Icons.person, size: 12, color: Colors.green[900]),
-                ),
-            ],
+                if (isMyTable)
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 1),
+                      child: Icon(
+                        Icons.person_pin,
+                        size: 12,
+                        color: Colors.white,
+                      ),
+                    ),
+                  )
+                else if (isOccupied)
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 1),
+                      child: Icon(
+                        Icons.person,
+                        size: 10,
+                        color: Colors.green[900],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -499,18 +799,23 @@ class _TableGridWidgetState extends State<TableGridWidget> {
     return AspectRatio(
       aspectRatio: 1,
       child: Container(
+        constraints: const BoxConstraints(minWidth: 45, minHeight: 45),
         decoration: BoxDecoration(
           color: Colors.grey[100],
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.grey[200]!, width: 1),
         ),
         child: Center(
-          child: Text(
-            tableNumber,
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.grey[400],
-              fontWeight: FontWeight.w300,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              tableNumber,
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.grey[400],
+                fontWeight: FontWeight.w300,
+              ),
+              maxLines: 1,
             ),
           ),
         ),

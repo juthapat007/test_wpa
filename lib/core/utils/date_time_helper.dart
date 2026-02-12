@@ -51,9 +51,9 @@ class DateTimeHelper {
 
   /// Format เวลาสำหรับ API (12-hour + AM/PM ไม่มีเว้นวรรค): "9:30:AM"
   static String formatApiTime(DateTime dateTime) {
-    return DateFormat(
-      'h:mm:a',
-    ).format(dateTime); // ใช้ 'h:mm:a' (มี colon, ไม่มีเว้นวรรค) → "10:01:AM"
+    return DateFormat('h:mm:a').format(
+      dateTime,
+    ); // ใช้ 'h:mm:a' (มี colon, ไม่มีเว้นวรรค) → "10:01:AM"
   }
 
   /// Format เวลาสำหรับ API (12-hour + AM/PM มีเว้นวรรค): "9:30 AM"
@@ -109,10 +109,7 @@ class DateTimeHelper {
     // Normalize: เปลี่ยน "9:00:AM" -> "9:00 AM"
     String normalized = timeStr.trim();
     // จัดการ format "h:mm:a" (colon ก่อน AM/PM)
-    final colonAmPmRegex = RegExp(
-      r'(\d{1,2}:\d{2}):(AM|PM)',
-      caseSensitive: false,
-    );
+    final colonAmPmRegex = RegExp(r'(\d{1,2}:\d{2}):(AM|PM)', caseSensitive: false);
     final colonMatch = colonAmPmRegex.firstMatch(normalized);
     if (colonMatch != null) {
       normalized = '${colonMatch.group(1)} ${colonMatch.group(2)}';

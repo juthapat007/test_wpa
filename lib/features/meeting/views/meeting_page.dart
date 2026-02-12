@@ -225,27 +225,36 @@ class _MeetingPageState extends State<MeetingPage> {
 
             // ========== Table Grid Section ==========
             BlocBuilder<TableBloc, TableState>(
-              builder: (context, state) {
-                if (state is TableLoading) {
+              builder: (context, tableState) {
+                if (tableState is TableLoading) {
                   return const SizedBox(
                     height: 300,
                     child: Center(child: CircularProgressIndicator()),
                   );
                 }
 
-                if (state is TableLoaded) {
+                if (tableState is TableLoaded) {
+                  // Get schedules from ScheduleBloc to pass to TableGridWidget
+                  final scheduleState = ReadContext(
+                    context,
+                  ).read<ScheduleBloc>().state;
+                  final schedules = scheduleState is ScheduleLoaded
+                      ? scheduleState.scheduleResponse.schedules
+                      : <Schedule>[];
+
                   return TableGridWidget(
-                    response: state.response,
+                    response: tableState.response,
+                    schedules: schedules, // Pass schedules here
                     onTimeSlotChanged: (time) {
                       Modular.get<TableBloc>().add(ChangeTimeSlot(time));
                     },
                   );
                 }
 
-                if (state is TableError) {
+                if (tableState is TableError) {
                   return SizedBox(
                     height: 300,
-                    child: Center(child: Text(state.message)),
+                    child: Center(child: Text(tableState.message)),
                   );
                 }
 

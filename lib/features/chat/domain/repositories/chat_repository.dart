@@ -1,5 +1,6 @@
 import 'package:test_wpa/features/chat/data/models/chat_message.dart';
 import 'package:test_wpa/features/chat/data/models/chat_room.dart';
+import 'package:test_wpa/features/chat/data/services/chat_websocket_service.dart';
 
 abstract class ChatRepository {
   // WebSocket
@@ -7,6 +8,7 @@ abstract class ChatRepository {
   Future<void> disconnectWebSocket();
   Stream<ChatMessage> get messageStream;
   Stream<bool> get connectionStream;
+  Stream<ReadReceiptEvent> get readReceiptStream;
   Future<void> sendMessage(ChatMessage message);
 
   // REST API
@@ -21,4 +23,7 @@ abstract class ChatRepository {
 
   Future<ChatRoom> createChatRoom(String participantId);
   Future<void> markAsRead(String roomId);
+  
+  /// Mark a single message as read by its ID
+  Future<void> markMessageAsRead(String messageId);
 }

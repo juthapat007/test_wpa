@@ -102,7 +102,7 @@ class ChatMessageBubble extends StatelessWidget {
 
                   const SizedBox(height: 4),
 
-                  // เวลา + Read status
+                  // Time + Read status
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -115,7 +115,7 @@ class ChatMessageBubble extends StatelessWidget {
                           fontSize: 11,
                         ),
                       ),
-                      // Read indicator (เฉพาะข้อความของฉัน)
+                      // Read indicator (only for my messages)
                       if (isMe) ...[
                         const SizedBox(width: 4),
                         Icon(
@@ -125,6 +125,17 @@ class ChatMessageBubble extends StatelessWidget {
                               ? Colors.lightBlueAccent
                               : Colors.white.withOpacity(0.8),
                         ),
+                        if (message.isRead) ...[
+                          const SizedBox(width: 3),
+                          Text(
+                            'Seen',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.7),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ],
                     ],
                   ),

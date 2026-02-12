@@ -18,12 +18,11 @@ class _ChatRoomListPageState extends State<ChatRoomListPage> {
   @override
   void initState() {
     super.initState();
-    // Load chat rooms (WebSocket เชื่อมต่อแล้วจาก AppWidget)
-    ReadContext(context).read<ChatBloc>().add(LoadChatRooms());
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    // ✅ เพิ่มบรรทัดนี้
+    // Reset and reload chat rooms fresh from the server every time
+    // the user enters the chat tab, ensuring accurate unread counts.
+    ReadContext(context).read<ChatBloc>().add(ResetAndLoadChatRooms());
+    // Ensure WebSocket is connected (guards against duplicate subscriptions internally)
     ReadContext(context).read<ChatBloc>().add(ConnectWebSocket());
-    // });
   }
 
   @override

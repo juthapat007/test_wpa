@@ -74,10 +74,23 @@ class ChatApi {
         '/messages/read_all',
         data: {'sender_id': int.parse(senderId)},
       );
-      debugPrint('✅ Messages marked as read');
+      debugPrint('Messages marked as read');
       return response;
     } catch (e) {
-      debugPrint('❌ Error marking as read: $e');
+      debugPrint('Error marking all as read: $e');
+      rethrow;
+    }
+  }
+
+  /// Mark a single message as read
+  /// Endpoint: PATCH /api/v1/messages/{id}/mark_as_read
+  Future<Response> markMessageAsRead(String messageId) async {
+    try {
+      final response = await dio.patch('/messages/$messageId/mark_as_read');
+      debugPrint('Message $messageId marked as read');
+      return response;
+    } catch (e) {
+      debugPrint('Error marking message $messageId as read: $e');
       rethrow;
     }
   }
