@@ -16,6 +16,12 @@ class ChatWebSocketService {
   String? _chatChannelIdentifier;
   String? _notificationChannelIdentifier;
 
+  // Reconnection
+  String? _lastToken;
+  int _reconnectAttempts = 0;
+  static const int _maxReconnectAttempts = 5;
+  Timer? _reconnectTimer;
+
   ChatWebSocketService();
 
   Stream<ChatMessage> get messageStream => _messageController.stream;
@@ -23,7 +29,17 @@ class ChatWebSocketService {
 
   /// เชื่อมต่อ ActionCable WebSocket
   Future<void> connect(String token) async {
+    _lastToken = token;
+    _reconnectAttempts = 0;
+    _reconnectTimer?.cancel();
+
     try {
+      // Close any existing connection first
+      if (_channel != null) {
+        await _channel!.sink.close();
+        _channel = null;
+      }
+
       final wsUrl = 'wss://wpa-docker.onrender.com/cable?token=$token';
 
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
@@ -31,29 +47,52 @@ class ChatWebSocketService {
       _channel!.stream.listen(
         (data) => _handleMessage(data),
         onError: (error) {
-          debugPrint('❌ WebSocket Error: $error');
+          debugPrint('WebSocket Error: $error');
           _isConnected = false;
           _connectionController.add(false);
+          _scheduleReconnect();
         },
         onDone: () {
-          debugPrint('🔌 WebSocket Disconnected');
+          debugPrint('WebSocket Disconnected');
           _isConnected = false;
           _connectionController.add(false);
+          _scheduleReconnect();
         },
       );
 
       _isConnected = true;
       _connectionController.add(true);
-      debugPrint('✅ WebSocket Connected');
+      debugPrint('WebSocket Connected');
 
-      // รอ welcome message แล้ว subscribe channels
+      // Wait for welcome message then subscribe channels
       await Future.delayed(const Duration(milliseconds: 500));
       await _subscribeChannels();
     } catch (e) {
-      debugPrint('❌ Failed to connect WebSocket: $e');
+      debugPrint('Failed to connect WebSocket: $e');
       _isConnected = false;
       _connectionController.add(false);
+      _scheduleReconnect();
     }
+  }
+
+  /// Auto-reconnect with exponential backoff
+  void _scheduleReconnect() {
+    if (_lastToken == null || _reconnectAttempts >= _maxReconnectAttempts) {
+      debugPrint('Max reconnect attempts reached or no token');
+      return;
+    }
+
+    _reconnectAttempts++;
+    final delay = Duration(seconds: _reconnectAttempts * 2); // 2s, 4s, 6s, 8s, 10s
+    debugPrint('Scheduling reconnect attempt $_reconnectAttempts in ${delay.inSeconds}s');
+
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(delay, () {
+      if (!_isConnected && _lastToken != null) {
+        debugPrint('Attempting reconnect...');
+        connect(_lastToken!);
+      }
+    });
   }
 
   /// Subscribe ช่องต่างๆ
@@ -136,7 +175,14 @@ class ChatWebSocketService {
 
     switch (messageType) {
       case 'new_message':
-        _handleNewMessage(message['message'] ?? message);
+        // The actual message data might be nested under 'message' key or at root level
+        final msgData = message['message'];
+        if (msgData is Map<String, dynamic>) {
+          _handleNewMessage(msgData);
+        } else {
+          // If no nested 'message', the message data is in the current map itself
+          _handleNewMessage(message);
+        }
         break;
 
       case 'message_read':
@@ -182,21 +228,45 @@ class ChatWebSocketService {
   /// จัดการข้อความใหม่
   void _handleNewMessage(Map<String, dynamic> messageData) {
     try {
+      // Handle both nested and flat message formats from the backend
+      String senderId;
+      String senderName;
+      String? senderAvatar;
+      String receiverId;
+
+      if (messageData['sender'] is Map) {
+        senderId = messageData['sender']['id'].toString();
+        senderName = messageData['sender']['name'] ?? '';
+        senderAvatar = messageData['sender']['avatar_url'];
+      } else {
+        senderId = (messageData['sender_id'] ?? messageData['senderId'] ?? '').toString();
+        senderName = messageData['sender_name'] ?? messageData['senderName'] ?? '';
+        senderAvatar = messageData['sender_avatar'] ?? messageData['senderAvatar'];
+      }
+
+      if (messageData['recipient'] is Map) {
+        receiverId = messageData['recipient']['id'].toString();
+      } else {
+        receiverId = (messageData['recipient_id'] ?? messageData['receiverId'] ?? '').toString();
+      }
+
       final message = ChatMessage(
         id: messageData['id'].toString(),
-        senderId: messageData['sender']['id'].toString(),
-        senderName: messageData['sender']['name'] ?? '',
-        senderAvatar: messageData['sender']['avatar_url'],
-        receiverId: messageData['recipient']['id'].toString(),
+        senderId: senderId,
+        senderName: senderName,
+        senderAvatar: senderAvatar,
+        receiverId: receiverId,
         content: messageData['content'] ?? '',
-        createdAt: DateTime.parse(messageData['created_at']),
+        createdAt: messageData['created_at'] != null
+            ? DateTime.parse(messageData['created_at'])
+            : DateTime.now(),
         isRead: messageData['read_at'] != null,
       );
 
       _messageController.add(message);
-      debugPrint('📩 Received message: ${message.content}');
+      debugPrint('Received message: ${message.content} from $senderId to $receiverId');
     } catch (e) {
-      debugPrint('❌ Error handling new message: $e');
+      debugPrint('Error handling new message: $e | data: $messageData');
     }
   }
 
@@ -256,6 +326,9 @@ class ChatWebSocketService {
 
   /// ปิดการเชื่อมต่อ
   Future<void> disconnect() async {
+    _reconnectTimer?.cancel();
+    _reconnectAttempts = _maxReconnectAttempts; // Prevent auto-reconnect
+
     if (_channel != null) {
       await _channel!.sink.close();
       _channel = null;
@@ -263,11 +336,13 @@ class ChatWebSocketService {
 
     _isConnected = false;
     _connectionController.add(false);
-    debugPrint('🔌 WebSocket Disconnected');
+    debugPrint('WebSocket Disconnected');
   }
 
   /// ทำลาย resources
   void dispose() {
+    _reconnectTimer?.cancel();
+    _lastToken = null;
     disconnect();
     _messageController.close();
     _connectionController.close();

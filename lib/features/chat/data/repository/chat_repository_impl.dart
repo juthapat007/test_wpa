@@ -39,7 +39,19 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<void> sendMessage(ChatMessage message) async {
-    await webSocketService.sendMessage(message);
+    // Use REST API for reliable message delivery
+    // WebSocket is only used for receiving real-time updates
+    try {
+      await api.sendMessage(
+        recipientId: message.receiverId,
+        content: message.content,
+        tempId: message.id,
+      );
+    } catch (e) {
+      debugPrint('REST send failed, falling back to WebSocket: $e');
+      // Fallback to WebSocket if REST fails
+      await webSocketService.sendMessage(message);
+    }
   }
 
   @override

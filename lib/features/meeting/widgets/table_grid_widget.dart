@@ -389,8 +389,12 @@ class _TableGridWidgetState extends State<TableGridWidget> {
       for (var table in regularTables) table.tableNumber: table,
     };
     final layout = widget.response.layout;
-    final rows = layout?.rows ?? _calculateDefaultRows(regularTables.length, 6);
     final columns = layout?.columns ?? 6;
+
+    // Calculate rows based on the maximum table number, not just the count.
+    // This ensures all tables are visible even if numbering has gaps or 
+    // the count differs from the highest table number (e.g., 66 tables need 11 rows of 6).
+    final rows = layout?.rows ?? _calculateRowsFromMaxTableNumber(regularTables, columns);
 
     return Container(
       constraints: const BoxConstraints(maxHeight: 450),
@@ -677,6 +681,31 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   // ========================================
   int _calculateDefaultRows(int tableCount, int columns) {
     return (tableCount / columns).ceil();
+  }
+
+  // ========================================
+  // Helper: Calculate Rows from Max Table Number
+  // ========================================
+  /// Determines the number of rows needed by finding the highest numeric 
+  /// table number. This ensures all tables are rendered even when the total 
+  /// count differs from the highest table number (e.g., 66 items need 11 rows of 6).
+  int _calculateRowsFromMaxTableNumber(List<TableInfo> tables, int columns) {
+    if (tables.isEmpty) return 0;
+
+    int maxNumber = 0;
+    for (final table in tables) {
+      final num = int.tryParse(table.tableNumber);
+      if (num != null && num > maxNumber) {
+        maxNumber = num;
+      }
+    }
+
+    // If we couldn't parse any numbers, fall back to count-based calculation
+    if (maxNumber == 0) {
+      return _calculateDefaultRows(tables.length, columns);
+    }
+
+    return (maxNumber / columns).ceil();
   }
 
   // ========================================

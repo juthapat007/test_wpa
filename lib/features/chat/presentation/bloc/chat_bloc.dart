@@ -120,8 +120,18 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     print('   - To: ${message.receiverId}');
     print('   - Content: ${message.content}');
 
-    // ตรวจสอบ duplicate
-    final isDuplicate = _messages.any((m) => m.id == message.id);
+    // ตรวจสอบ duplicate - check both by ID and by content+sender+time (within 5 seconds)
+    final isDuplicate = _messages.any((m) {
+      // Exact ID match
+      if (m.id == message.id) return true;
+      // Same sender, same content, within 5 seconds (handles optimistic update vs WebSocket echo)
+      if (m.senderId == message.senderId &&
+          m.content == message.content &&
+          m.createdAt.difference(message.createdAt).inSeconds.abs() < 5) {
+        return true;
+      }
+      return false;
+    });
     if (isDuplicate) {
       print('⚠️ Duplicate message detected, skipping');
       return;
