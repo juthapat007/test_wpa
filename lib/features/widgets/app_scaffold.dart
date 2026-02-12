@@ -3,6 +3,7 @@ import 'package:test_wpa/core/theme/app_app_bar.dart';
 import 'package:test_wpa/core/theme/app_avatar.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
 import 'package:test_wpa/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:test_wpa/features/notification/presentation/bloc/notification_bloc.dart';
 import 'app_bottom_navigation_bar.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -149,28 +150,55 @@ class AppScaffold extends StatelessWidget {
   }
 
   List<Widget>? _defaultActions(BuildContext context) {
-    switch (appBarStyle) {
-      case AppBarStyle.standard:
-        return [
-          IconButton(
-            onPressed: () => Modular.to.pushNamed('/notification'),
-            icon: const Icon(
-              Icons.notifications_outlined,
-              color: color.AppColors.textSecondary,
-            ),
-          ),
-        ];
+    return [
+      BlocBuilder<NotificationBloc, NotificationState>(
+        builder: (context, state) {
+          int unreadCount = 0;
+          if (state is NotificationLoaded) {
+            unreadCount = state.unreadCount;
+          } else if (state is UnreadCountLoaded) {
+            unreadCount = state.count;
+          }
 
-      case AppBarStyle.elegant:
-        return [
-          IconButton(
-            onPressed: () => Modular.to.pushNamed('/notification'),
-            icon: const Icon(
-              Icons.notifications_outlined,
-              color: color.AppColors.textSecondary,
-            ),
-          ),
-        ];
-    }
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                onPressed: () => Modular.to.pushNamed('/notification'),
+                icon: const Icon(
+                  Icons.notifications_outlined,
+                  color: color.AppColors.textSecondary,
+                ),
+              ),
+              if (unreadCount > 0)
+                Positioned(
+                  top: 6,
+                  right: 6,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: color.AppColors.error,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    child: Text(
+                      unreadCount > 9 ? '9+' : '$unreadCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    ];
   }
 }

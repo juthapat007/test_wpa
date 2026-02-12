@@ -39,6 +39,7 @@ dependencies:
   table_calendar: ^3.2.0
   intl: ^0.20.2
   web_socket_channel: ^2.4.0
+  timeago: ^3.7.1
 
 
 

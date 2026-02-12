@@ -1,4 +1,3 @@
-// enum ScheduleStatus { success, empty, unauthorized, error }
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 
 enum ScheduleStatus {

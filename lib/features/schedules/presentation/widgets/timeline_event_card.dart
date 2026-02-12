@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
+import 'package:test_wpa/core/utils/date_time_helper.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/utils/schedule_card_helper.dart';
-import 'package:intl/intl.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 
 class TimelineEventCard extends StatelessWidget {
@@ -32,8 +32,8 @@ class _MeetingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final helper = ScheduleCardHelper(schedule);
-    final startTime = DateFormat('h:mm a').format(schedule.startAt.toUtc());
-    final endTime = DateFormat('h:mm a').format(schedule.endAt.toUtc());
+    final startTime = DateTimeHelper.formatTime12(schedule.startAt);
+    final endTime = DateTimeHelper.formatTime12(schedule.endAt);
 
     return Container(
       padding: const EdgeInsets.all(16),

@@ -51,10 +51,15 @@ import 'package:test_wpa/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:test_wpa/features/chat/presentation/pages/chat_room_list_page.dart';
 import 'package:test_wpa/features/chat/presentation/pages/chat_conversation_page.dart';
 
-// Other features
-import 'package:flutter_bloc/flutter_bloc.dart';
+// Notification
+import 'package:test_wpa/features/notification/data/repository/notification_repository_impl.dart';
+import 'package:test_wpa/features/notification/data/services/notification_api.dart';
+import 'package:test_wpa/features/notification/domain/repositories/notification_repository.dart';
 import 'package:test_wpa/features/notification/presentation/bloc/notification_bloc.dart';
 import 'package:test_wpa/features/notification/presentation/page/notification.dart';
+
+// Other features
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_wpa/features/scan/presentation/bloc/scan_bloc.dart';
 import 'package:test_wpa/features/scan/views/scan.dart';
 
@@ -124,9 +129,21 @@ class AppModule extends Module {
       () => ChatBloc(chatRepository: Modular.get<ChatRepository>()),
     );
 
+    /// ================= Notification =================
+    i.addLazySingleton<NotificationApi>(
+      () => NotificationApi(Modular.get<Dio>()),
+    );
+    i.addLazySingleton<NotificationRepository>(
+      () => NotificationRepositoryImpl(api: Modular.get<NotificationApi>()),
+    );
+    i.addLazySingleton<NotificationBloc>(
+      () => NotificationBloc(
+        notificationRepository: Modular.get<NotificationRepository>(),
+      ),
+    );
+
     /// ================= Other Feature Blocs =================
     i.addLazySingleton<ScanBloc>(() => ScanBloc());
-    i.addLazySingleton<NotificationBloc>(() => NotificationBloc());
   }
 
   @override
@@ -194,9 +211,9 @@ class AppModule extends Module {
 
     r.child(
       '/notification',
-      child: (_) => BlocProvider(
-        create: (_) => Modular.get<NotificationBloc>(),
-        child: const Notification(),
+      child: (_) => BlocProvider.value(
+        value: Modular.get<NotificationBloc>(),
+        child: const NotificationWidget(),
       ),
     );
 
