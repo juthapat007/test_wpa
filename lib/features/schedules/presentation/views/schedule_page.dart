@@ -168,10 +168,9 @@ class _SchedulePageState extends State<SchedulePage> {
 
                       return DateTabBar(
                         availableDates: response.availableDates,
-                        selectedDate:
-                            _selectedDateStr.isNotEmpty
-                                ? _selectedDateStr
-                                : response.date,
+                        selectedDate: _selectedDateStr.isNotEmpty
+                            ? _selectedDateStr
+                            : response.date,
                         onDateSelected: _onDateSelected,
                       );
                     }
