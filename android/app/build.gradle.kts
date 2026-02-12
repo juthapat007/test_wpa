@@ -9,6 +9,8 @@ android {
     namespace = "com.example.test_wpa"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
+    compileSdkVersion 34  // ต้อง >= 21
+
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -20,6 +22,8 @@ android {
     }
 
     defaultConfig {
+        minSdkVersion 21  // ต้อง >= 21
+
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.test_wpa"
         // You can update the following values to match your application needs.

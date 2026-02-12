@@ -33,6 +33,12 @@ class AuthRepositoryImpl implements AuthRepository {
           'avatar_url': loginResponse.user!.avatarUrl,
         };
         await storage.write(key: 'user_data', value: jsonEncode(userData));
+        
+        // 🔥 เก็บ delegate_id สำหรับดึง QR Code
+        await storage.write(
+          key: 'delegate_id',
+          value: loginResponse.user!.id.toString(),
+        );
       }
 
       return loginResponse;
@@ -46,6 +52,7 @@ class AuthRepositoryImpl implements AuthRepository {
     final storage = Modular.get<FlutterSecureStorage>();
     await storage.delete(key: 'auth_token');
     await storage.delete(key: 'user_data');
+    await storage.delete(key: 'delegate_id'); // 🔥 ลบ delegate_id ด้วย
   }
 
   @override
