@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:test_wpa/features/chat/data/models/chat_message.dart';
 import 'package:test_wpa/features/chat/data/models/chat_room.dart';
+import 'package:test_wpa/features/chat/data/services/chat_websocket_service.dart' show ReadReceiptEvent;
 import 'package:test_wpa/features/chat/domain/repositories/chat_repository.dart';
 
 part 'chat_event.dart';
@@ -15,6 +16,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
   StreamSubscription? _messageSubscription;
   StreamSubscription? _connectionSubscription;
+  StreamSubscription? _readReceiptSubscription;
 
   // Local state
   List<ChatRoom> _chatRooms = [];
@@ -47,6 +49,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
     // Chat Room Events
     on<LoadChatRooms>(_onLoadChatRooms);
+    on<ResetAndLoadChatRooms>(_onResetAndLoadChatRooms);
     on<SelectChatRoom>(_onSelectChatRoom);
     on<BackToRoomList>(_onBackToRoomList);
     on<CreateChatRoom>(_onCreateChatRoom);
@@ -56,6 +59,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<LoadMoreMessages>(_onLoadMoreMessages); // ✨ NEW
     on<SendMessage>(_onSendMessage);
     on<MarkAsRead>(_onMarkAsRead);
+    on<MarkMessagesAsReadInConversation>(_onMarkMessagesAsReadInConversation);
+    on<MessageReadReceived>(_onMessageReadReceived);
   }
 
   /// Initialize current user ID from secure storage
@@ -83,6 +88,15 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     Emitter<ChatState> emit,
   ) async {
     try {
+      // Cancel any existing subscriptions to prevent duplicate listeners
+      // that multiply notification counts on re-navigation
+      await _messageSubscription?.cancel();
+      _messageSubscription = null;
+      await _connectionSubscription?.cancel();
+      _connectionSubscription = null;
+      await _readReceiptSubscription?.cancel();
+      _readReceiptSubscription = null;
+
       await chatRepository.connectWebSocket();
 
       _messageSubscription = chatRepository.messageStream.listen(
@@ -91,6 +105,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
       _connectionSubscription = chatRepository.connectionStream.listen(
         (isConnected) => add(WebSocketConnectionChanged(isConnected)),
+      );
+
+      _readReceiptSubscription = chatRepository.readReceiptStream.listen(
+        (receipt) => add(MessageReadReceived(
+          messageId: receipt.messageId,
+          readAt: receipt.readAt,
+        )),
       );
     } catch (e) {
       emit(ChatError('Failed to connect WebSocket: $e'));
@@ -103,6 +124,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   ) async {
     await _messageSubscription?.cancel();
     await _connectionSubscription?.cancel();
+    await _readReceiptSubscription?.cancel();
     await chatRepository.disconnectWebSocket();
     _isWebSocketConnected = false;
     emit(WebSocketDisconnected());
@@ -159,9 +181,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         ),
       );
 
-      // Mark as read ถ้าข้อความมาจากคนอื่น
+      // Mark as read if message is from the other person (we are currently viewing the conversation)
       if (message.senderId == _selectedRoom!.participantId) {
-        add(MarkAsRead(_selectedRoom!.participantId));
+        add(MarkMessagesAsReadInConversation([message.id]));
       }
     }
     // ถ้าไม่ได้อยู่ในห้องนั้น = เพิ่ม unread count
@@ -237,6 +259,36 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
   }
 
+  /// Resets local chat room state and reloads fresh data from the server.
+  /// This ensures unread counts are accurate (not accumulated from stale local state).
+  Future<void> _onResetAndLoadChatRooms(
+    ResetAndLoadChatRooms event,
+    Emitter<ChatState> emit,
+  ) async {
+    emit(ChatLoading());
+    try {
+      // Clear stale local state
+      _selectedRoom = null;
+      _messages = [];
+      _currentPage = 1;
+      _hasMoreMessages = true;
+
+      // Reload fresh from API (server has the accurate unread counts)
+      _chatRooms = await chatRepository.getChatRooms();
+      emit(
+        ChatRoomsLoaded(
+          rooms: _chatRooms,
+          isWebSocketConnected: _isWebSocketConnected,
+        ),
+      );
+    } catch (e) {
+      emit(ChatError('Failed to load chat rooms: $e'));
+      emit(
+        ChatRoomsLoaded(rooms: [], isWebSocketConnected: _isWebSocketConnected),
+      );
+    }
+  }
+
   void _onBackToRoomList(BackToRoomList event, Emitter<ChatState> emit) {
     _selectedRoom = null;
     _messages = [];
@@ -276,7 +328,17 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       print('💬 Selected room: ${event.room.participantName}');
       print('💬 Loaded ${_messages.length} messages (page 1/$totalPages)');
 
-      // Mark as read
+      // Mark unread messages from the other person as read (per-message API)
+      final unreadFromOther = _messages
+          .where((m) => !m.isRead && m.senderId == event.room.participantId)
+          .map((m) => m.id)
+          .toList();
+
+      if (unreadFromOther.isNotEmpty) {
+        add(MarkMessagesAsReadInConversation(unreadFromOther));
+      }
+
+      // Also use the bulk mark-as-read to reset unread count in room list
       if (event.room.unreadCount > 0) {
         add(MarkAsRead(event.room.id));
       }
@@ -514,10 +576,74 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
   }
 
+  /// Marks individual messages as read via the per-message API endpoint.
+  /// Called when entering a conversation that has unread messages from the other user.
+  Future<void> _onMarkMessagesAsReadInConversation(
+    MarkMessagesAsReadInConversation event,
+    Emitter<ChatState> emit,
+  ) async {
+    for (final messageId in event.messageIds) {
+      try {
+        await chatRepository.markMessageAsRead(messageId);
+      } catch (e) {
+        print('Failed to mark message $messageId as read: $e');
+      }
+    }
+
+    // Update local message state to reflect read status
+    _messages = _messages.map((m) {
+      if (event.messageIds.contains(m.id) && !m.isRead) {
+        return m.copyWith(isRead: true);
+      }
+      return m;
+    }).toList();
+
+    if (_selectedRoom != null) {
+      emit(
+        ChatRoomSelected(
+          room: _selectedRoom!,
+          messages: _messages,
+          isWebSocketConnected: _isWebSocketConnected,
+          hasMoreMessages: _hasMoreMessages,
+          currentPage: _currentPage,
+        ),
+      );
+    }
+  }
+
+  /// Handles incoming read receipt from WebSocket.
+  /// When the other user reads our message, update the local isRead status.
+  void _onMessageReadReceived(
+    MessageReadReceived event,
+    Emitter<ChatState> emit,
+  ) {
+    bool changed = false;
+    _messages = _messages.map((m) {
+      if (m.id == event.messageId && !m.isRead) {
+        changed = true;
+        return m.copyWith(isRead: true);
+      }
+      return m;
+    }).toList();
+
+    if (changed && _selectedRoom != null) {
+      emit(
+        ChatRoomSelected(
+          room: _selectedRoom!,
+          messages: _messages,
+          isWebSocketConnected: _isWebSocketConnected,
+          hasMoreMessages: _hasMoreMessages,
+          currentPage: _currentPage,
+        ),
+      );
+    }
+  }
+
   @override
   Future<void> close() {
     _messageSubscription?.cancel();
     _connectionSubscription?.cancel();
+    _readReceiptSubscription?.cancel();
     chatRepository.disconnectWebSocket();
     return super.close();
   }

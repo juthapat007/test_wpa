@@ -4,10 +4,18 @@ import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:test_wpa/features/chat/data/models/chat_message.dart';
 
+/// Data class for read receipt events from WebSocket
+class ReadReceiptEvent {
+  final String messageId;
+  final DateTime readAt;
+  ReadReceiptEvent({required this.messageId, required this.readAt});
+}
+
 class ChatWebSocketService {
   WebSocketChannel? _channel;
   final _messageController = StreamController<ChatMessage>.broadcast();
   final _connectionController = StreamController<bool>.broadcast();
+  final _readReceiptController = StreamController<ReadReceiptEvent>.broadcast();
 
   bool _isConnected = false;
   bool get isConnected => _isConnected;
@@ -26,6 +34,7 @@ class ChatWebSocketService {
 
   Stream<ChatMessage> get messageStream => _messageController.stream;
   Stream<bool> get connectionStream => _connectionController.stream;
+  Stream<ReadReceiptEvent> get readReceiptStream => _readReceiptController.stream;
 
   /// เชื่อมต่อ ActionCable WebSocket
   Future<void> connect(String token) async {
@@ -186,8 +195,11 @@ class ChatWebSocketService {
         break;
 
       case 'message_read':
+        _handleMessageRead(message);
+        break;
+
       case 'messages_read':
-        debugPrint('Message(s) marked as read');
+        _handleMessagesRead(message);
         break;
 
       case 'typing_start':
@@ -222,6 +234,45 @@ class ChatWebSocketService {
         } else {
           debugPrint('Unknown data message type: $messageType, data: $message');
         }
+    }
+  }
+
+  /// Handle a single message read receipt from WebSocket
+  void _handleMessageRead(Map<String, dynamic> data) {
+    try {
+      final msgData = data['message'] ?? data;
+      final messageId = (msgData['id'] ?? msgData['message_id'] ?? '').toString();
+      final readAtStr = msgData['read_at'] as String?;
+      final readAt = readAtStr != null ? DateTime.parse(readAtStr) : DateTime.now();
+
+      if (messageId.isNotEmpty) {
+        _readReceiptController.add(
+          ReadReceiptEvent(messageId: messageId, readAt: readAt),
+        );
+        debugPrint('Read receipt received for message $messageId');
+      }
+    } catch (e) {
+      debugPrint('Error handling message_read: $e');
+    }
+  }
+
+  /// Handle bulk messages read receipt from WebSocket
+  void _handleMessagesRead(Map<String, dynamic> data) {
+    try {
+      final messages = data['messages'] ?? data['message_ids'];
+      if (messages is List) {
+        for (final item in messages) {
+          final messageId = item is Map ? item['id'].toString() : item.toString();
+          final readAtStr = item is Map ? item['read_at'] as String? : null;
+          final readAt = readAtStr != null ? DateTime.parse(readAtStr) : DateTime.now();
+          _readReceiptController.add(
+            ReadReceiptEvent(messageId: messageId, readAt: readAt),
+          );
+        }
+        debugPrint('Bulk read receipt: ${messages.length} messages');
+      }
+    } catch (e) {
+      debugPrint('Error handling messages_read: $e');
     }
   }
 
@@ -346,5 +397,6 @@ class ChatWebSocketService {
     disconnect();
     _messageController.close();
     _connectionController.close();
+    _readReceiptController.close();
   }
 }

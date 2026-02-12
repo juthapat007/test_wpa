@@ -21,6 +21,10 @@ class WebSocketConnectionChanged extends ChatEvent {
 // Chat Room Events
 class LoadChatRooms extends ChatEvent {}
 
+/// Resets internal chat room state and reloads from the server.
+/// Use this when re-entering the chat tab to get accurate unread counts.
+class ResetAndLoadChatRooms extends ChatEvent {}
+
 class SelectChatRoom extends ChatEvent {
   final ChatRoom room;
   SelectChatRoom(this.room);
@@ -64,4 +68,17 @@ class SendMessage extends ChatEvent {
 class MarkAsRead extends ChatEvent {
   final String roomId;
   MarkAsRead(this.roomId);
+}
+
+/// Marks individual unread messages as read when entering a conversation.
+class MarkMessagesAsReadInConversation extends ChatEvent {
+  final List<String> messageIds;
+  MarkMessagesAsReadInConversation(this.messageIds);
+}
+
+/// Handles incoming read receipt from WebSocket (the other user read our message).
+class MessageReadReceived extends ChatEvent {
+  final String messageId;
+  final DateTime readAt;
+  MessageReadReceived({required this.messageId, required this.readAt});
 }

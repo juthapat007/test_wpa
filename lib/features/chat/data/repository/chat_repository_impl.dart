@@ -3,7 +3,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:test_wpa/features/chat/data/models/chat_message.dart';
 import 'package:test_wpa/features/chat/data/models/chat_room.dart';
 import 'package:test_wpa/features/chat/data/services/chat_api.dart';
-import 'package:test_wpa/features/chat/data/services/chat_websocket_service.dart';
+import 'package:test_wpa/features/chat/data/services/chat_websocket_service.dart'
+    show ChatWebSocketService, ReadReceiptEvent;
 import 'package:test_wpa/features/chat/domain/repositories/chat_repository.dart';
 
 class ChatRepositoryImpl implements ChatRepository {
@@ -36,6 +37,9 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Stream<bool> get connectionStream => webSocketService.connectionStream;
+
+  @override
+  Stream<ReadReceiptEvent> get readReceiptStream => webSocketService.readReceiptStream;
 
   @override
   Future<void> sendMessage(ChatMessage message) async {
@@ -166,6 +170,15 @@ class ChatRepositoryImpl implements ChatRepository {
       await api.markAllAsRead(partnerId);
     } catch (e) {
       throw Exception('Failed to mark as read: $e');
+    }
+  }
+
+  @override
+  Future<void> markMessageAsRead(String messageId) async {
+    try {
+      await api.markMessageAsRead(messageId);
+    } catch (e) {
+      throw Exception('Failed to mark message as read: $e');
     }
   }
 
