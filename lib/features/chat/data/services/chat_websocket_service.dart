@@ -34,7 +34,8 @@ class ChatWebSocketService {
 
   Stream<ChatMessage> get messageStream => _messageController.stream;
   Stream<bool> get connectionStream => _connectionController.stream;
-  Stream<ReadReceiptEvent> get readReceiptStream => _readReceiptController.stream;
+  Stream<ReadReceiptEvent> get readReceiptStream =>
+      _readReceiptController.stream;
 
   /// เชื่อมต่อ ActionCable WebSocket
   Future<void> connect(String token) async {
@@ -92,8 +93,10 @@ class ChatWebSocketService {
     }
 
     _reconnectAttempts++;
-    final delay = Duration(seconds: _reconnectAttempts * 2); // 2s, 4s, 6s, 8s, 10s
-    debugPrint('Scheduling reconnect attempt $_reconnectAttempts in ${delay.inSeconds}s');
+    final delay = Duration(seconds: _reconnectAttempts * 2);
+    debugPrint(
+      'Scheduling reconnect attempt $_reconnectAttempts in ${delay.inSeconds}s',
+    );
 
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(delay, () {
@@ -142,8 +145,11 @@ class ChatWebSocketService {
       final data = jsonDecode(rawData.toString());
       final type = data['type'] as String?;
 
-      // ActionCable system messages (welcome, ping, confirm_subscription)
-      // มี 'type' อยู่ที่ root level
+      // 🔥 DEBUG: แสดงทุก message ที่ได้รับ
+      print('🔍 [WebSocket Raw Message] Type: $type');
+      print('🔍 [WebSocket Raw Data] ${jsonEncode(data)}');
+
+      // ActionCable system messages
       switch (type) {
         case 'welcome':
           debugPrint('Welcome to WebSocket');
@@ -164,9 +170,7 @@ class ChatWebSocketService {
           break;
 
         default:
-          // ActionCable data messages มา format:
-          // { "identifier": "...", "message": { "type": "new_message", ... } }
-          // ไม่มี 'type' ที่ root level (type == null)
+          // ActionCable data messages
           if (data['message'] != null && data['message'] is Map) {
             _handleActionCableDataMessage(data['message']);
           } else if (type != null) {
@@ -175,31 +179,47 @@ class ChatWebSocketService {
       }
     } catch (e) {
       debugPrint('Error parsing message: $e');
+      print('❌ Raw data that failed to parse: $rawData');
     }
   }
 
-  /// จัดการ ActionCable data messages (ข้อความจริงจาก channel)
+  /// จัดการ ActionCable data messages
   void _handleActionCableDataMessage(Map<String, dynamic> message) {
     final messageType = message['type'] as String?;
 
+    // 🔥 DEBUG: แสดง message type และ content
+    print('📨 [Data Message] Type: $messageType');
+    print('📨 [Data Content] ${jsonEncode(message)}');
+
     switch (messageType) {
       case 'new_message':
-        // The actual message data might be nested under 'message' key or at root level
         final msgData = message['message'];
         if (msgData is Map<String, dynamic>) {
           _handleNewMessage(msgData);
         } else {
-          // If no nested 'message', the message data is in the current map itself
           _handleNewMessage(message);
         }
         break;
 
       case 'message_read':
+        print('✅ [READ RECEIPT] Received message_read event!');
         _handleMessageRead(message);
         break;
 
       case 'messages_read':
+        print('✅ [READ RECEIPT] Received messages_read event!');
         _handleMessagesRead(message);
+        break;
+
+      // 🔥 NEW: Handle ทุก possible format ของ read receipt
+      case 'read_receipt':
+        print('✅ [READ RECEIPT] Received read_receipt event!');
+        _handleReadReceipt(message);
+        break;
+
+      case 'message_status_update':
+        print('✅ [READ RECEIPT] Received message_status_update event!');
+        _handleMessageStatusUpdate(message);
         break;
 
       case 'typing_start':
@@ -227,13 +247,70 @@ class ChatWebSocketService {
         break;
 
       default:
-        // บาง ActionCable server อาจส่ง message โดยไม่มี 'type' wrapper
-        // ลองดูว่ามี sender/recipient field หรือไม่ (เป็น chat message โดยตรง)
+        // บาง ActionCable server ส่ง message โดยไม่มี 'type' wrapper
         if (message.containsKey('sender') && message.containsKey('content')) {
           _handleNewMessage(message);
-        } else {
-          debugPrint('Unknown data message type: $messageType, data: $message');
         }
+        // 🔥 NEW: ตรวจสอบว่ามี read_at field หรือไม่ (อาจเป็น read receipt)
+        else if (message.containsKey('read_at') ||
+            message.containsKey('is_read')) {
+          print('🔍 [Possible Read Receipt] Found read_at or is_read field');
+          _handlePossibleReadReceipt(message);
+        } else {
+          print('⚠️ [Unknown Message Type] $messageType');
+          print('⚠️ [Unknown Message Data] ${jsonEncode(message)}');
+        }
+    }
+  }
+
+  /// 🔥 NEW: Handle possible read receipt format
+  void _handlePossibleReadReceipt(Map<String, dynamic> data) {
+    try {
+      String? messageId;
+      DateTime? readAt;
+
+      // Try different field names
+      if (data['id'] != null) messageId = data['id'].toString();
+      if (data['message_id'] != null) messageId = data['message_id'].toString();
+
+      if (data['read_at'] != null) {
+        readAt = DateTime.parse(data['read_at']);
+      } else if (data['is_read'] == true) {
+        readAt = DateTime.now();
+      }
+
+      if (messageId != null && readAt != null) {
+        print('✅ [Parsed Read Receipt] Message $messageId read at $readAt');
+        _readReceiptController.add(
+          ReadReceiptEvent(messageId: messageId, readAt: readAt),
+        );
+      } else {
+        print('⚠️ [Failed to parse] messageId: $messageId, readAt: $readAt');
+      }
+    } catch (e) {
+      print('❌ [Error parsing possible read receipt] $e');
+    }
+  }
+
+  /// 🔥 NEW: Handle read_receipt type
+  void _handleReadReceipt(Map<String, dynamic> data) {
+    try {
+      final msgData = data['message'] ?? data['data'] ?? data;
+      _handlePossibleReadReceipt(msgData);
+    } catch (e) {
+      print('❌ [Error handling read_receipt] $e');
+    }
+  }
+
+  /// 🔥 NEW: Handle message_status_update type
+  void _handleMessageStatusUpdate(Map<String, dynamic> data) {
+    try {
+      final msgData = data['message'] ?? data['data'] ?? data;
+      if (msgData['status'] == 'read' || msgData['is_read'] == true) {
+        _handlePossibleReadReceipt(msgData);
+      }
+    } catch (e) {
+      print('❌ [Error handling message_status_update] $e');
     }
   }
 
@@ -241,18 +318,25 @@ class ChatWebSocketService {
   void _handleMessageRead(Map<String, dynamic> data) {
     try {
       final msgData = data['message'] ?? data;
-      final messageId = (msgData['id'] ?? msgData['message_id'] ?? '').toString();
+      final messageId = (msgData['id'] ?? msgData['message_id'] ?? '')
+          .toString();
       final readAtStr = msgData['read_at'] as String?;
-      final readAt = readAtStr != null ? DateTime.parse(readAtStr) : DateTime.now();
+      final readAt = readAtStr != null
+          ? DateTime.parse(readAtStr)
+          : DateTime.now();
 
       if (messageId.isNotEmpty) {
+        print('📗 [Processing Read Receipt] Message $messageId');
         _readReceiptController.add(
           ReadReceiptEvent(messageId: messageId, readAt: readAt),
         );
         debugPrint('Read receipt received for message $messageId');
+      } else {
+        print('⚠️ [Read Receipt] Empty message ID: ${jsonEncode(msgData)}');
       }
     } catch (e) {
       debugPrint('Error handling message_read: $e');
+      print('❌ [Error Data] ${jsonEncode(data)}');
     }
   }
 
@@ -261,25 +345,34 @@ class ChatWebSocketService {
     try {
       final messages = data['messages'] ?? data['message_ids'];
       if (messages is List) {
+        print('📗 [Processing Bulk Read Receipt] ${messages.length} messages');
         for (final item in messages) {
-          final messageId = item is Map ? item['id'].toString() : item.toString();
+          final messageId = item is Map
+              ? item['id'].toString()
+              : item.toString();
           final readAtStr = item is Map ? item['read_at'] as String? : null;
-          final readAt = readAtStr != null ? DateTime.parse(readAtStr) : DateTime.now();
+          final readAt = readAtStr != null
+              ? DateTime.parse(readAtStr)
+              : DateTime.now();
           _readReceiptController.add(
             ReadReceiptEvent(messageId: messageId, readAt: readAt),
           );
         }
         debugPrint('Bulk read receipt: ${messages.length} messages');
+      } else {
+        print(
+          '⚠️ [Bulk Read Receipt] messages is not a List: ${messages.runtimeType}',
+        );
       }
     } catch (e) {
       debugPrint('Error handling messages_read: $e');
+      print('❌ [Error Data] ${jsonEncode(data)}');
     }
   }
 
   /// จัดการข้อความใหม่
   void _handleNewMessage(Map<String, dynamic> messageData) {
     try {
-      // Handle both nested and flat message formats from the backend
       String senderId;
       String senderName;
       String? senderAvatar;
@@ -290,15 +383,20 @@ class ChatWebSocketService {
         senderName = messageData['sender']['name'] ?? '';
         senderAvatar = messageData['sender']['avatar_url'];
       } else {
-        senderId = (messageData['sender_id'] ?? messageData['senderId'] ?? '').toString();
-        senderName = messageData['sender_name'] ?? messageData['senderName'] ?? '';
-        senderAvatar = messageData['sender_avatar'] ?? messageData['senderAvatar'];
+        senderId = (messageData['sender_id'] ?? messageData['senderId'] ?? '')
+            .toString();
+        senderName =
+            messageData['sender_name'] ?? messageData['senderName'] ?? '';
+        senderAvatar =
+            messageData['sender_avatar'] ?? messageData['senderAvatar'];
       }
 
       if (messageData['recipient'] is Map) {
         receiverId = messageData['recipient']['id'].toString();
       } else {
-        receiverId = (messageData['recipient_id'] ?? messageData['receiverId'] ?? '').toString();
+        receiverId =
+            (messageData['recipient_id'] ?? messageData['receiverId'] ?? '')
+                .toString();
       }
 
       final message = ChatMessage(
@@ -315,7 +413,9 @@ class ChatWebSocketService {
       );
 
       _messageController.add(message);
-      debugPrint('Received message: ${message.content} from $senderId to $receiverId');
+      debugPrint(
+        'Received message: ${message.content} from $senderId to $receiverId',
+      );
     } catch (e) {
       debugPrint('Error handling new message: $e | data: $messageData');
     }
@@ -378,7 +478,7 @@ class ChatWebSocketService {
   /// ปิดการเชื่อมต่อ
   Future<void> disconnect() async {
     _reconnectTimer?.cancel();
-    _reconnectAttempts = _maxReconnectAttempts; // Prevent auto-reconnect
+    _reconnectAttempts = _maxReconnectAttempts;
 
     if (_channel != null) {
       await _channel!.sink.close();
