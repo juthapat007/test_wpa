@@ -17,6 +17,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   StreamSubscription? _messageSubscription;
   StreamSubscription? _connectionSubscription;
   StreamSubscription? _readReceiptSubscription;
+  StreamSubscription? _messageDeletedSubscription;
+  StreamSubscription? _messageUpdatedSubscription;
 
   // Local state
   List<ChatRoom> _chatRooms = [];
@@ -24,6 +26,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   List<ChatMessage> _messages = [];
   bool _isWebSocketConnected = false;
   String? _currentUserId;
+
+  // Pending read receipts: stores message IDs that were marked as read
+  // before the new_message event arrived (race condition fix)
+  final Set<String> _pendingReadReceipts = {};
 
   // ✨ NEW: Pagination state
   int _currentPage = 1;
@@ -60,6 +66,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<SendMessage>(_onSendMessage);
     on<MarkAsRead>(_onMarkAsRead);
     on<MessageReadReceived>(_onMessageReadReceived);
+    on<WebSocketMessageDeleted>(_onWebSocketMessageDeleted);
+    on<WebSocketMessageUpdated>(_onWebSocketMessageUpdated);
   }
 
   Future<void> _onConnectWebSocket(
@@ -71,6 +79,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       await _messageSubscription?.cancel();
       await _connectionSubscription?.cancel();
       await _readReceiptSubscription?.cancel();
+      await _messageDeletedSubscription?.cancel();
+      await _messageUpdatedSubscription?.cancel();
 
       await chatRepository.connectWebSocket();
 
@@ -82,7 +92,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         (isConnected) => add(WebSocketConnectionChanged(isConnected)),
       );
 
-      // ✅ เพิ่ม listener สำหรับ read receipt
       _readReceiptSubscription = chatRepository.readReceiptStream.listen(
         (receipt) => add(
           MessageReadReceived(
@@ -91,59 +100,68 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           ),
         ),
       );
+
+      _messageDeletedSubscription = chatRepository.messageDeletedStream.listen(
+        (event) => add(WebSocketMessageDeleted(messageId: event.messageId)),
+      );
+
+      _messageUpdatedSubscription = chatRepository.messageUpdatedStream.listen(
+        (event) => add(WebSocketMessageUpdated(
+          messageId: event.messageId,
+          content: event.content,
+          editedAt: event.editedAt,
+        )),
+      );
     } catch (e) {
       emit(ChatError('Failed to connect WebSocket: $e'));
     }
   }
 
-  // ✅ Handler สำหรับ read receipt event
+  // Handler for read receipt events (both single and bulk)
   void _onMessageReadReceived(
-  MessageReadReceived event,
-  Emitter<ChatState> emit,
-) {
-  print(
-    '📗 Read receipt received: Message ${event.messageId} read at ${event.readAt}',
-  );
-
-  // 🔥 FIX: ตรวจสอบว่า message อยู่ใน list หรือยัง
-  final messageExists = _messages.any((m) => m.id == event.messageId);
-  
-  if (!messageExists) {
+    MessageReadReceived event,
+    Emitter<ChatState> emit,
+  ) {
     print(
-      '⚠️ Message ${event.messageId} not found in local state yet. '
-      'This can happen if read receipt arrives before new_message WebSocket event.',
+      'Read receipt received: Message ${event.messageId} read at ${event.readAt}',
     );
-    // ไม่ต้อง emit state เพราะยังไม่มี message ใน UI
-    // เมื่อ message มาถึง มันจะมี read_at ใน payload อยู่แล้ว
-    return;
-  }
 
-  // Update local message state
-  bool hasChanges = false;
-  _messages = _messages.map((m) {
-    if (m.id == event.messageId && !m.isRead) {
-      hasChanges = true;
-      return m.copyWith(isRead: true);
+    final messageExists = _messages.any((m) => m.id == event.messageId);
+
+    if (!messageExists) {
+      // Race condition: bulk_read arrived before new_message.
+      // Store in pending set so we can apply it when the message arrives.
+      _pendingReadReceipts.add(event.messageId);
+      print(
+        'Message ${event.messageId} not in local state yet -- queued as pending read receipt.',
+      );
+      return;
     }
-    return m;
-  }).toList();
 
-  // Emit updated state if in conversation AND we actually changed something
-  if (hasChanges && _selectedRoom != null) {
-    print('✅ Updating UI with read receipt for message ${event.messageId}');
-    emit(
-      ChatRoomSelected(
-        room: _selectedRoom!,
-        messages: _messages,
-        isWebSocketConnected: _isWebSocketConnected,
-        hasMoreMessages: _hasMoreMessages,
-        currentPage: _currentPage,
-      ),
-    );
-  } else if (!hasChanges) {
-    print('ℹ️ Message ${event.messageId} already marked as read, skipping UI update');
+    // Update local message state
+    bool hasChanges = false;
+    _messages = _messages.map((m) {
+      if (m.id == event.messageId && !m.isRead) {
+        hasChanges = true;
+        return m.copyWith(isRead: true);
+      }
+      return m;
+    }).toList();
+
+    // Emit updated state if in conversation AND we actually changed something
+    if (hasChanges && _selectedRoom != null) {
+      print('Updating UI with read receipt for message ${event.messageId}');
+      emit(
+        ChatRoomSelected(
+          room: _selectedRoom!,
+          messages: _messages,
+          isWebSocketConnected: _isWebSocketConnected,
+          hasMoreMessages: _hasMoreMessages,
+          currentPage: _currentPage,
+        ),
+      );
+    }
   }
-}
 
   // ✅ อย่าลืม cancel ตอน disconnect
   Future<void> _onDisconnectWebSocket(
@@ -165,6 +183,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     await _messageSubscription?.cancel();
     await _connectionSubscription?.cancel();
     await _readReceiptSubscription?.cancel();
+    await _messageDeletedSubscription?.cancel();
+    await _messageUpdatedSubscription?.cancel();
     await chatRepository.disconnectWebSocket();
     _isWebSocketConnected = false;
     emit(WebSocketDisconnected());
@@ -218,39 +238,47 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       return;
     }
 
-    // ถ้ากำลังอยู่ในห้องแชทนั้น
-    if (_selectedRoom != null &&
-        (message.senderId == _selectedRoom!.participantId ||
-            message.receiverId == _selectedRoom!.participantId)) {
-      print('✅ Adding message to current room');
+    // Apply any pending read receipt from the race condition
+    // (bulk_read arrived before new_message)
+    ChatMessage finalMessage = message;
+    if (_pendingReadReceipts.contains(message.id)) {
+      finalMessage = message.copyWith(isRead: true);
+      _pendingReadReceipts.remove(message.id);
+      print('Applied pending read receipt to message ${message.id}');
+    }
 
-      _messages = [..._messages, message];
+    // Check if the message belongs to the currently open chat room
+    if (_selectedRoom != null &&
+        (finalMessage.senderId == _selectedRoom!.participantId ||
+            finalMessage.receiverId == _selectedRoom!.participantId)) {
+      print('Adding message to current room');
+
+      _messages = [..._messages, finalMessage];
 
       final updatedRoom = _selectedRoom!.copyWith(
-        lastMessage: message,
-        lastActiveAt: message.createdAt,
+        lastMessage: finalMessage,
+        lastActiveAt: finalMessage.createdAt,
       );
       _selectedRoom = updatedRoom;
 
       emit(
         NewMessageReceived(
-          message: message,
+          message: finalMessage,
           room: updatedRoom,
           messages: _messages,
         ),
       );
 
-      // 🔥 FIX: Mark as read ทันทีเมื่อได้รับข้อความใหม่ในห้องที่กำลังเปิดอยู่
-      // ใช้ bulk API เพราะ per-message API ไม่ทำงาน (404)
-      if (message.senderId == _selectedRoom!.participantId) {
-        print('📗 Auto-marking messages as read (we are in the room)');
+      // Auto mark-as-read when receiving a message in the currently open room
+      if (finalMessage.senderId == _selectedRoom!.participantId) {
+        print('Auto-marking messages as read (we are in the room)');
         add(MarkAsRead(_selectedRoom!.participantId));
       }
     }
-    // ถ้าไม่ได้อยู่ในห้องนั้น = เพิ่ม unread count
+    // Message is for a room we are NOT currently viewing
     else {
-      print('📬 Message for other room, updating room list');
-      _updateChatRoomsWithNewMessage(message, emit);
+      print('Message for other room, updating room list');
+      _updateChatRoomsWithNewMessage(finalMessage, emit);
     }
   }
 
@@ -292,6 +320,20 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
     if (event.isConnected) {
       emit(WebSocketConnected());
+
+      // Re-enter the room after a reconnect so the backend knows
+      // we are still viewing this conversation (fixes read receipts
+      // and real-time events stopping after a brief disconnect).
+      if (_selectedRoom != null) {
+        try {
+          (chatRepository as ChatRepositoryImpl).enterRoom(
+            _selectedRoom!.participantId,
+          );
+          print('Re-entered room with ${_selectedRoom!.participantName} after reconnect');
+        } catch (e) {
+          print('Failed to re-enter room after reconnect: $e');
+        }
+      }
     } else {
       emit(WebSocketDisconnected());
     }
@@ -652,6 +694,60 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
   }
 
+  // ==================== Real-time Delete / Edit Handlers ====================
+
+  void _onWebSocketMessageDeleted(
+    WebSocketMessageDeleted event,
+    Emitter<ChatState> emit,
+  ) {
+    print('WebSocket message_deleted: ${event.messageId}');
+
+    final existed = _messages.any((m) => m.id == event.messageId);
+    if (!existed) return;
+
+    _messages = _messages.where((m) => m.id != event.messageId).toList();
+
+    if (_selectedRoom != null) {
+      emit(
+        ChatRoomSelected(
+          room: _selectedRoom!,
+          messages: _messages,
+          isWebSocketConnected: _isWebSocketConnected,
+          hasMoreMessages: _hasMoreMessages,
+          currentPage: _currentPage,
+        ),
+      );
+    }
+  }
+
+  void _onWebSocketMessageUpdated(
+    WebSocketMessageUpdated event,
+    Emitter<ChatState> emit,
+  ) {
+    print('WebSocket message_updated: ${event.messageId}');
+
+    bool hasChanges = false;
+    _messages = _messages.map((m) {
+      if (m.id == event.messageId) {
+        hasChanges = true;
+        return m.copyWith(content: event.content);
+      }
+      return m;
+    }).toList();
+
+    if (hasChanges && _selectedRoom != null) {
+      emit(
+        ChatRoomSelected(
+          room: _selectedRoom!,
+          messages: _messages,
+          isWebSocketConnected: _isWebSocketConnected,
+          hasMoreMessages: _hasMoreMessages,
+          currentPage: _currentPage,
+        ),
+      );
+    }
+  }
+
   @override
   Future<void> close() async {
     // 🔥 FIX: Leave room ก่อนปิด bloc
@@ -669,6 +765,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     await _messageSubscription?.cancel();
     await _connectionSubscription?.cancel();
     await _readReceiptSubscription?.cancel();
+    await _messageDeletedSubscription?.cancel();
+    await _messageUpdatedSubscription?.cancel();
     await chatRepository.disconnectWebSocket();
 
     return super.close();

@@ -160,3 +160,21 @@ class MessageReadReceived extends ChatEvent {
   final DateTime readAt;
   MessageReadReceived({required this.messageId, required this.readAt});
 }
+
+/// Handles real-time message deletion from WebSocket.
+class WebSocketMessageDeleted extends ChatEvent {
+  final String messageId;
+  WebSocketMessageDeleted({required this.messageId});
+}
+
+/// Handles real-time message edit from WebSocket.
+class WebSocketMessageUpdated extends ChatEvent {
+  final String messageId;
+  final String content;
+  final DateTime editedAt;
+  WebSocketMessageUpdated({
+    required this.messageId,
+    required this.content,
+    required this.editedAt,
+  });
+}

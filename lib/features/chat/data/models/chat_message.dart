@@ -8,6 +8,8 @@ class ChatMessage {
   final DateTime createdAt;
   final bool isRead;
   final MessageType type;
+  final DateTime? editedAt;
+  final bool isDeleted;
 
   ChatMessage({
     required this.id,
@@ -19,6 +21,8 @@ class ChatMessage {
     required this.createdAt,
     this.isRead = false,
     this.type = MessageType.text,
+    this.editedAt,
+    this.isDeleted = false,
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
@@ -40,6 +44,10 @@ class ChatMessage {
           : DateTime.now(),
       isRead: json['is_read'] ?? json['isRead'] ?? false,
       type: _parseMessageType(json['type']),
+      editedAt: json['edited_at'] != null
+          ? DateTime.parse(json['edited_at'])
+          : null,
+      isDeleted: json['is_deleted'] ?? false,
     );
   }
 
@@ -53,6 +61,8 @@ class ChatMessage {
     'created_at': createdAt.toIso8601String(),
     'is_read': isRead,
     'type': type.name,
+    'edited_at': editedAt?.toIso8601String(),
+    'is_deleted': isDeleted,
   };
 
   static MessageType _parseMessageType(dynamic type) {
@@ -79,6 +89,8 @@ class ChatMessage {
     DateTime? createdAt,
     bool? isRead,
     MessageType? type,
+    DateTime? editedAt,
+    bool? isDeleted,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -90,6 +102,8 @@ class ChatMessage {
       createdAt: createdAt ?? this.createdAt,
       isRead: isRead ?? this.isRead,
       type: type ?? this.type,
+      editedAt: editedAt ?? this.editedAt,
+      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
 }

@@ -548,11 +548,31 @@ class ReadReceiptEvent {
   ReadReceiptEvent({required this.messageId, required this.readAt});
 }
 
+/// Data class for message deleted events from WebSocket
+class MessageDeletedEvent {
+  final String messageId;
+  MessageDeletedEvent({required this.messageId});
+}
+
+/// Data class for message updated events from WebSocket
+class MessageUpdatedEvent {
+  final String messageId;
+  final String content;
+  final DateTime editedAt;
+  MessageUpdatedEvent({
+    required this.messageId,
+    required this.content,
+    required this.editedAt,
+  });
+}
+
 class ChatWebSocketService {
   WebSocketChannel? _channel;
   final _messageController = StreamController<ChatMessage>.broadcast();
   final _connectionController = StreamController<bool>.broadcast();
   final _readReceiptController = StreamController<ReadReceiptEvent>.broadcast();
+  final _messageDeletedController = StreamController<MessageDeletedEvent>.broadcast();
+  final _messageUpdatedController = StreamController<MessageUpdatedEvent>.broadcast();
 
   bool _isConnected = false;
   bool get isConnected => _isConnected;
@@ -573,6 +593,10 @@ class ChatWebSocketService {
   Stream<bool> get connectionStream => _connectionController.stream;
   Stream<ReadReceiptEvent> get readReceiptStream =>
       _readReceiptController.stream;
+  Stream<MessageDeletedEvent> get messageDeletedStream =>
+      _messageDeletedController.stream;
+  Stream<MessageUpdatedEvent> get messageUpdatedStream =>
+      _messageUpdatedController.stream;
 
   /// เชื่อมต่อ ActionCable WebSocket
   Future<void> connect(String token) async {
@@ -774,11 +798,11 @@ class ChatWebSocketService {
         break;
 
       case 'message_deleted':
-        debugPrint('Message deleted: ${message['message_id']}');
+        _handleMessageDeleted(message);
         break;
 
       case 'message_updated':
-        debugPrint('Message updated');
+        _handleMessageUpdated(message);
         break;
 
       case 'new_notification':
@@ -944,6 +968,61 @@ class ChatWebSocketService {
     }
   }
 
+  /// Handle message_deleted event from WebSocket
+  void _handleMessageDeleted(Map<String, dynamic> data) {
+    try {
+      // Format: {"type":"message_deleted","message_id":123}
+      // or nested: {"type":"message_deleted","message":{"id":123}}
+      final msgData = data['message'];
+      String? messageId;
+
+      if (msgData is Map) {
+        messageId = (msgData['id'] ?? msgData['message_id'])?.toString();
+      }
+      messageId ??= (data['message_id'] ?? data['id'])?.toString();
+
+      if (messageId != null) {
+        print('Received message_deleted for message $messageId');
+        _messageDeletedController.add(
+          MessageDeletedEvent(messageId: messageId),
+        );
+      } else {
+        print('message_deleted: could not extract message ID from $data');
+      }
+    } catch (e) {
+      print('Error handling message_deleted: $e');
+    }
+  }
+
+  /// Handle message_updated event from WebSocket
+  void _handleMessageUpdated(Map<String, dynamic> data) {
+    try {
+      // Format: {"type":"message_updated","message":{"id":123,"content":"new text","edited_at":"..."}}
+      final msgData = data['message'] ?? data;
+      final messageId = (msgData['id'] ?? msgData['message_id'] ?? data['message_id'])?.toString();
+      final content = msgData['content'] as String?;
+      final editedAtStr = msgData['edited_at'] as String?;
+
+      if (messageId != null && content != null) {
+        final editedAt = editedAtStr != null
+            ? DateTime.parse(editedAtStr)
+            : DateTime.now();
+        print('Received message_updated for message $messageId');
+        _messageUpdatedController.add(
+          MessageUpdatedEvent(
+            messageId: messageId,
+            content: content,
+            editedAt: editedAt,
+          ),
+        );
+      } else {
+        print('message_updated: could not extract message ID or content from $data');
+      }
+    } catch (e) {
+      print('Error handling message_updated: $e');
+    }
+  }
+
   /// Handle bulk messages read receipt from WebSocket
   void _handleMessagesRead(Map<String, dynamic> data) {
     try {
@@ -1014,6 +1093,10 @@ class ChatWebSocketService {
             ? DateTime.parse(messageData['created_at'])
             : DateTime.now(),
         isRead: messageData['read_at'] != null,
+        editedAt: messageData['edited_at'] != null
+            ? DateTime.parse(messageData['edited_at'])
+            : null,
+        isDeleted: messageData['is_deleted'] ?? false,
       );
 
       _messageController.add(message);
@@ -1102,5 +1185,7 @@ class ChatWebSocketService {
     _messageController.close();
     _connectionController.close();
     _readReceiptController.close();
+    _messageDeletedController.close();
+    _messageUpdatedController.close();
   }
 }
