@@ -548,11 +548,35 @@ class ReadReceiptEvent {
   ReadReceiptEvent({required this.messageId, required this.readAt});
 }
 
+/// Data class for message deleted events from WebSocket
+class MessageDeletedEvent {
+  final String messageId;
+  MessageDeletedEvent({required this.messageId});
+}
+
+/// Data class for message updated events from WebSocket
+class MessageUpdatedEvent {
+  final String messageId;
+  final String content;
+  final DateTime? editedAt;
+  MessageUpdatedEvent({required this.messageId, required this.content, this.editedAt});
+}
+
+/// Data class for typing indicator events from WebSocket
+class TypingEvent {
+  final String userId;
+  final bool isTyping;
+  TypingEvent({required this.userId, required this.isTyping});
+}
+
 class ChatWebSocketService {
   WebSocketChannel? _channel;
   final _messageController = StreamController<ChatMessage>.broadcast();
   final _connectionController = StreamController<bool>.broadcast();
   final _readReceiptController = StreamController<ReadReceiptEvent>.broadcast();
+  final _messageDeletedController = StreamController<MessageDeletedEvent>.broadcast();
+  final _messageUpdatedController = StreamController<MessageUpdatedEvent>.broadcast();
+  final _typingController = StreamController<TypingEvent>.broadcast();
 
   bool _isConnected = false;
   bool get isConnected => _isConnected;
@@ -573,6 +597,11 @@ class ChatWebSocketService {
   Stream<bool> get connectionStream => _connectionController.stream;
   Stream<ReadReceiptEvent> get readReceiptStream =>
       _readReceiptController.stream;
+  Stream<MessageDeletedEvent> get messageDeletedStream =>
+      _messageDeletedController.stream;
+  Stream<MessageUpdatedEvent> get messageUpdatedStream =>
+      _messageUpdatedController.stream;
+  Stream<TypingEvent> get typingStream => _typingController.stream;
 
   /// เชื่อมต่อ ActionCable WebSocket
   Future<void> connect(String token) async {
@@ -766,19 +795,19 @@ class ChatWebSocketService {
         break;
 
       case 'typing_start':
-        debugPrint('User is typing...');
+        _handleTypingEvent(message, true);
         break;
 
       case 'typing_stop':
-        debugPrint('User stopped typing');
+        _handleTypingEvent(message, false);
         break;
 
       case 'message_deleted':
-        debugPrint('Message deleted: ${message['message_id']}');
+        _handleMessageDeleted(message);
         break;
 
       case 'message_updated':
-        debugPrint('Message updated');
+        _handleMessageUpdated(message);
         break;
 
       case 'new_notification':
@@ -1094,6 +1123,71 @@ class ChatWebSocketService {
     debugPrint('WebSocket Disconnected');
   }
 
+  /// Handle message_deleted event
+  void _handleMessageDeleted(Map<String, dynamic> data) {
+    try {
+      final messageId = (data['message_id'] ?? data['id'] ?? '').toString();
+      if (messageId.isNotEmpty) {
+        print('🗑️ [Message Deleted] ID: $messageId');
+        _messageDeletedController.add(
+          MessageDeletedEvent(messageId: messageId),
+        );
+      } else {
+        // Sometimes the deleted message payload is nested
+        final msgData = data['message'];
+        if (msgData is Map<String, dynamic>) {
+          final nestedId = (msgData['id'] ?? msgData['message_id'] ?? '').toString();
+          if (nestedId.isNotEmpty) {
+            print('🗑️ [Message Deleted] ID: $nestedId (nested)');
+            _messageDeletedController.add(
+              MessageDeletedEvent(messageId: nestedId),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      print('❌ [Error handling message_deleted] $e');
+    }
+  }
+
+  /// Handle message_updated event
+  void _handleMessageUpdated(Map<String, dynamic> data) {
+    try {
+      final msgData = data['message'] ?? data;
+      final messageId = (msgData['id'] ?? msgData['message_id'] ?? '').toString();
+      final content = msgData['content'] as String? ?? '';
+      final editedAtStr = msgData['edited_at'] as String?;
+      final editedAt = editedAtStr != null ? DateTime.parse(editedAtStr) : DateTime.now();
+
+      if (messageId.isNotEmpty) {
+        print('✏️ [Message Updated] ID: $messageId, content: $content');
+        _messageUpdatedController.add(
+          MessageUpdatedEvent(
+            messageId: messageId,
+            content: content,
+            editedAt: editedAt,
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ [Error handling message_updated] $e');
+    }
+  }
+
+  /// Handle typing indicator events
+  void _handleTypingEvent(Map<String, dynamic> data, bool isTyping) {
+    try {
+      final userId = (data['user_id'] ?? data['sender_id'] ?? '').toString();
+      if (userId.isNotEmpty) {
+        _typingController.add(
+          TypingEvent(userId: userId, isTyping: isTyping),
+        );
+      }
+    } catch (e) {
+      print('❌ [Error handling typing event] $e');
+    }
+  }
+
   /// ทำลาย resources
   void dispose() {
     _reconnectTimer?.cancel();
@@ -1102,5 +1196,8 @@ class ChatWebSocketService {
     _messageController.close();
     _connectionController.close();
     _readReceiptController.close();
+    _messageDeletedController.close();
+    _messageUpdatedController.close();
+    _typingController.close();
   }
 }

@@ -4,7 +4,7 @@ import 'package:test_wpa/features/chat/data/models/chat_message.dart';
 import 'package:test_wpa/features/chat/data/models/chat_room.dart';
 import 'package:test_wpa/features/chat/data/services/chat_api.dart';
 import 'package:test_wpa/features/chat/data/services/chat_websocket_service.dart'
-    show ChatWebSocketService, ReadReceiptEvent;
+    show ChatWebSocketService, ReadReceiptEvent, MessageDeletedEvent, MessageUpdatedEvent, TypingEvent;
 import 'package:test_wpa/features/chat/domain/repositories/chat_repository.dart';
 
 class ChatRepositoryImpl implements ChatRepository {

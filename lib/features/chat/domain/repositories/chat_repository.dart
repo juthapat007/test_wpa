@@ -9,6 +9,9 @@ abstract class ChatRepository {
   Stream<ChatMessage> get messageStream;
   Stream<bool> get connectionStream;
   Stream<ReadReceiptEvent> get readReceiptStream;
+  Stream<MessageDeletedEvent> get messageDeletedStream;
+  Stream<MessageUpdatedEvent> get messageUpdatedStream;
+  Stream<TypingEvent> get typingStream;
   Future<void> sendMessage(ChatMessage message);
 
   // REST API
