@@ -127,13 +127,14 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     );
 
     final messageExists = _messages.any((m) => m.id == event.messageId);
+    print('[v0] ReadReceipt: messageExists=$messageExists, _messages.length=${_messages.length}, pendingCount=${_pendingReadReceipts.length}');
 
     if (!messageExists) {
       // Race condition: bulk_read arrived before new_message.
       // Store in pending set so we can apply it when the message arrives.
       _pendingReadReceipts.add(event.messageId);
       print(
-        'Message ${event.messageId} not in local state yet -- queued as pending read receipt.',
+        '[v0] Message ${event.messageId} not in local state yet -- queued as pending read receipt. Total pending: ${_pendingReadReceipts.length}',
       );
       return;
     }
@@ -247,11 +248,27 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       print('Applied pending read receipt to message ${message.id}');
     }
 
-    // Check if the message belongs to the currently open chat room
-    if (_selectedRoom != null &&
+    // Debug: log the matching values
+    print('[v0] _selectedRoom: ${_selectedRoom != null ? "id=${_selectedRoom!.id}, participantId=${_selectedRoom!.participantId}, name=${_selectedRoom!.participantName}" : "NULL"}');
+    print('[v0] message senderId=${finalMessage.senderId}, receiverId=${finalMessage.receiverId}');
+    print('[v0] currentUserId=$_currentUserId');
+
+    // Check if the message belongs to the currently open chat room.
+    // Match on BOTH participantId and room.id since they may differ,
+    // and also match when the current user is the sender (we sent from another device).
+    final bool isForCurrentRoom = _selectedRoom != null &&
         (finalMessage.senderId == _selectedRoom!.participantId ||
-            finalMessage.receiverId == _selectedRoom!.participantId)) {
-      print('Adding message to current room');
+            finalMessage.receiverId == _selectedRoom!.participantId ||
+            finalMessage.senderId == _selectedRoom!.id ||
+            finalMessage.receiverId == _selectedRoom!.id ||
+            // Also match when current user sent the message to the room participant
+            (finalMessage.senderId == _currentUserId &&
+                finalMessage.receiverId == _selectedRoom!.participantId) ||
+            (finalMessage.receiverId == _currentUserId &&
+                finalMessage.senderId == _selectedRoom!.participantId));
+
+    if (isForCurrentRoom) {
+      print('[v0] Message matched current room');
 
       _messages = [..._messages, finalMessage];
 
@@ -277,7 +294,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
     // Message is for a room we are NOT currently viewing
     else {
-      print('Message for other room, updating room list');
+      print('[v0] Message NOT matched to current room -- treating as other room');
       _updateChatRoomsWithNewMessage(finalMessage, emit);
     }
   }
@@ -317,6 +334,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     Emitter<ChatState> emit,
   ) {
     _isWebSocketConnected = event.isConnected;
+    print('[v0] WebSocket connection changed: ${event.isConnected}, _selectedRoom: ${_selectedRoom?.participantName ?? "NULL"}');
 
     if (event.isConnected) {
       emit(WebSocketConnected());
@@ -392,7 +410,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   }
 
   void _onBackToRoomList(BackToRoomList event, Emitter<ChatState> emit) async {
-    // 🔥 FIX: Leave room เมื่อออกจากห้องแชท
+    print('[v0] BackToRoomList called. _selectedRoom was: ${_selectedRoom?.participantName ?? "NULL"}');
     if (_selectedRoom != null) {
       try {
         await (chatRepository as ChatRepositoryImpl).leaveRoom(
@@ -427,6 +445,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       _selectedRoom = event.room;
       _currentPage = 1;
       _hasMoreMessages = true;
+      print('[v0] SelectChatRoom: room.id=${event.room.id}, participantId=${event.room.participantId}, name=${event.room.participantName}');
 
       // 🔥 FIX 1: เข้าห้องแชท - บอก backend ว่าเรากำลังอยู่ในห้องนี้
       // Backend จะรู้และจะ auto-mark messages as read + ส่ง read receipt
