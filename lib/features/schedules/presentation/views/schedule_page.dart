@@ -7,12 +7,10 @@ import 'package:test_wpa/features/schedules/presentation/bloc/schedules_state.da
 import 'package:test_wpa/features/schedules/presentation/views/attendance_status.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/timeline_row.dart';
-import 'package:test_wpa/features/schedules/presentation/widgets/timeline_event_card.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/empty_schedule_view.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/error_schedule_view.dart';
 import 'package:test_wpa/features/widgets/date_tab_bar.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
-import 'package:flutter_modular/flutter_modular.dart';
 
 class SchedulePage extends StatefulWidget {
   const SchedulePage({super.key});

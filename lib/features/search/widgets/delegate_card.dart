@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:test_wpa/core/theme/app_text.dart';
 import 'package:test_wpa/features/search/domain/entities/delegate.dart';
@@ -39,7 +38,7 @@ class DelegateCard extends StatelessWidget {
             Row(
               children: [
                 const Icon(Icons.email, size: 14),
-                const SizedBox(width: 4),
+                 SizedBox(width: 4),
                 Expanded(
                   child: Text(delegate.email, overflow: TextOverflow.ellipsis),
                 ),

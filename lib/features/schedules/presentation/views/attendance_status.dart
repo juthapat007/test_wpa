@@ -140,7 +140,7 @@ class _AttendanceStatusState extends State<AttendanceStatus> {
                     ],
                   ),
                 );
-              }).toList(),
+              }),
 
               SizedBox(height: space.l),
 
@@ -166,7 +166,7 @@ class _AttendanceStatusState extends State<AttendanceStatus> {
                     vertical: 16,
                   ),
                 ),
-                value: _selectedStatus,
+                initialValue: _selectedStatus,
                 items: _statusOptions.map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,

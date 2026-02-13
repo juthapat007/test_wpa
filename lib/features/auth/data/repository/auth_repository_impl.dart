@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:test_wpa/features/auth/data/datasource/auth_local_storage.dart';
 import 'package:test_wpa/features/auth/data/models/login_response.dart';
 import 'package:test_wpa/features/auth/data/services/auth_api.dart';
 import 'package:flutter_modular/flutter_modular.dart';

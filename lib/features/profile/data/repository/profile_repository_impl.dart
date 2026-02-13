@@ -18,7 +18,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       final entity = model.toEntity();
 
       return entity;
-    } catch (e, stackTrace) {
+    } catch (e) {
       throw Exception('Failed to load profile: $e');
     }
   }

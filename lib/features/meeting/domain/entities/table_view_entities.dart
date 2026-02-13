@@ -1,6 +1,5 @@
 // lib/features/meeting/domain/entities/table_view_entities.dart
 
-import 'package:test_wpa/features/meeting/views/meeting_page.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 

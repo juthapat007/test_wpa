@@ -52,18 +52,21 @@ class ScheduleCardHelper {
   }
 
   Border? get border {
-    if (isOnLeave)
+    if (isOnLeave) {
       return Border.all(color: color.AppColors.error.withAlpha(100), width: 2);
-    if (isEvent)
+    }
+    if (isEvent) {
       return Border.all(
         color: color.AppColors.warning.withAlpha(100),
         width: 2,
       );
-    if (isNoMeeting)
+    }
+    if (isNoMeeting) {
       return Border.all(
         color: color.AppColors.textSecondary.withAlpha(100),
         width: 2,
       );
+    }
     return null;
   }
 

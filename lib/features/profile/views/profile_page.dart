@@ -373,7 +373,7 @@ class _ProfilePageState extends State<ProfilePage> {
             Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: Colors.blue,
+              activeThumbColor: Colors.blue,
             ),
           ],
         ),

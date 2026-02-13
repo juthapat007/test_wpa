@@ -151,7 +151,7 @@ class TableDetailSheet extends StatelessWidget {
           backgroundImage: delegate.avatarUrl.isNotEmpty
               ? NetworkImage(delegate.avatarUrl)
               : null,
-          onBackgroundImageError: (_, __) {},
+          onBackgroundImageError: (_, _) {},
           child: delegate.avatarUrl.isEmpty
               ? Text(
                   delegate.delegateName.isNotEmpty

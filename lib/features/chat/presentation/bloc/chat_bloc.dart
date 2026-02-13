@@ -6,8 +6,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:test_wpa/features/chat/data/models/chat_message.dart';
 import 'package:test_wpa/features/chat/data/models/chat_room.dart';
 import 'package:test_wpa/features/chat/data/repository/chat_repository_impl.dart';
-import 'package:test_wpa/features/chat/data/services/chat_websocket_service.dart'
-    show ReadReceiptEvent;
 import 'package:test_wpa/features/chat/domain/repositories/chat_repository.dart';
 
 part 'chat_event.dart';
@@ -100,37 +98,52 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
   // ✅ Handler สำหรับ read receipt event
   void _onMessageReadReceived(
-    MessageReadReceived event,
-    Emitter<ChatState> emit,
-  ) {
+  MessageReadReceived event,
+  Emitter<ChatState> emit,
+) {
+  print(
+    '📗 Read receipt received: Message ${event.messageId} read at ${event.readAt}',
+  );
+
+  // 🔥 FIX: ตรวจสอบว่า message อยู่ใน list หรือยัง
+  final messageExists = _messages.any((m) => m.id == event.messageId);
+  
+  if (!messageExists) {
     print(
-      '📗 Read receipt received: Message ${event.messageId} read at ${event.readAt}',
+      '⚠️ Message ${event.messageId} not found in local state yet. '
+      'This can happen if read receipt arrives before new_message WebSocket event.',
     );
-
-    // Update local message state
-    bool hasChanges = false;
-    _messages = _messages.map((m) {
-      if (m.id == event.messageId && !m.isRead) {
-        hasChanges = true;
-        return m.copyWith(isRead: true);
-      }
-      return m;
-    }).toList();
-
-    // Emit updated state if in conversation
-    if (hasChanges && _selectedRoom != null) {
-      print('✅ Updating UI with read receipt for message ${event.messageId}');
-      emit(
-        ChatRoomSelected(
-          room: _selectedRoom!,
-          messages: _messages,
-          isWebSocketConnected: _isWebSocketConnected,
-          hasMoreMessages: _hasMoreMessages,
-          currentPage: _currentPage,
-        ),
-      );
-    }
+    // ไม่ต้อง emit state เพราะยังไม่มี message ใน UI
+    // เมื่อ message มาถึง มันจะมี read_at ใน payload อยู่แล้ว
+    return;
   }
+
+  // Update local message state
+  bool hasChanges = false;
+  _messages = _messages.map((m) {
+    if (m.id == event.messageId && !m.isRead) {
+      hasChanges = true;
+      return m.copyWith(isRead: true);
+    }
+    return m;
+  }).toList();
+
+  // Emit updated state if in conversation AND we actually changed something
+  if (hasChanges && _selectedRoom != null) {
+    print('✅ Updating UI with read receipt for message ${event.messageId}');
+    emit(
+      ChatRoomSelected(
+        room: _selectedRoom!,
+        messages: _messages,
+        isWebSocketConnected: _isWebSocketConnected,
+        hasMoreMessages: _hasMoreMessages,
+        currentPage: _currentPage,
+      ),
+    );
+  } else if (!hasChanges) {
+    print('ℹ️ Message ${event.messageId} already marked as read, skipping UI update');
+  }
+}
 
   // ✅ อย่าลืม cancel ตอน disconnect
   Future<void> _onDisconnectWebSocket(

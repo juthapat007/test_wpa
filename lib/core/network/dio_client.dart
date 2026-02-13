@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:test_wpa/core/constants/setup_Logger.dart';
 import 'package:test_wpa/core/interceptors/auth_interceptor.dart';
-import 'package:flutter_modular/flutter_modular.dart';
 
 class DioClient {
   static final DioClient _instance = DioClient._internal();

@@ -4,7 +4,6 @@ import 'package:test_wpa/core/theme/app_colors.dart' as color;
 import 'package:test_wpa/features/notification/domain/entities/notification_entity.dart';
 import 'package:test_wpa/features/notification/presentation/bloc/notification_bloc.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
-import 'package:intl/intl.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class NotificationPage extends StatefulWidget {
@@ -70,7 +69,7 @@ class _NotificationPageState extends State<NotificationPage> {
               child: ListView.separated(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 itemCount: state.notifications.length,
-                separatorBuilder: (_, __) =>
+                separatorBuilder: (_, _) =>
                     Divider(height: 1, color: Colors.grey[200]),
                 itemBuilder: (context, index) {
                   final item = state.notifications[index];
@@ -272,7 +271,7 @@ class _NotificationTile extends StatelessWidget {
       return CircleAvatar(
         radius: 22,
         backgroundImage: NetworkImage(sender.avatarUrl!),
-        onBackgroundImageError: (_, __) {},
+        onBackgroundImageError: (_, _) {},
       );
     }
 

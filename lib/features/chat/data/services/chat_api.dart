@@ -56,7 +56,7 @@ class ChatApi {
         data: {
           'recipient_id': int.parse(recipientId),
           'content': content,
-          if (tempId != null) 'tempId': tempId,
+          'tempId': ?tempId,
         },
       );
       debugPrint('✅ Message sent via REST');

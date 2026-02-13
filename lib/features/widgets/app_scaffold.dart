@@ -117,7 +117,7 @@ class AppScaffold extends StatelessWidget {
                     );
                   },
                 ),
-              if (showAvatar) const SizedBox(width: 12),
+              if (showAvatar)  SizedBox(width: 12),
               // Title
               Expanded(
                 child: Text(

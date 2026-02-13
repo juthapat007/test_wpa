@@ -1,6 +1,6 @@
 import 'package:test_wpa/features/profile/domain/entities/profile.dart';
 
-import '../../domain/entities/profile.dart'; // import Profile entity
+// import Profile entity
 
 class ProfileModel {
   final int id;

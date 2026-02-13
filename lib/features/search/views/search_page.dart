@@ -5,7 +5,6 @@ import 'package:test_wpa/features/search/presentation/bloc/search_bloc.dart';
 import 'package:test_wpa/features/search/widgets/delegate_search_bar%20.dart';
 import 'package:test_wpa/features/search/widgets/search_result_view.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
-import 'package:flutter_modular/flutter_modular.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});

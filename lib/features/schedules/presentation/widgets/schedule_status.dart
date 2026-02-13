@@ -1,4 +1,3 @@
-import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 
 enum ScheduleStatus {
   past,

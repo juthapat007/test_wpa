@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:test_wpa/features/search/presentation/bloc/search_bloc.dart';
-import 'package:test_wpa/features/search/views/search_page.dart';
 import 'package:test_wpa/features/search/widgets/delegate_list_view.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_wpa/features/search/widgets/status/search_empty_view.dart';
