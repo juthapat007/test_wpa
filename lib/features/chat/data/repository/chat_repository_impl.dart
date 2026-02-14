@@ -4,7 +4,7 @@ import 'package:test_wpa/features/chat/data/models/chat_message.dart';
 import 'package:test_wpa/features/chat/data/models/chat_room.dart';
 import 'package:test_wpa/features/chat/data/services/chat_api.dart';
 import 'package:test_wpa/features/chat/data/services/chat_websocket_service.dart'
-    show ChatWebSocketService, ReadReceiptEvent;
+    show ChatWebSocketService, ReadReceiptEvent, MessageDeletedEvent, MessageUpdatedEvent;
 import 'package:test_wpa/features/chat/domain/repositories/chat_repository.dart';
 
 class ChatRepositoryImpl implements ChatRepository {
@@ -40,6 +40,12 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Stream<ReadReceiptEvent> get readReceiptStream => webSocketService.readReceiptStream;
+
+  @override
+  Stream<MessageDeletedEvent> get messageDeletedStream => webSocketService.messageDeletedStream;
+
+  @override
+  Stream<MessageUpdatedEvent> get messageUpdatedStream => webSocketService.messageUpdatedStream;
 
   @override
   Future<void> sendMessage(ChatMessage message) async {
@@ -137,6 +143,10 @@ class ChatRepositoryImpl implements ChatRepository {
           content: json['content'] ?? '',
           createdAt: DateTime.parse(json['created_at']),
           isRead: json['read_at'] != null,
+          editedAt: json['edited_at'] != null
+              ? DateTime.parse(json['edited_at'])
+              : null,
+          isDeleted: json['is_deleted'] ?? false,
         );
       }).toList();
 

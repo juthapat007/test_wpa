@@ -1,4 +1,4 @@
-import 'package:bloc/bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:meta/meta.dart';
 import 'package:test_wpa/features/search/domain/entities/delegate.dart';
 import 'package:test_wpa/features/search/domain/repositories/delegate_repository.dart';

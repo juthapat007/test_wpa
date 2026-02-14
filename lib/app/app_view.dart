@@ -12,10 +12,13 @@ class AppView extends StatelessWidget {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthUnauthenticated) {
-          Modular.to.popAndPushNamed('/');
+          Modular.to.navigate('/');
         }
-      }, //ฟังก์ชันที่ใช้เพื่อตรวจสอบสถานะการล็อกอิน และควบคุม navigation
+      },
+      //ฟังก์ชันที่ใช้เพื่อตรวจสอบสถานะการล็อกอิน และควบคุม navigation
       child: const RouterOutlet(),
+
+      //Unauthenticated คือสถานะไม่ล็อกอิน
     );
   }
 }

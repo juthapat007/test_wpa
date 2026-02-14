@@ -1,18 +1,29 @@
-part of 'profile_bloc.dart';
+import 'package:equatable/equatable.dart';
+import 'package:test_wpa/features/profile/data/models/profile_view_Model.dart';
 
-@immutable
-abstract class ProfileState {}
+abstract class ProfileState extends Equatable {
+  const ProfileState();
 
-class ProfileInitial extends ProfileState {}
+  @override
+  List<Object?> get props => [];
+}
 
 class ProfileLoading extends ProfileState {}
 
 class ProfileLoaded extends ProfileState {
-  final Profile profile;
-  ProfileLoaded(this.profile);
+  final ProfileViewModel profile;
+
+  const ProfileLoaded(this.profile);
+
+  @override
+  List<Object?> get props => [profile];
 }
 
 class ProfileError extends ProfileState {
   final String message;
-  ProfileError(this.message);
+
+  const ProfileError(this.message);
+
+  @override
+  List<Object?> get props => [message];
 }

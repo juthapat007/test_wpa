@@ -18,11 +18,9 @@ class _ChatRoomListPageState extends State<ChatRoomListPage> {
   @override
   void initState() {
     super.initState();
-    // Reset and reload chat rooms fresh from the server every time
-    // the user enters the chat tab, ensuring accurate unread counts.
     ReadContext(context).read<ChatBloc>().add(ResetAndLoadChatRooms());
-    // Ensure WebSocket is connected (guards against duplicate subscriptions internally)
     ReadContext(context).read<ChatBloc>().add(ConnectWebSocket());
+    // ReadContext(context).read<ChatBloc>().add(LoadChatRoomsIfNeeded());
   }
 
   @override

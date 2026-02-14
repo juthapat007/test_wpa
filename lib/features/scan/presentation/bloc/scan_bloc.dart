@@ -1,6 +1,6 @@
 // lib/features/scan/presentation/bloc/scan_bloc.dart
 
-import 'package:bloc/bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:meta/meta.dart';
 import 'package:test_wpa/features/scan/domain/repositories/qr_repository.dart';
 

@@ -18,7 +18,9 @@ import 'package:test_wpa/features/profile/data/repository/profile_repository_imp
 import 'package:test_wpa/features/profile/data/service/profile_api.dart';
 import 'package:test_wpa/features/profile/domain/repositories/profile_repository.dart';
 import 'package:test_wpa/features/profile/presentation/bloc/profile_bloc.dart';
-import 'package:test_wpa/features/profile/presentation/page/profile_widget.dart';
+import 'package:test_wpa/features/profile/presentation/bloc/profile_event.dart';
+import 'package:test_wpa/features/profile/presentation/page/profile_page.dart';
+import 'package:test_wpa/features/profile/views/profile_view.dart';
 import 'package:test_wpa/features/scan/data/repositories/qr_repository_impl.dart';
 import 'package:test_wpa/features/scan/data/services/qr_api.dart';
 import 'package:test_wpa/features/scan/domain/repositories/qr_repository.dart';
@@ -87,9 +89,10 @@ class AppModule extends Module {
     i.addLazySingleton<ProfileRepository>(
       () => ProfileRepositoryImpl(api: Modular.get<ProfileApi>()),
     );
-    i.addLazySingleton<ProfileBloc>(
-      () => ProfileBloc(profileRepository: Modular.get<ProfileRepository>()),
-    );
+    // i.addLazySingleton<ProfileBloc>(
+    //   () => ProfileBloc(profileRepository: Modular.get<ProfileRepository>()),
+    // );
+    i.addLazySingleton<ProfileBloc>(() => ProfileBloc(profileRepository: i()));
 
     /// ================= Schedule =================
     i.addLazySingleton<ScheduleApi>(() => ScheduleApi(Modular.get<Dio>()));
@@ -190,7 +193,6 @@ class AppModule extends Module {
       ),
     );
 
-    //  Chat - ไม่ต้อง provide ChatBloc ซ้ำเพราะ provide ที่ AppWidget แล้ว
     r.child('/chat', child: (_) => const ChatRoomListPage());
     // r.child(
     //   '/chat',
@@ -213,7 +215,7 @@ class AppModule extends Module {
       '/profile',
       child: (_) => BlocProvider.value(
         value: Modular.get<ProfileBloc>()..add(LoadProfile()),
-        child: const ProfileWidget(),
+        child: const ProfilePage(),
       ),
     );
 

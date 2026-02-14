@@ -18,6 +18,7 @@ class AppBottomNavigationBar extends StatelessWidget {
         : 0;
 
     return BottomNavigationBar(
+      //BottomNavigationBar ทำงานเมื่อเปลี่ยนหน้า โดยใช้ currentIndex เพื่อเลือกหน้าที่ต้องการ และ
       currentIndex: validIndex,
       onTap: (index) {
         final route = bottomNavItems[index].route;
@@ -32,15 +33,15 @@ class AppBottomNavigationBar extends StatelessWidget {
             print('ChatBloc not found: $e');
           }
         }
-        if (route == '/meeting') {
-          try {
-            ModularWatchExtension(
-              context,
-            ).read<TableBloc>().add(LoadTableView());
-          } catch (e) {
-            print('TableBloc not found: $e');
-          }
-        }
+        // if (route == '/meeting') {
+        //   try {
+        //     ModularWatchExtension(
+        //       context,
+        //     ).read<TableBloc>().add(LoadTableView());
+        //   } catch (e) {
+        //     print('TableBloc not found: $e');
+        //   }
+        // }
 
         // ✅ Force refresh ทุกหน้า เพื่อให้ state reset
         Modular.to.navigate(route);

@@ -1,63 +1,64 @@
 import 'package:test_wpa/features/profile/domain/entities/profile.dart';
+import 'package:equatable/equatable.dart';
 
 // import Profile entity
-
-class ProfileModel {
+class ProfileModel extends Equatable {
   final int id;
   final String name;
   final String title;
   final String email;
-  final String phone;
-  final Company company;
   final String avatarUrl;
+  final Company company;
   final Team team;
-  final bool firstConference;
-  final bool spouseAttending;
-  final String spouseName;
-  final bool needRoom;
-  final String bookingNo;
+  final int companyId;
+  final int teamId;
 
-  ProfileModel({
+  const ProfileModel({
     required this.id,
     required this.name,
     required this.title,
     required this.email,
-    required this.phone,
-    required this.company,
     required this.avatarUrl,
+    required this.company,
     required this.team,
-    required this.firstConference,
-    required this.spouseAttending,
-    required this.spouseName,
-    required this.needRoom,
-    required this.bookingNo,
+    required this.companyId,
+    required this.teamId,
+    required phone,
+    required firstConference,
+    required spouseAttending,
+    required spouseName,
+    required needRoom,
+    required bookingNo,
   });
 
+  @override
+  List<Object?> get props => [id, name, title, email, avatarUrl, company, team];
+
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
-      String companyName;
-  if (json.containsKey('company_name')) {
-    // Format 1: delegate response มี company_name ตรงๆ
-    companyName = json['company_name'] ?? '';
-  } else if (json.containsKey('company') && json['company'] is Map) {
-    // Format 2: profile response มี company object
-    companyName = json['company']['name'] ?? '';
-  } else {
-    companyName = '';
-  }
     return ProfileModel(
-      id: json['id'],
+      id: json['id'] ?? 0,
       name: json['name'] ?? '',
       title: json['title'] ?? '',
       email: json['email'] ?? '',
       phone: json['phone'] ?? '',
-      company: Company.fromJson(json['company']),
+
+      company: json['company'] != null
+          ? Company.fromJson(json['company'])
+          : Company(id: 0, name: '', country: ''),
+
       avatarUrl: json['avatar_url'] ?? '',
-      team: Team.fromJson(json['team']),
+
+      team: json['team'] != null
+          ? Team.fromJson(json['team'])
+          : Team(id: 0, name: ''),
+
       firstConference: json['first_conference'] ?? false,
       spouseAttending: json['spouse_attending'] ?? false,
       spouseName: json['spouse_name'] ?? '',
       needRoom: json['need_room'] ?? false,
       bookingNo: json['booking_no'] ?? '',
+      companyId: json['company_id'] ?? 0,
+      teamId: json['team_id'] ?? 0,
     );
   }
 
@@ -69,8 +70,10 @@ class ProfileModel {
       title: title,
       email: email,
       avatarUrl: avatarUrl,
-      companyName: company.name,
-      teamName: team.name,
+      companyId: company.id,
+      teamId: team.id,
+      company: company.name,
+      team: team.name,
     );
   }
 }

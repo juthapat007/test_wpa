@@ -252,7 +252,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   }
 
   // ========================================
-  // Zoomable Grid (InteractiveViewer + constrained height)
+  // Zoomable Grid - แก้ไขใหม่เพื่อรองรับ responsive
   // ========================================
   Widget _buildZoomableGrid(List<TableInfo> regularTables) {
     final tableMap = {
@@ -262,8 +262,19 @@ class _TableGridWidgetState extends State<TableGridWidget> {
     final rows = layout?.rows ?? _calculateDefaultRows(regularTables.length, 6);
     final columns = layout?.columns ?? 6;
 
+    // คำนวณขนาด cell ที่เหมาะสม
+    final cellSize = 60.0;
+    final spacing = 6.0;
+    final padding = 24.0;
+
+    // คำนวณขนาดทั้งหมดของ grid
+    final gridWidth =
+        (columns * cellSize) + ((columns - 1) * spacing) + (padding * 2);
+    final gridHeight =
+        (rows * cellSize) + ((rows - 1) * spacing) + (padding * 2);
+
     return Container(
-      constraints: const BoxConstraints(maxHeight: 360),
+      height: 400, // Fixed height สำหรับ container
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
@@ -275,41 +286,52 @@ class _TableGridWidgetState extends State<TableGridWidget> {
           children: [
             InteractiveViewer(
               transformationController: _transformController,
-              minScale: 0.6,
-              maxScale: 3.0,
-              boundaryMargin: const EdgeInsets.all(40),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: List.generate(rows, (rowIndex) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: List.generate(columns, (colIndex) {
-                          final tableNumber =
-                              (rowIndex * columns + colIndex + 1).toString();
-                          final table = tableMap[tableNumber];
+              minScale: 0.5,
+              maxScale: 4.0,
+              boundaryMargin: EdgeInsets.all(gridWidth > 600 ? 100 : 40),
+              constrained: false, // สำคัญ! ให้ child กำหนดขนาดเองได้
+              child: Center(
+                child: Container(
+                  width: gridWidth,
+                  height: gridHeight,
+                  padding: EdgeInsets.all(padding),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(rows, (rowIndex) {
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom: rowIndex < rows - 1 ? spacing : 0,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(columns, (colIndex) {
+                            final tableNumber =
+                                (rowIndex * columns + colIndex + 1).toString();
+                            final table = tableMap[tableNumber];
 
-                          return Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 3,
+                            return Padding(
+                              padding: EdgeInsets.only(
+                                right: colIndex < columns - 1 ? spacing : 0,
                               ),
-                              child: table != null
-                                  ? _buildTableCell(
-                                      table,
-                                      table.tableNumber ==
-                                          widget.response.myTable,
-                                    )
-                                  : _buildEmptyCell(tableNumber),
-                            ),
-                          );
-                        }),
-                      ),
-                    );
-                  }),
+                              child: SizedBox(
+                                width: cellSize,
+                                height: cellSize,
+                                child: table != null
+                                    ? _buildTableCell(
+                                        table,
+                                        table.tableNumber ==
+                                            widget.response.myTable,
+                                      )
+                                    : _buildEmptyCell(tableNumber),
+                              ),
+                            );
+                          }),
+                        ),
+                      );
+                    }),
+                  ),
                 ),
               ),
             ),
@@ -333,6 +355,39 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                       style: TextStyle(fontSize: 10, color: Colors.white70),
                     ),
                   ],
+                ),
+              ),
+            ),
+            // Reset zoom button (top-right)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    _transformController.value = Matrix4.identity();
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.center_focus_strong,
+                      size: 18,
+                      color: color.AppColors.primary,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -447,46 +502,43 @@ class _TableGridWidgetState extends State<TableGridWidget> {
         });
         _showTableDetails(table, isMyTable);
       },
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: Container(
-          decoration: BoxDecoration(
-            color: colors.background,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: colors.border, width: 2),
-            boxShadow: isMyTable || isSelected
-                ? [
-                    BoxShadow(
-                      color: colors.border.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                table.tableNumber,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: colors.text,
-                ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: colors.background,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: colors.border, width: 2),
+          boxShadow: isMyTable || isSelected
+              ? [
+                  BoxShadow(
+                    color: colors.border.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              table.tableNumber,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: colors.text,
               ),
-              if (isMyTable)
-                const Padding(
-                  padding: EdgeInsets.only(top: 2),
-                  child: Icon(Icons.person_pin, size: 14, color: Colors.white),
-                )
-              else if (isOccupied)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Icon(Icons.person, size: 12, color: Colors.green[900]),
-                ),
-            ],
-          ),
+            ),
+            if (isMyTable)
+              const Padding(
+                padding: EdgeInsets.only(top: 2),
+                child: Icon(Icons.person_pin, size: 14, color: Colors.white),
+              )
+            else if (isOccupied)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Icon(Icons.person, size: 12, color: Colors.green[900]),
+              ),
+          ],
         ),
       ),
     );
@@ -496,22 +548,19 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   // Empty Cell
   // ========================================
   Widget _buildEmptyCell(String tableNumber) {
-    return AspectRatio(
-      aspectRatio: 1,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[200]!, width: 1),
-        ),
-        child: Center(
-          child: Text(
-            tableNumber,
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.grey[400],
-              fontWeight: FontWeight.w300,
-            ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!, width: 1),
+      ),
+      child: Center(
+        child: Text(
+          tableNumber,
+          style: TextStyle(
+            fontSize: 10,
+            color: Colors.grey[400],
+            fontWeight: FontWeight.w300,
           ),
         ),
       ),

@@ -56,7 +56,7 @@ class AppScaffold extends StatelessWidget {
                           return AppAvatar(
                             imageUrl: avatarUrl,
                             onTap: () {
-                              Modular.to.pushNamed('/profile');
+                              Modular.to.navigate('/profile');
                             },
                           );
                         },
@@ -93,7 +93,7 @@ class AppScaffold extends StatelessWidget {
                     }
 
                     return GestureDetector(
-                      onTap: () => Modular.to.pushNamed('/profile'),
+                      onTap: () => Modular.to.navigate('/profile'),
                       child: Container(
                         width: 45,
                         height: 45,
@@ -117,7 +117,7 @@ class AppScaffold extends StatelessWidget {
                     );
                   },
                 ),
-              if (showAvatar)  SizedBox(width: 12),
+              if (showAvatar) SizedBox(width: 12),
               // Title
               Expanded(
                 child: Text(
@@ -164,7 +164,7 @@ class AppScaffold extends StatelessWidget {
             clipBehavior: Clip.none,
             children: [
               IconButton(
-                onPressed: () => Modular.to.pushNamed('/notification'),
+                onPressed: () => Modular.to.navigate('/notification'),
                 icon: const Icon(
                   Icons.notifications_outlined,
                   color: color.AppColors.textSecondary,

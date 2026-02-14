@@ -1,4 +1,4 @@
-import 'package:bloc/bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:meta/meta.dart';
 import 'package:test_wpa/features/notification/domain/entities/notification_entity.dart';
 import 'package:test_wpa/features/notification/domain/repositories/notification_repository.dart';

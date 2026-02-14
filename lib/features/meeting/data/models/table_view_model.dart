@@ -19,7 +19,7 @@ class TableDelegateModel {
     return TableDelegateModel(
       delegateId: json['delegate_id'],
       delegateName: json['delegate_name'] ?? '',
-      company: json['company'] ?? '',
+      company: json['company'],
       avatarUrl: json['avatar_url'] ?? '',
       title: json['title'],
     );

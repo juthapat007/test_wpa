@@ -1,6 +1,6 @@
 // lib/features/meeting/presentation/bloc/table_bloc.dart
 
-import 'package:bloc/bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:meta/meta.dart';
 
 import 'package:test_wpa/features/meeting/domain/entities/table_view_entities.dart';

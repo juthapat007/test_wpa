@@ -1,11 +1,13 @@
 class Profile {
   final int id;
+  final int companyId;
+  final int teamId;
   final String name;
   final String title;
   final String email;
   final String avatarUrl;
-  final String companyName;
-  final String teamName;
+  final String company;
+  final String team;
 
   Profile({
     required this.id,
@@ -13,7 +15,9 @@ class Profile {
     required this.title,
     required this.email,
     required this.avatarUrl,
-    required this.companyName,
-    required this.teamName,
+    required this.company,
+    required this.team,
+    required this.companyId,
+    required this.teamId,
   });
 }
