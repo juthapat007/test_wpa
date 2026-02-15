@@ -13,7 +13,8 @@ class ProfilePage extends StatelessWidget {
     return AppScaffold(
       title: 'Personal Information',
       currentIndex: -1,
-      showAvatar: false,
+      showAvatar: false, // 👈 ไม่แสดง avatar, จะแสดงปุ่ม back แทน
+      showBackButton: true, // 👈 แสดงปุ่ม back แทน avatar
       body: BlocBuilder<ProfileBloc, ProfileState>(
         builder: (context, state) {
           return ProfileView(state: state);

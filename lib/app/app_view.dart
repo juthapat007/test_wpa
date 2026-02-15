@@ -11,14 +11,14 @@ class AppView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
+        print('AuthBloc state changed: ${state.runtimeType}');
+
         if (state is AuthUnauthenticated) {
+          print('Navigating to login...');
           Modular.to.navigate('/');
         }
       },
-      //ฟังก์ชันที่ใช้เพื่อตรวจสอบสถานะการล็อกอิน และควบคุม navigation
       child: const RouterOutlet(),
-
-      //Unauthenticated คือสถานะไม่ล็อกอิน
     );
   }
 }

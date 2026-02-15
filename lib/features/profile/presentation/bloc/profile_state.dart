@@ -12,11 +12,17 @@ class ProfileLoading extends ProfileState {}
 
 class ProfileLoaded extends ProfileState {
   final ProfileViewModel profile;
+  final bool wasUpdated; // แสดงว่าเพิ่ง update เสร็จ
+  final String? updateError; // error message ถ้า update ไม่สำเร็จ
 
-  const ProfileLoaded(this.profile);
+  const ProfileLoaded(
+    this.profile, {
+    this.wasUpdated = false,
+    this.updateError,
+  });
 
   @override
-  List<Object?> get props => [profile];
+  List<Object?> get props => [profile, wasUpdated, updateError];
 }
 
 class ProfileError extends ProfileState {
@@ -26,4 +32,14 @@ class ProfileError extends ProfileState {
 
   @override
   List<Object?> get props => [message];
+}
+
+class ProfileUpdateSuccess extends ProfileState {
+  final ProfileViewModel profile;
+  const ProfileUpdateSuccess(this.profile);
+}
+
+class ProfileUpdateError extends ProfileState {
+  final String message;
+  const ProfileUpdateError(this.message);
 }

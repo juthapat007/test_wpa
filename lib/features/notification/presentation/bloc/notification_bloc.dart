@@ -10,7 +10,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   final NotificationRepository notificationRepository;
 
   NotificationBloc({required this.notificationRepository})
-      : super(NotificationInitial()) {
+    : super(NotificationInitial()) {
     on<LoadNotifications>(_onLoadNotifications);
     on<LoadUnreadCount>(_onLoadUnreadCount);
     on<MarkAllNotificationsRead>(_onMarkAllRead);
@@ -23,12 +23,16 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   ) async {
     emit(NotificationLoading());
     try {
-      final notifications = await notificationRepository.getNotifications();
+      final notifications = await notificationRepository.getNotifications(
+        type: event.type,
+      );
       final unreadCount = await notificationRepository.getUnreadCount();
-      emit(NotificationLoaded(
-        notifications: notifications,
-        unreadCount: unreadCount,
-      ));
+      emit(
+        NotificationLoaded(
+          notifications: notifications,
+          unreadCount: unreadCount,
+        ),
+      );
     } catch (e) {
       emit(NotificationError('Failed to load notifications: $e'));
     }
@@ -42,10 +46,12 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       final count = await notificationRepository.getUnreadCount();
       final currentState = state;
       if (currentState is NotificationLoaded) {
-        emit(NotificationLoaded(
-          notifications: currentState.notifications,
-          unreadCount: count,
-        ));
+        emit(
+          NotificationLoaded(
+            notifications: currentState.notifications,
+            unreadCount: count,
+          ),
+        );
       } else {
         emit(UnreadCountLoaded(count));
       }
@@ -59,7 +65,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     Emitter<NotificationState> emit,
   ) async {
     try {
-      await notificationRepository.markAllAsRead();
+      await notificationRepository.markAllAsRead(type: event.type);
       final currentState = state;
       if (currentState is NotificationLoaded) {
         final updatedNotifications = currentState.notifications.map((n) {
@@ -72,10 +78,12 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
             notifiable: n.notifiable,
           );
         }).toList();
-        emit(NotificationLoaded(
-          notifications: updatedNotifications,
-          unreadCount: 0,
-        ));
+        emit(
+          NotificationLoaded(
+            notifications: updatedNotifications,
+            unreadCount: 0,
+          ),
+        );
       }
     } catch (e) {
       emit(NotificationError('Failed to mark all as read: $e'));
@@ -104,10 +112,12 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
           return n;
         }).toList();
         final newUnread = updatedNotifications.where((n) => n.isUnread).length;
-        emit(NotificationLoaded(
-          notifications: updatedNotifications,
-          unreadCount: newUnread,
-        ));
+        emit(
+          NotificationLoaded(
+            notifications: updatedNotifications,
+            unreadCount: newUnread,
+          ),
+        );
       }
     } catch (e) {
       emit(NotificationError('Failed to mark as read: $e'));

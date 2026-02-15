@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
+import 'package:test_wpa/features/notification/domain/entities/connection_request_entity.dart';
 import 'package:test_wpa/features/notification/domain/entities/notification_entity.dart';
+import 'package:test_wpa/features/notification/presentation/bloc/connection_bloc.dart';
 import 'package:test_wpa/features/notification/presentation/bloc/notification_bloc.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -13,12 +16,26 @@ class NotificationPage extends StatefulWidget {
   State<NotificationPage> createState() => _NotificationPageState();
 }
 
-class _NotificationPageState extends State<NotificationPage> {
+class _NotificationPageState extends State<NotificationPage>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
   @override
   void initState() {
     super.initState();
-    // Load notifications on page open
-    context.read<NotificationBloc>().add(LoadNotifications());
+    _tabController = TabController(length: 2, vsync: this);
+
+    // Load initial data
+    ReadContext(
+      context,
+    ).read<NotificationBloc>().add(LoadNotifications(type: 'system'));
+    ReadContext(context).read<ConnectionBloc>().add(LoadConnectionRequests());
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -28,132 +45,337 @@ class _NotificationPageState extends State<NotificationPage> {
       currentIndex: -1,
       showAvatar: false,
       backgroundColor: color.AppColors.background,
-      actions: [
-        BlocBuilder<NotificationBloc, NotificationState>(
-          builder: (context, state) {
-            final hasUnread =
-                state is NotificationLoaded && state.unreadCount > 0;
-            if (!hasUnread) return const SizedBox.shrink();
-            return TextButton(
-              onPressed: () {
-                context.read<NotificationBloc>().add(
-                  MarkAllNotificationsRead(),
-                );
-              },
-              child: Text(
-                'Read All',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: color.AppColors.primary,
-                ),
-              ),
-            );
-          },
-        ),
-      ],
-      body: BlocBuilder<NotificationBloc, NotificationState>(
-        builder: (context, state) {
-          if (state is NotificationLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (state is NotificationLoaded) {
-            if (state.notifications.isEmpty) {
-              return _buildEmptyState();
-            }
-            return RefreshIndicator(
-              onRefresh: () async {
-                context.read<NotificationBloc>().add(LoadNotifications());
-              },
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                itemCount: state.notifications.length,
-                separatorBuilder: (_, _) =>
-                    Divider(height: 1, color: Colors.grey[200]),
-                itemBuilder: (context, index) {
-                  final item = state.notifications[index];
-                  return _NotificationTile(
-                    item: item,
-                    onTap: () {
-                      if (item.isUnread) {
-                        context.read<NotificationBloc>().add(
-                          MarkNotificationRead(item.id),
-                        );
-                      }
-                    },
-                  );
-                },
-              ),
-            );
-          }
-
-          if (state is NotificationError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 56,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Could not load notifications',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: color.AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      state.message,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: color.AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    OutlinedButton(
-                      onPressed: () {
-                        context.read<NotificationBloc>().add(
-                          LoadNotifications(),
-                        );
-                      },
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          return const SizedBox.shrink();
-        },
+      actions: [_buildMarkAllReadButton()],
+      body: Column(
+        children: [
+          _buildTabBar(),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildSystemNotificationsTab(),
+                _buildConnectionRequestsTab(),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildTabBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Colors.grey[200]!, width: 1)),
+      ),
+      child: TabBar(
+        controller: _tabController,
+        labelColor: color.AppColors.primary,
+        unselectedLabelColor: color.AppColors.textSecondary,
+        indicatorColor: color.AppColors.primary,
+        indicatorWeight: 3,
+        labelStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+        ),
+        onTap: (index) {
+          // Reload data when switching tabs
+          if (index == 0) {
+            ReadContext(
+              context,
+            ).read<NotificationBloc>().add(LoadNotifications(type: 'system'));
+          } else {
+            ReadContext(
+              context,
+            ).read<ConnectionBloc>().add(LoadConnectionRequests());
+          }
+        },
+        tabs: [
+          Tab(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('System'),
+                const SizedBox(width: 6),
+                _buildSystemBadge(),
+              ],
+            ),
+          ),
+          Tab(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('Connections'),
+                const SizedBox(width: 6),
+                _buildConnectionBadge(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSystemBadge() {
+    return BlocBuilder<NotificationBloc, NotificationState>(
+      builder: (context, state) {
+        int unreadCount = 0;
+        if (state is NotificationLoaded) {
+          unreadCount = state.notifications.where((n) => n.isUnread).length;
+        }
+
+        if (unreadCount == 0) return const SizedBox.shrink();
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: color.AppColors.error,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          constraints: const BoxConstraints(minWidth: 20),
+          child: Text(
+            unreadCount > 99 ? '99+' : '$unreadCount',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildConnectionBadge() {
+    return BlocBuilder<ConnectionBloc, ConnectionRequestState>(
+      builder: (context, state) {
+        int pendingCount = 0;
+        if (state is ConnectionRequestLoaded) {
+          pendingCount = state.requests.where((r) => r.isPending).length;
+        }
+
+        if (pendingCount == 0) return const SizedBox.shrink();
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: color.AppColors.error,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          constraints: const BoxConstraints(minWidth: 20),
+          child: Text(
+            pendingCount > 99 ? '99+' : '$pendingCount',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMarkAllReadButton() {
+    return BlocBuilder<NotificationBloc, NotificationState>(
+      builder: (context, state) {
+        // Only show for system notifications tab
+        if (_tabController.index != 0) return const SizedBox.shrink();
+
+        final hasUnread =
+            state is NotificationLoaded &&
+            state.notifications.any((n) => n.isUnread);
+
+        if (!hasUnread) return const SizedBox.shrink();
+
+        return TextButton(
+          onPressed: () {
+            ReadContext(context).read<NotificationBloc>().add(
+              MarkAllNotificationsRead(type: 'system'),
+            );
+          },
+          child: Text(
+            'Read All',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: color.AppColors.primary,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // System Notifications Tab
+  Widget _buildSystemNotificationsTab() {
+    return BlocBuilder<NotificationBloc, NotificationState>(
+      builder: (context, state) {
+        if (state is NotificationLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (state is NotificationLoaded) {
+          if (state.notifications.isEmpty) {
+            return _buildEmptyState(
+              icon: Icons.notifications_none_rounded,
+              title: 'No Notifications',
+              message:
+                  'You\'re all caught up. New notifications\nwill appear here.',
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              ReadContext(
+                context,
+              ).read<NotificationBloc>().add(LoadNotifications(type: 'system'));
+            },
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: state.notifications.length,
+              separatorBuilder: (_, __) =>
+                  Divider(height: 1, color: Colors.grey[200]),
+              itemBuilder: (context, index) {
+                final item = state.notifications[index];
+                return _NotificationTile(
+                  item: item,
+                  onTap: () {
+                    if (item.isUnread) {
+                      ReadContext(context).read<NotificationBloc>().add(
+                        MarkNotificationRead(item.id),
+                      );
+                    }
+                  },
+                );
+              },
+            ),
+          );
+        }
+
+        if (state is NotificationError) {
+          return _buildErrorState(
+            message: state.message,
+            onRetry: () {
+              ReadContext(
+                context,
+              ).read<NotificationBloc>().add(LoadNotifications(type: 'system'));
+            },
+          );
+        }
+
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  // Connection Requests Tab
+  Widget _buildConnectionRequestsTab() {
+    return BlocConsumer<ConnectionBloc, ConnectionRequestState>(
+      listener: (context, state) {
+        if (state is ConnectionRequestActionSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: color.AppColors.success,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+        if (state is ConnectionRequestError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: color.AppColors.error,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      },
+      builder: (context, state) {
+        if (state is ConnectionRequestLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (state is ConnectionRequestLoaded) {
+          final pendingRequests = state.requests
+              .where((r) => r.isPending)
+              .toList();
+
+          if (pendingRequests.isEmpty) {
+            return _buildEmptyState(
+              icon: Icons.people_outline,
+              title: 'No Connection Requests',
+              message: 'You don\'t have any pending\nconnection requests.',
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              ReadContext(
+                context,
+              ).read<ConnectionBloc>().add(LoadConnectionRequests());
+            },
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: pendingRequests.length,
+              separatorBuilder: (_, __) =>
+                  Divider(height: 1, color: Colors.grey[200]),
+              itemBuilder: (context, index) {
+                final request = pendingRequests[index];
+                return _ConnectionRequestTile(
+                  request: request,
+                  onAccept: () {
+                    ReadContext(context).read<ConnectionBloc>().add(
+                      AcceptConnectionRequest(request.id),
+                    );
+                  },
+                  onReject: () {
+                    ReadContext(context).read<ConnectionBloc>().add(
+                      RejectConnectionRequest(request.id),
+                    );
+                  },
+                );
+              },
+            ),
+          );
+        }
+
+        if (state is ConnectionRequestError) {
+          return _buildErrorState(
+            message: state.message,
+            onRetry: () {
+              ReadContext(
+                context,
+              ).read<ConnectionBloc>().add(LoadConnectionRequests());
+            },
+          );
+        }
+
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  Widget _buildEmptyState({
+    required IconData icon,
+    required String title,
+    required String message,
+  }) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(48),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.notifications_none_rounded,
-              size: 72,
-              color: Colors.grey[300],
-            ),
+            Icon(icon, size: 72, color: Colors.grey[300]),
             const SizedBox(height: 20),
             Text(
-              'No Notifications',
+              title,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -162,7 +384,7 @@ class _NotificationPageState extends State<NotificationPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'You\'re all caught up. New notifications\nwill appear here.',
+              message,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -170,6 +392,43 @@ class _NotificationPageState extends State<NotificationPage> {
                 height: 1.5,
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState({
+    required String message,
+    required VoidCallback onRetry,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 56, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              'Something went wrong',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: color.AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: color.AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 20),
+            OutlinedButton(onPressed: onRetry, child: const Text('Retry')),
           ],
         ),
       ),
@@ -199,15 +458,12 @@ class _NotificationTile extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Icon / Avatar
               _buildLeading(),
               const SizedBox(width: 12),
-              // Content
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title row
                     Row(
                       children: [
                         Expanded(
@@ -234,7 +490,6 @@ class _NotificationTile extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    // Body text
                     if (_getBody().isNotEmpty)
                       Text(
                         _getBody(),
@@ -247,7 +502,6 @@ class _NotificationTile extends StatelessWidget {
                         ),
                       ),
                     const SizedBox(height: 6),
-                    // Timestamp
                     Text(
                       _formatTime(item.createdAt),
                       style: TextStyle(fontSize: 12, color: Colors.grey[400]),
@@ -271,11 +525,10 @@ class _NotificationTile extends StatelessWidget {
       return CircleAvatar(
         radius: 22,
         backgroundImage: NetworkImage(sender.avatarUrl!),
-        onBackgroundImageError: (_, _) {},
+        onBackgroundImageError: (_, __) {},
       );
     }
 
-    // Fallback icon based on type
     final iconData = _getIconForType(item.type);
     final iconColor = _getColorForType(item.type);
 
@@ -346,5 +599,107 @@ class _NotificationTile extends StatelessWidget {
     } catch (_) {
       return '';
     }
+  }
+}
+
+// ========================================
+// Connection Request Tile Widget
+// ========================================
+class _ConnectionRequestTile extends StatelessWidget {
+  final ConnectionRequest request;
+  final VoidCallback onAccept;
+  final VoidCallback onReject;
+
+  const _ConnectionRequestTile({
+    required this.request,
+    required this.onAccept,
+    required this.onReject,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final sender = request.sender;
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Avatar
+          CircleAvatar(
+            radius: 28,
+            backgroundImage:
+                sender?.avatarUrl != null && sender!.avatarUrl!.isNotEmpty
+                ? NetworkImage(sender.avatarUrl!)
+                : const AssetImage('assets/images/empty_state.png')
+                      as ImageProvider,
+          ),
+          const SizedBox(width: 12),
+          // Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  sender?.name ?? 'Unknown',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: color.AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                if (sender?.title != null)
+                  Text(
+                    sender!.title!,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: color.AppColors.textSecondary,
+                    ),
+                  ),
+                if (sender?.companyName != null)
+                  Text(
+                    sender!.companyName!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: color.AppColors.textSecondary,
+                    ),
+                  ),
+                const SizedBox(height: 12),
+                // Action buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: onReject,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: color.AppColors.textSecondary,
+                          side: BorderSide(color: Colors.grey[300]!),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                        child: const Text('Decline'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: onAccept,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: color.AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                        child: const Text('Accept'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

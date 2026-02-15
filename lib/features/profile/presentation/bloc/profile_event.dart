@@ -32,3 +32,14 @@ class ToggleEmailNotification extends ProfileEvent {
   @override
   List<Object?> get props => [value];
 }
+
+// ✨ New Event for updating profile fields
+class UpdateProfileField extends ProfileEvent {
+  final String field;
+  final String value;
+
+  const UpdateProfileField({required this.field, required this.value});
+
+  @override
+  List<Object?> get props => [field, value];
+}

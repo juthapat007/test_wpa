@@ -11,10 +11,7 @@ final class NotificationLoaded extends NotificationState {
   final List<NotificationItem> notifications;
   final int unreadCount;
 
-  NotificationLoaded({
-    required this.notifications,
-    required this.unreadCount,
-  });
+  NotificationLoaded({required this.notifications, required this.unreadCount});
 }
 
 final class UnreadCountLoaded extends NotificationState {

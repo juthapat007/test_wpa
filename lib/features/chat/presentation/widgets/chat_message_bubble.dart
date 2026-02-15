@@ -143,9 +143,6 @@ class ChatMessageBubble extends StatelessWidget {
               ),
             ),
           ),
-
-          // Avatar ฝั่งขวา (ฉัน) - ถ้าต้องการ
-          if (isMe) ...[const SizedBox(width: 8)],
         ],
       ),
     );

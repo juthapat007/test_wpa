@@ -11,24 +11,26 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 enum AppBarStyle { standard, elegant }
 
 class AppScaffold extends StatelessWidget {
-  final String icon;
+  final bool icon;
   final String title;
   final int currentIndex;
   final Widget? body;
   final List<Widget>? actions;
   final bool showAvatar;
+  final bool showBackButton; // 👈 เพิ่ม parameter แยกสำหรับปุ่ม back
   final Color? backgroundColor;
   final AppBarStyle appBarStyle;
   final bool showBottomNavBar;
 
   const AppScaffold({
     super.key,
-    this.icon = '',
+    this.icon = false,
     required this.title,
     required this.currentIndex,
     this.body,
     this.actions,
     this.showAvatar = true,
+    this.showBackButton = false, // 👈 default เป็น false
     this.backgroundColor,
     this.appBarStyle = AppBarStyle.standard,
     this.showBottomNavBar = true,
@@ -42,10 +44,18 @@ class AppScaffold extends StatelessWidget {
           ? _buildElegantAppBar(context)
           : AppAppBar(
               title: title,
+              showBackButton: showBackButton, // 👈 ใช้ parameter โดยตรง
               leading: showAvatar
                   ? Padding(
                       padding: const EdgeInsets.only(left: 8),
                       child: BlocBuilder<AuthBloc, AuthState>(
+                        buildWhen: (previous, current) {
+                          if (previous is AuthAuthenticated &&
+                              current is AuthAuthenticated) {
+                            return false;
+                          }
+                          return true;
+                        },
                         builder: (context, state) {
                           String? avatarUrl;
 
@@ -56,7 +66,7 @@ class AppScaffold extends StatelessWidget {
                           return AppAvatar(
                             imageUrl: avatarUrl,
                             onTap: () {
-                              Modular.to.navigate('/profile');
+                              Modular.to.pushNamed('/profile');
                             },
                           );
                         },
@@ -85,6 +95,13 @@ class AppScaffold extends StatelessWidget {
               // Avatar
               if (showAvatar)
                 BlocBuilder<AuthBloc, AuthState>(
+                  buildWhen: (previous, current) {
+                    if (previous is AuthAuthenticated &&
+                        current is AuthAuthenticated) {
+                      return false;
+                    }
+                    return true;
+                  },
                   builder: (context, state) {
                     String? avatarUrl;
 
@@ -93,14 +110,13 @@ class AppScaffold extends StatelessWidget {
                     }
 
                     return GestureDetector(
-                      onTap: () => Modular.to.navigate('/profile'),
+                      onTap: () => Modular.to.pushNamed('/profile'),
                       child: Container(
                         width: 45,
                         height: 45,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white),
-
                           image: avatarUrl != null && avatarUrl.isNotEmpty
                               ? DecorationImage(
                                   image: NetworkImage(avatarUrl),
@@ -117,7 +133,7 @@ class AppScaffold extends StatelessWidget {
                     );
                   },
                 ),
-              if (showAvatar) SizedBox(width: 12),
+              if (showAvatar) const SizedBox(width: 12),
               // Title
               Expanded(
                 child: Text(
@@ -141,16 +157,55 @@ class AppScaffold extends StatelessWidget {
 
   Widget _buildBottomNavBar() {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 60), // ปรับเลขตรงนี้
+      padding: const EdgeInsets.only(bottom: 60),
       child: Container(
-        decoration: BoxDecoration(),
+        decoration: const BoxDecoration(),
         child: AppBottomNavigationBar(currentIndex: currentIndex),
       ),
     );
   }
 
+  /// 🏠 กำหนดหน้า "บ้าน" ตาม currentIndex
+  String _getHomeRoute(int index) {
+    switch (index) {
+      case 0:
+        return '/meeting';
+      case 1:
+        return '/search';
+      case 2:
+        return '/scan';
+      case 3:
+        return '/chat';
+      case 4:
+        return '/schedule';
+      default:
+        return '/meeting'; // default fallback
+    }
+  }
+
   List<Widget>? _defaultActions(BuildContext context) {
     return [
+      // 🏠 Home Button
+      IconButton(
+        onPressed: () {
+          // ถ้าอยู่หน้าที่มี bottom nav bar (currentIndex >= 0)
+          // ให้กลับไปหน้านั้น
+          if (currentIndex >= 0) {
+            final homeRoute = _getHomeRoute(currentIndex);
+            Modular.to.navigate(homeRoute);
+          } else {
+            // ถ้าไม่มี bottom nav (เช่นหน้า notification, profile)
+            // ให้กลับไปหน้า meeting (หน้าแรก)
+            Modular.to.navigate('/meeting');
+          }
+        },
+        icon: const Icon(
+          Icons.home_outlined,
+          color: color.AppColors.textSecondary,
+        ),
+      ),
+
+      // 🔔 Notification Button with Badge
       BlocBuilder<NotificationBloc, NotificationState>(
         builder: (context, state) {
           int unreadCount = 0;

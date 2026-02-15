@@ -18,34 +18,47 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthLoginEvent event,
     Emitter<AuthState> emit,
   ) async {
+    print('🔐 Login requested...');
     emit(AuthLoading());
     try {
-      // 1️login
+      // 1️⃣ login
       final result = await authRepository.login(
         email: event.email,
         password: event.password,
       );
 
-      //  ใช้ user (ไม่ใช่ delegate)
+      print('✅ Login successful!');
+
+      // ใช้ user (ไม่ใช่ delegate)
       final avatarUrl = result.user?.avatarUrl;
 
-      //init dio
+      // init dio
       await DioClient().init();
 
       // 3️⃣ emit success พร้อม avatar
       emit(AuthAuthenticated(avatarUrl: avatarUrl));
     } catch (e) {
+      print('❌ Login error: $e');
       emit(AuthError('email or Password is wrong'));
       emit(AuthInitial());
     }
   }
 
   Future<void> _onLogout(AuthLogout event, Emitter<AuthState> emit) async {
-    await authRepository.logout();
-    emit(AuthUnauthenticated());
+    print('🚪 Logout requested...');
+    try {
+      await authRepository.logout();
+      print('✅ Logout successful!');
+      emit(AuthUnauthenticated());
+    } catch (e) {
+      print('❌ Logout error: $e');
+      // ถ้า error ก็ emit unauthenticated อยู่ดี
+      emit(AuthUnauthenticated());
+    }
   }
 
   void _onReset(AuthReset event, Emitter<AuthState> emit) {
+    print('🔄 Auth reset');
     emit(AuthInitial());
   }
 }

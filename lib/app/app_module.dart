@@ -12,6 +12,10 @@ import 'package:test_wpa/features/auth/domain/repositories/auth_repository.dart'
 import 'package:test_wpa/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:test_wpa/features/auth/views/forgot_password.dart';
 import 'package:test_wpa/features/auth/views/login_page.dart';
+import 'package:test_wpa/features/notification/data/repository/connection_repository_impl.dart';
+import 'package:test_wpa/features/notification/data/services/connection_api.dart';
+import 'package:test_wpa/features/notification/domain/repositories/connection_repository.dart';
+import 'package:test_wpa/features/notification/presentation/bloc/connection_bloc.dart';
 
 // Profile
 import 'package:test_wpa/features/profile/data/repository/profile_repository_impl.dart';
@@ -80,19 +84,23 @@ class AppModule extends Module {
     i.addLazySingleton<AuthRepository>(
       () => AuthRepositoryImpl(Modular.get<AuthApi>()),
     );
-    i.addLazySingleton<AuthBloc>(
+    //  add ถูกสร้างใหม่ถูกครั้งที่โดนเรียก
+    i.add<AuthBloc>(
       () => AuthBloc(authRepository: Modular.get<AuthRepository>()),
     );
 
     /// ================= Profile =================
+    /// addLazySingleton ใช้สร้างครั้งเดียว และใช้instance เดิมตลอด เมื่อ .close() แล้ว ไม่สามารถใช้งานได้อีก
     i.addLazySingleton<ProfileApi>(() => ProfileApi(Modular.get<Dio>()));
     i.addLazySingleton<ProfileRepository>(
       () => ProfileRepositoryImpl(api: Modular.get<ProfileApi>()),
     );
-    // i.addLazySingleton<ProfileBloc>(
-    //   () => ProfileBloc(profileRepository: Modular.get<ProfileRepository>()),
-    // );
-    i.addLazySingleton<ProfileBloc>(() => ProfileBloc(profileRepository: i()));
+    i.addLazySingleton<ProfileBloc>(
+      () => ProfileBloc(
+        profileRepository: Modular.get<ProfileRepository>(),
+        profileApi: Modular.get<ProfileApi>(),
+      ),
+    );
 
     /// ================= Schedule =================
     i.addLazySingleton<ScheduleApi>(() => ScheduleApi(Modular.get<Dio>()));
@@ -148,6 +156,17 @@ class AppModule extends Module {
       ),
     );
 
+    /// ================= Connection (NEW) =================
+    i.addLazySingleton<ConnectionApi>(() => ConnectionApi(Modular.get<Dio>()));
+    i.addLazySingleton<ConnectionRepository>(
+      () => ConnectionRepositoryImpl(api: Modular.get<ConnectionApi>()),
+    );
+    i.addLazySingleton<ConnectionBloc>(
+      () => ConnectionBloc(
+        connectionRepository: Modular.get<ConnectionRepository>(),
+      ),
+    );
+
     /// ================= Scan / QR Code =================
     i.addLazySingleton<QrApi>(() => QrApi(Modular.get<Dio>()));
     i.addLazySingleton<QrRepository>(
@@ -164,6 +183,7 @@ class AppModule extends Module {
     r.child(
       '/',
       child: (_) => BlocProvider<AuthBloc>(
+        // ✅ สร้าง AuthBloc instance ใหม่ทุกครั้งที่เข้าหน้า login
         create: (_) => Modular.get<AuthBloc>(),
         child: const LoginPage(),
       ),
@@ -194,15 +214,9 @@ class AppModule extends Module {
     );
 
     r.child('/chat', child: (_) => const ChatRoomListPage());
-    // r.child(
-    //   '/chat',
-    //   child: (_) => BlocProvider<ChatBloc>(
-    //     create: (_) => Modular.get<ChatBloc>()..add(ConnectWebSocket()),
-    //     child: const ChatRoomListPage(),
-    //   ),
-    // );
 
     r.child('/chat/room', child: (_) => const ChatConversationPage());
+
     r.child(
       '/scan',
       child: (_) => BlocProvider.value(
@@ -221,8 +235,11 @@ class AppModule extends Module {
 
     r.child(
       '/notification',
-      child: (_) => BlocProvider.value(
-        value: Modular.get<NotificationBloc>(),
+      child: (_) => MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: Modular.get<NotificationBloc>()),
+          BlocProvider.value(value: Modular.get<ConnectionBloc>()),
+        ],
         child: const NotificationWidget(),
       ),
     );

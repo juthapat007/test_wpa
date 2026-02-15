@@ -6,8 +6,12 @@ class NotificationApi {
   NotificationApi(this.dio);
 
   /// GET /api/v1/notifications
-  Future<List<dynamic>> getNotifications() async {
-    final response = await dio.get('/notifications');
+  /// Optional type parameter: 'system' for system notifications only
+  Future<List<dynamic>> getNotifications({String? type}) async {
+    final response = await dio.get(
+      '/notifications',
+      queryParameters: type != null ? {'type': type} : null,
+    );
     return response.data as List<dynamic>;
   }
 
@@ -18,8 +22,12 @@ class NotificationApi {
   }
 
   /// PATCH /api/v1/notifications/mark_all_as_read
-  Future<Map<String, dynamic>> markAllAsRead() async {
-    final response = await dio.patch('/notifications/mark_all_as_read');
+  /// Optional type parameter: 'system' to mark only system notifications as read
+  Future<Map<String, dynamic>> markAllAsRead({String? type}) async {
+    final response = await dio.patch(
+      '/notifications/mark_all_as_read',
+      queryParameters: type != null ? {'type': type} : null,
+    );
     return response.data as Map<String, dynamic>;
   }
 

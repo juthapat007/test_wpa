@@ -9,14 +9,14 @@ class NotificationRepositoryImpl implements NotificationRepository {
   NotificationRepositoryImpl({required this.api});
 
   @override
-  Future<List<NotificationItem>> getNotifications() async {
+  Future<List<NotificationItem>> getNotifications({String? type}) async {
     try {
-      final data = await api.getNotifications();
+      final data = await api.getNotifications(type: type);
       return data
           .map(
-            (json) =>
-                NotificationItemModel.fromJson(json as Map<String, dynamic>)
-                    .toEntity(),
+            (json) => NotificationItemModel.fromJson(
+              json as Map<String, dynamic>,
+            ).toEntity(),
           )
           .toList();
     } catch (e) {
@@ -35,9 +35,9 @@ class NotificationRepositoryImpl implements NotificationRepository {
   }
 
   @override
-  Future<void> markAllAsRead() async {
+  Future<void> markAllAsRead({String? type}) async {
     try {
-      await api.markAllAsRead();
+      await api.markAllAsRead(type: type);
     } catch (e) {
       throw Exception('Failed to mark all as read: $e');
     }

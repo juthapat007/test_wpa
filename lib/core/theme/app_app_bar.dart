@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String? title;
   final bool showBackButton;
