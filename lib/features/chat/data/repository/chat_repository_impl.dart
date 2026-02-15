@@ -4,8 +4,15 @@ import 'package:test_wpa/features/chat/data/models/chat_message.dart';
 import 'package:test_wpa/features/chat/data/models/chat_room.dart';
 import 'package:test_wpa/features/chat/data/services/chat_api.dart';
 import 'package:test_wpa/features/chat/data/services/chat_websocket_service.dart'
-    show ChatWebSocketService, ReadReceiptEvent, MessageDeletedEvent, MessageUpdatedEvent;
+    show
+        ChatWebSocketService,
+        ReadReceiptEvent,
+        MessageDeletedEvent,
+        MessageUpdatedEvent;
+
 import 'package:test_wpa/features/chat/domain/repositories/chat_repository.dart';
+import 'package:test_wpa/features/chat/domain/repositories/chat_repository.dart'
+    show TypingEvent;
 
 class ChatRepositoryImpl implements ChatRepository {
   final ChatApi api;
@@ -39,13 +46,20 @@ class ChatRepositoryImpl implements ChatRepository {
   Stream<bool> get connectionStream => webSocketService.connectionStream;
 
   @override
-  Stream<ReadReceiptEvent> get readReceiptStream => webSocketService.readReceiptStream;
+  Stream<ReadReceiptEvent> get readReceiptStream =>
+      webSocketService.readReceiptStream;
 
   @override
-  Stream<MessageDeletedEvent> get messageDeletedStream => webSocketService.messageDeletedStream;
+  Stream<MessageDeletedEvent> get messageDeletedStream =>
+      webSocketService.messageDeletedStream;
 
   @override
-  Stream<MessageUpdatedEvent> get messageUpdatedStream => webSocketService.messageUpdatedStream;
+  Stream<MessageUpdatedEvent> get messageUpdatedStream =>
+      webSocketService.messageUpdatedStream;
+
+  // 🆕 NEW: Typing stream
+  @override
+  Stream<TypingEvent> get typingStream => webSocketService.typingStream;
 
   @override
   Future<void> sendMessage(ChatMessage message) async {
@@ -110,7 +124,6 @@ class ChatRepositoryImpl implements ChatRepository {
     }
   }
 
-  // ✨ UPDATED: รองรับ pagination และ return metadata
   @override
   Future<Map<String, dynamic>> getChatHistory(
     String partnerId, {
@@ -127,7 +140,7 @@ class ChatRepositoryImpl implements ChatRepository {
       final List<dynamic> data = response.data['data'] ?? response.data;
       final meta = response.data['meta'];
 
-      print('🔍 API Response for partner $partnerId:');
+      print('📋 API Response for partner $partnerId:');
       print('   Total messages in this page: ${data.length}');
       print('   Current page: ${meta?['page']}');
       print('   Total pages: ${meta?['total_pages']}');
@@ -150,7 +163,6 @@ class ChatRepositoryImpl implements ChatRepository {
         );
       }).toList();
 
-      // เรียงจากเก่าสุดไปใหม่สุด (สำหรับแสดงผลใน ListView reverse: true)
       messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
       return {
@@ -192,6 +204,27 @@ class ChatRepositoryImpl implements ChatRepository {
     }
   }
 
+  // 🆕 UPDATED: เพิ่ม @override
+  @override
+  Future<void> updateMessage(String messageId, String content) async {
+    try {
+      await api.updateMessage(messageId: messageId, content: content);
+    } catch (e) {
+      throw Exception('Failed to update message: $e');
+    }
+  }
+
+  // 🆕 UPDATED: เพิ่ม @override
+  @override
+  Future<void> deleteMessage(String messageId) async {
+    try {
+      await api.deleteMessage(messageId);
+    } catch (e) {
+      throw Exception('Failed to delete message: $e');
+    }
+  }
+
+  // Helper methods (ไม่ใช่ part ของ interface)
   Future<void> sendTypingIndicator(String recipientId, bool isTyping) async {
     await webSocketService.sendTypingIndicator(recipientId, isTyping);
   }
@@ -202,21 +235,5 @@ class ChatRepositoryImpl implements ChatRepository {
 
   Future<void> leaveRoom(String userId) async {
     await webSocketService.leaveRoom(userId);
-  }
-
-  Future<void> updateMessage(String messageId, String content) async {
-    try {
-      await api.updateMessage(messageId: messageId, content: content);
-    } catch (e) {
-      throw Exception('Failed to update message: $e');
-    }
-  }
-
-  Future<void> deleteMessage(String messageId) async {
-    try {
-      await api.deleteMessage(messageId);
-    } catch (e) {
-      throw Exception('Failed to delete message: $e');
-    }
   }
 }

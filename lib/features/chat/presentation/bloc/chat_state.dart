@@ -24,8 +24,9 @@ final class ChatRoomSelected extends ChatState {
   final ChatRoom room;
   final List<ChatMessage> messages;
   final bool isWebSocketConnected;
-  final bool hasMoreMessages; // ✨ NEW: บอกว่ายังมีข้อความเก่าให้โหลดอีกหรือไม่
-  final int currentPage; // ✨ NEW: เก็บ page ปัจจุบัน
+  final bool hasMoreMessages; // ✨ บอกว่ายังมีข้อความเก่าให้โหลดอีกหรือไม่
+  final int currentPage; // ✨ เก็บ page ปัจจุบัน
+  final bool isTyping; // 🆕 NEW: อีกฝ่ายกำลังพิมพ์หรือไม่
 
   ChatRoomSelected({
     required this.room,
@@ -33,19 +34,22 @@ final class ChatRoomSelected extends ChatState {
     this.isWebSocketConnected = false,
     this.hasMoreMessages = true,
     this.currentPage = 1,
+    this.isTyping = false, // 🆕 NEW
   });
 }
 
-// ✨ NEW: State สำหรับกำลังโหลดข้อความเก่าเพิ่ม
+// ✨ State สำหรับกำลังโหลดข้อความเก่าเพิ่ม
 final class LoadingMoreMessages extends ChatState {
   final ChatRoom room;
   final List<ChatMessage> messages;
   final int currentPage;
+  final bool isTyping; // 🆕 NEW
 
   LoadingMoreMessages({
     required this.room,
     required this.messages,
     required this.currentPage,
+    this.isTyping = false, // 🆕 NEW
   });
 }
 

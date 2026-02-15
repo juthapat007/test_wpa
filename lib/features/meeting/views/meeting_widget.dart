@@ -17,14 +17,14 @@ import 'package:test_wpa/features/widgets/date_tab_bar.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'dart:async';
 
-class MeetingPage extends StatefulWidget {
-  const MeetingPage({super.key});
+class MeetingWidget extends StatefulWidget {
+  const MeetingWidget({super.key});
 
   @override
-  State<MeetingPage> createState() => _MeetingPageState();
+  State<MeetingWidget> createState() => _MeetingWidgetState();
 }
 
-class _MeetingPageState extends State<MeetingPage> {
+class _MeetingWidgetState extends State<MeetingWidget> {
   Timer? _timer;
   DateTime _currentTime = DateTime.now();
   String _selectedDateStr = '';
@@ -46,10 +46,11 @@ class _MeetingPageState extends State<MeetingPage> {
       });
     });
   }
-    @override
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    
+
     // Refresh ทุกครั้งที่กลับมาที่หน้านี้
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {

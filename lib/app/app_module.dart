@@ -12,6 +12,7 @@ import 'package:test_wpa/features/auth/domain/repositories/auth_repository.dart'
 import 'package:test_wpa/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:test_wpa/features/auth/views/forgot_password.dart';
 import 'package:test_wpa/features/auth/views/login_page.dart';
+import 'package:test_wpa/features/meeting/presentation/page/meeting_page.dart';
 import 'package:test_wpa/features/notification/data/repository/connection_repository_impl.dart';
 import 'package:test_wpa/features/notification/data/services/connection_api.dart';
 import 'package:test_wpa/features/notification/domain/repositories/connection_repository.dart';
@@ -24,7 +25,6 @@ import 'package:test_wpa/features/profile/domain/repositories/profile_repository
 import 'package:test_wpa/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:test_wpa/features/profile/presentation/bloc/profile_event.dart';
 import 'package:test_wpa/features/profile/presentation/page/profile_page.dart';
-import 'package:test_wpa/features/profile/views/profile_view.dart';
 import 'package:test_wpa/features/scan/data/repositories/qr_repository_impl.dart';
 import 'package:test_wpa/features/scan/data/services/qr_api.dart';
 import 'package:test_wpa/features/scan/domain/repositories/qr_repository.dart';
@@ -49,7 +49,6 @@ import 'package:test_wpa/features/meeting/data/repository/table_repository_impl.
 import 'package:test_wpa/features/meeting/data/services/table_api.dart';
 import 'package:test_wpa/features/meeting/domain/repositories/table_repository.dart';
 import 'package:test_wpa/features/meeting/presentation/bloc/table_bloc.dart';
-import 'package:test_wpa/features/meeting/views/meeting_page.dart';
 
 // Chat
 import 'package:test_wpa/features/chat/data/repository/chat_repository_impl.dart';

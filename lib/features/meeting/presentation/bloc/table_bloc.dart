@@ -18,23 +18,6 @@ class TableBloc extends Bloc<TableEvent, TableState> {
     on<ChangeDate>(_onChangeDate);
   }
 
-  // Future<void> _onLoadTableView(
-  //   LoadTableView event,
-  //   Emitter<TableState> emit,
-  // ) async {
-  //   emit(TableLoading());
-  //   try {
-  //     final response = await tableRepository.getTableView(
-  //       date: event.date,
-  //       time: event.time,
-  //     );
-  //     emit(TableLoaded(response));
-  //   } catch (e) {
-  //     print('TableBloc error: $e');
-  //     emit(TableError('Cannot load table view: $e'));
-  //   }
-  // }
-  // ที่ table_bloc.dart
   Future<void> _onLoadTableView(
     LoadTableView event,
     Emitter<TableState> emit,

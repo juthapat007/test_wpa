@@ -5,6 +5,8 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:test_wpa/features/chat/data/models/chat_message.dart';
 import 'package:logger/logger.dart';
 import 'package:test_wpa/core/constants/print_logger.dart';
+import 'package:test_wpa/features/chat/domain/repositories/chat_repository.dart'
+    show TypingEvent;
 
 /// Data class for read receipt events from WebSocket
 class ReadReceiptEvent {
@@ -40,6 +42,7 @@ class ChatWebSocketService {
       StreamController<MessageDeletedEvent>.broadcast();
   final _messageUpdatedController =
       StreamController<MessageUpdatedEvent>.broadcast();
+  final _typingController = StreamController<TypingEvent>.broadcast();
 
   bool _isConnected = false;
   bool get isConnected => _isConnected;
@@ -64,6 +67,7 @@ class ChatWebSocketService {
       _messageDeletedController.stream;
   Stream<MessageUpdatedEvent> get messageUpdatedStream =>
       _messageUpdatedController.stream;
+  Stream<TypingEvent> get typingStream => _typingController.stream;
 
   /// เชื่อมต่อ ActionCable WebSocket
   Future<void> connect(String token) async {
@@ -176,7 +180,6 @@ class ChatWebSocketService {
       // 🔥 DEBUG: แสดงทุก message ที่ได้รับ
       print('🔍 [WebSocket Raw Message] Type: $type');
       print('🔍 [WebSocket Raw Data] ${jsonEncode(data)}');
-      
 
       // ActionCable system messages
       switch (type) {
@@ -257,14 +260,29 @@ class ChatWebSocketService {
         print('✅ [READ RECEIPT] Received message_status_update event!');
         _handleMessageStatusUpdate(message);
         break;
-
       case 'typing_start':
-        debugPrint('User is typing...');
+        final userId = (message['user_id'] ?? message['userId'] ?? '')
+            .toString();
+        if (userId.isNotEmpty) {
+          _typingController.add(TypingEvent(userId: userId, isTyping: true));
+        }
         break;
 
       case 'typing_stop':
-        debugPrint('User stopped typing');
+        final userId = (message['user_id'] ?? message['userId'] ?? '')
+            .toString();
+        if (userId.isNotEmpty) {
+          _typingController.add(TypingEvent(userId: userId, isTyping: false));
+        }
         break;
+
+      // case 'typing_start':
+      //   debugPrint('User is typing...');
+      //   break;
+
+      // case 'typing_stop':
+      //   debugPrint('User stopped typing');
+      //   break;
 
       case 'message_deleted':
         _handleMessageDeleted(message);
@@ -629,5 +647,6 @@ class ChatWebSocketService {
     _readReceiptController.close();
     _messageDeletedController.close();
     _messageUpdatedController.close();
+    _typingController.close();
   }
 }

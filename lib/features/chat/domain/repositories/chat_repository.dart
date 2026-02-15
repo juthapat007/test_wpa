@@ -12,6 +12,7 @@ abstract class ChatRepository {
   Stream<ReadReceiptEvent> get readReceiptStream;
   Stream<MessageDeletedEvent> get messageDeletedStream;
   Stream<MessageUpdatedEvent> get messageUpdatedStream;
+  Stream<TypingEvent> get typingStream; // 🆕 NEW
   Future<void> sendMessage(ChatMessage message);
 
   // REST API
@@ -26,7 +27,19 @@ abstract class ChatRepository {
 
   Future<ChatRoom> createChatRoom(String participantId);
   Future<void> markAsRead(String roomId);
-  
+
   /// Mark a single message as read by its ID
   Future<void> markMessageAsRead(String messageId);
+
+  // 🆕 NEW: Message actions
+  Future<void> updateMessage(String messageId, String content);
+  Future<void> deleteMessage(String messageId);
+}
+
+// 🆕 NEW: Typing event data class
+class TypingEvent {
+  final String userId;
+  final bool isTyping;
+
+  TypingEvent({required this.userId, required this.isTyping});
 }

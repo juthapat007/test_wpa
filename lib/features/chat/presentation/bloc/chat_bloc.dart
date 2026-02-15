@@ -19,6 +19,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   StreamSubscription? _readReceiptSubscription;
   StreamSubscription? _messageDeletedSubscription;
   StreamSubscription? _messageUpdatedSubscription;
+  StreamSubscription? _typingSubscription;
 
   // Local state
   List<ChatRoom> _chatRooms = [];
@@ -68,6 +69,14 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<MessageReadReceived>(_onMessageReadReceived);
     on<WebSocketMessageDeleted>(_onWebSocketMessageDeleted);
     on<WebSocketMessageUpdated>(_onWebSocketMessageUpdated);
+
+    on<TypingStarted>(_onTypingStarted);
+    on<TypingStopped>(_onTypingStopped);
+    on<SendTypingIndicator>(_onSendTypingIndicator);
+
+    // 🆕 NEW: Message Action Handlers
+    on<DeleteMessageLocal>(_onDeleteMessageLocal);
+    on<UpdateMessageLocal>(_onUpdateMessageLocal);
   }
 
   Future<void> _onConnectWebSocket(
@@ -81,7 +90,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       await _readReceiptSubscription?.cancel();
       await _messageDeletedSubscription?.cancel();
       await _messageUpdatedSubscription?.cancel();
-
       await chatRepository.connectWebSocket();
 
       _messageSubscription = chatRepository.messageStream.listen(
@@ -114,12 +122,175 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           ),
         ),
       );
+      _typingSubscription = chatRepository.typingStream.listen((event) {
+        if (event.isTyping) {
+          add(TypingStarted(event.userId));
+        } else {
+          add(TypingStopped(event.userId));
+        }
+      });
+      await _typingSubscription?.cancel(); // 🆕 NEW
+
+      // ==================== 6. เพิ่มใน close() method ====================
+
+      await _typingSubscription?.cancel();
     } catch (e) {
       emit(ChatError('Failed to connect WebSocket: $e'));
     }
   }
+  // ==================== Typing Indicator Handlers ====================
 
-  // ใน chat_bloc.dart
+  void _onTypingStarted(TypingStarted event, Emitter<ChatState> emit) {
+    print('✍️ User ${event.userId} started typing');
+
+    if (_selectedRoom == null || _selectedRoom!.participantId != event.userId) {
+      return;
+    }
+
+    emit(
+      ChatRoomSelected(
+        room: _selectedRoom!,
+        messages: _messages,
+        isWebSocketConnected: _isWebSocketConnected,
+        hasMoreMessages: _hasMoreMessages,
+        currentPage: _currentPage,
+        isTyping: true,
+      ),
+    );
+  }
+
+  void _onTypingStopped(TypingStopped event, Emitter<ChatState> emit) {
+    print('✍️ User ${event.userId} stopped typing');
+
+    if (_selectedRoom == null || _selectedRoom!.participantId != event.userId) {
+      return;
+    }
+
+    emit(
+      ChatRoomSelected(
+        room: _selectedRoom!,
+        messages: _messages,
+        isWebSocketConnected: _isWebSocketConnected,
+        hasMoreMessages: _hasMoreMessages,
+        currentPage: _currentPage,
+        isTyping: false,
+      ),
+    );
+  }
+
+  Future<void> _onSendTypingIndicator(
+    SendTypingIndicator event,
+    Emitter<ChatState> emit,
+  ) async {
+    try {
+      await (chatRepository as ChatRepositoryImpl).sendTypingIndicator(
+        event.recipientId,
+        event.isTyping,
+      );
+    } catch (e) {
+      print('❌ Failed to send typing indicator: $e');
+    }
+  }
+
+  // ==================== Message Action Handlers ====================
+
+  Future<void> _onDeleteMessageLocal(
+    DeleteMessageLocal event,
+    Emitter<ChatState> emit,
+  ) async {
+    if (_selectedRoom == null) return;
+
+    print('🗑️ Deleting message ${event.messageId}');
+
+    try {
+      await (chatRepository as ChatRepositoryImpl).deleteMessage(
+        event.messageId,
+      );
+
+      _messages = _messages.where((m) => m.id != event.messageId).toList();
+
+      print('✅ Message deleted successfully');
+
+      emit(
+        ChatRoomSelected(
+          room: _selectedRoom!,
+          messages: _messages,
+          isWebSocketConnected: _isWebSocketConnected,
+          hasMoreMessages: _hasMoreMessages,
+          currentPage: _currentPage,
+        ),
+      );
+    } catch (e) {
+      print('❌ Failed to delete message: $e');
+      emit(ChatError('Failed to delete message'));
+
+      if (_selectedRoom != null) {
+        emit(
+          ChatRoomSelected(
+            room: _selectedRoom!,
+            messages: _messages,
+            isWebSocketConnected: _isWebSocketConnected,
+            hasMoreMessages: _hasMoreMessages,
+            currentPage: _currentPage,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _onUpdateMessageLocal(
+    UpdateMessageLocal event,
+    Emitter<ChatState> emit,
+  ) async {
+    if (_selectedRoom == null) return;
+
+    print('✏️ Editing message ${event.messageId}');
+
+    try {
+      await (chatRepository as ChatRepositoryImpl).updateMessage(
+        event.messageId,
+  event.newContent,
+
+      );
+
+      _messages = _messages.map((m) {
+        if (m.id == event.messageId) {
+          return m.copyWith(
+            content: event.newContent,
+            editedAt: DateTime.now(),
+          );
+        }
+        return m;
+      }).toList();
+
+      print('✅ Message updated successfully');
+
+      emit(
+        ChatRoomSelected(
+          room: _selectedRoom!,
+          messages: _messages,
+          isWebSocketConnected: _isWebSocketConnected,
+          hasMoreMessages: _hasMoreMessages,
+          currentPage: _currentPage,
+        ),
+      );
+    } catch (e) {
+      print('❌ Failed to update message: $e');
+      emit(ChatError('Failed to update message'));
+
+      if (_selectedRoom != null) {
+        emit(
+          ChatRoomSelected(
+            room: _selectedRoom!,
+            messages: _messages,
+            isWebSocketConnected: _isWebSocketConnected,
+            hasMoreMessages: _hasMoreMessages,
+            currentPage: _currentPage,
+          ),
+        );
+      }
+    }
+  }
 
   void _onMessageReadReceived(
     MessageReadReceived event,

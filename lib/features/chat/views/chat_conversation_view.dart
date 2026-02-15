@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
@@ -5,6 +6,7 @@ import 'package:test_wpa/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:test_wpa/features/chat/presentation/widgets/chat_input_field.dart';
 import 'package:test_wpa/features/chat/presentation/widgets/chat_message_bubble.dart';
 import 'package:test_wpa/features/chat/presentation/widgets/empty_state_widget.dart';
+import 'package:test_wpa/features/chat/presentation/widgets/typing_indicator.dart';
 
 class ChatConversationView extends StatefulWidget {
   const ChatConversationView({super.key});
@@ -18,18 +20,70 @@ class _ChatConversationViewState extends State<ChatConversationView> {
   final ScrollController _scrollController = ScrollController();
   bool _isLoadingMore = false;
 
+  // 🆕 NEW: Typing indicator management
+  Timer? _typingTimer;
+  bool _isTyping = false;
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _messageController.addListener(_onTextChanged); // 🆕 NEW
   }
 
   @override
   void dispose() {
+    _messageController.removeListener(_onTextChanged); // 🆕 NEW
     _messageController.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _typingTimer?.cancel(); // 🆕 NEW
     super.dispose();
+  }
+
+  // 🆕 NEW: Handle text changes for typing indicator
+  void _onTextChanged() {
+    final text = _messageController.text.trim();
+    final bloc = context.read<ChatBloc>();
+    final state = bloc.state;
+    final room = _getRoom(state);
+
+    if (room == null) return;
+
+    if (text.isNotEmpty && !_isTyping) {
+      // เริ่มพิมพ์
+      _isTyping = true;
+      bloc.add(
+        SendTypingIndicator(recipientId: room.participantId, isTyping: true),
+      );
+
+      // Reset timer
+      _typingTimer?.cancel();
+      _typingTimer = Timer(const Duration(seconds: 3), _stopTyping);
+    } else if (text.isEmpty && _isTyping) {
+      // หยุดพิมพ์ (ลบข้อความทั้งหมด)
+      _stopTyping();
+    } else if (text.isNotEmpty && _isTyping) {
+      // ยังคงพิมพ์อยู่ - reset timer
+      _typingTimer?.cancel();
+      _typingTimer = Timer(const Duration(seconds: 3), _stopTyping);
+    }
+  }
+
+  void _stopTyping() {
+    if (!_isTyping) return;
+
+    final bloc = context.read<ChatBloc>();
+    final state = bloc.state;
+    final room = _getRoom(state);
+
+    if (room == null) return;
+
+    _isTyping = false;
+    _typingTimer?.cancel();
+    bloc.add(
+      SendTypingIndicator(recipientId: room.participantId, isTyping: false),
+    );
   }
 
   void _onScroll() {
@@ -70,6 +124,9 @@ class _ChatConversationViewState extends State<ChatConversationView> {
     final content = _messageController.text.trim();
     if (content.isEmpty) return;
 
+    // 🆕 หยุด typing indicator ก่อนส่ง
+    _stopTyping();
+
     final bloc = context.read<ChatBloc>();
     final state = bloc.state;
 
@@ -109,48 +166,61 @@ class _ChatConversationViewState extends State<ChatConversationView> {
           final room = _getRoom(state);
           final messages = _getMessages(state);
           final currentUserId = context.read<ChatBloc>().currentUserId;
-          final isLoadingMore = state is LoadingMoreMessages;
+          final isTyping = _getIsTyping(state); // 🆕 NEW
 
           return Column(
             children: [
               // Messages list
               Expanded(
                 child: messages.isEmpty
-                    ? EmptyStateWidget(
+                    ? const EmptyStateWidget(
                         icon: Icons.chat_outlined,
                         title: 'No messages yet',
                         message: 'Start the conversation!',
                       )
-                    : Stack(
-                        children: [
-                          ListView.builder(
-                            controller: _scrollController,
-                            reverse: true,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            itemCount: messages.length,
-                            itemBuilder: (context, index) {
-                              final reversedIndex = messages.length - 1 - index;
-                              final message = messages[reversedIndex];
-                              final isMe = message.senderId == currentUserId;
+                    : ListView.builder(
+                        controller: _scrollController,
+                        reverse: true,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        itemCount:
+                            messages.length + (isTyping ? 1 : 0), // 🆕 NEW
+                        itemBuilder: (context, index) {
+                          // 🆕 NEW: แสดง typing indicator ที่ตำแหน่งแรก
+                          if (index == 0 && isTyping) {
+                            return TypingIndicator(
+                              userName: room?.participantName ?? 'User',
+                            );
+                          }
 
-                              return ChatMessageBubble(
-                                message: message,
-                                isMe: isMe,
-                              );
-                            },
-                          ),
+                          final messageIndex = isTyping ? index - 1 : index;
+                          final reversedIndex =
+                              messages.length - 1 - messageIndex;
+                          final message = messages[reversedIndex];
+                          final isMe = message.senderId == currentUserId;
 
-                          // Loading indicator
-                          // if (isLoadingMore)
-                          //   Positioned(
-                          //     top: 0,
-                          //     left: 0,
-                          //     right: 0,
-                          //     child: LoadingOverlay(
-                          //       message: 'Loading more messages...',
-                          //     ),
-                          //   ),
-                        ],
+                          return ChatMessageBubble(
+                            message: message,
+                            isMe: isMe,
+                            // 🆕 NEW: เพิ่ม callbacks สำหรับแก้ไขและลบ (เฉพาะข้อความของเรา)
+                            onEdit: isMe
+                                ? (newContent) {
+                                    context.read<ChatBloc>().add(
+                                      UpdateMessageLocal(
+                                        messageId: message.id,
+                                        newContent: newContent,
+                                      ),
+                                    );
+                                  }
+                                : null,
+                            onDelete: isMe
+                                ? () {
+                                    context.read<ChatBloc>().add(
+                                      DeleteMessageLocal(message.id),
+                                    );
+                                  }
+                                : null,
+                          );
+                        },
                       ),
               ),
 
@@ -163,7 +233,7 @@ class _ChatConversationViewState extends State<ChatConversationView> {
           );
         }
 
-        return EmptyStateWidget(
+        return const EmptyStateWidget(
           icon: Icons.chat_outlined,
           title: 'No chat selected',
         );
@@ -187,5 +257,12 @@ class _ChatConversationViewState extends State<ChatConversationView> {
     if (state is MessageSent) return state.messages;
     if (state is NewMessageReceived) return state.messages;
     return [];
+  }
+
+  // 🆕 NEW: Get typing status from state
+  bool _getIsTyping(ChatState state) {
+    if (state is ChatRoomSelected) return state.isTyping;
+    if (state is LoadingMoreMessages) return state.isTyping;
+    return false;
   }
 }

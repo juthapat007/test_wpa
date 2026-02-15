@@ -123,9 +123,7 @@ class AppScaffold extends StatelessWidget {
                                   fit: BoxFit.cover,
                                 )
                               : const DecorationImage(
-                                  image: AssetImage(
-                                    'assets/images/empty_state.png',
-                                  ),
+                                  image: AssetImage('assets/images/logo.png'),
                                   fit: BoxFit.cover,
                                 ),
                         ),
@@ -165,46 +163,8 @@ class AppScaffold extends StatelessWidget {
     );
   }
 
-  /// 🏠 กำหนดหน้า "บ้าน" ตาม currentIndex
-  String _getHomeRoute(int index) {
-    switch (index) {
-      case 0:
-        return '/meeting';
-      case 1:
-        return '/search';
-      case 2:
-        return '/scan';
-      case 3:
-        return '/chat';
-      case 4:
-        return '/schedule';
-      default:
-        return '/meeting'; // default fallback
-    }
-  }
-
   List<Widget>? _defaultActions(BuildContext context) {
     return [
-      // 🏠 Home Button
-      IconButton(
-        onPressed: () {
-          // ถ้าอยู่หน้าที่มี bottom nav bar (currentIndex >= 0)
-          // ให้กลับไปหน้านั้น
-          if (currentIndex >= 0) {
-            final homeRoute = _getHomeRoute(currentIndex);
-            Modular.to.navigate(homeRoute);
-          } else {
-            // ถ้าไม่มี bottom nav (เช่นหน้า notification, profile)
-            // ให้กลับไปหน้า meeting (หน้าแรก)
-            Modular.to.navigate('/meeting');
-          }
-        },
-        icon: const Icon(
-          Icons.home_outlined,
-          color: color.AppColors.textSecondary,
-        ),
-      ),
-
       // 🔔 Notification Button with Badge
       BlocBuilder<NotificationBloc, NotificationState>(
         builder: (context, state) {
