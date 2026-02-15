@@ -25,6 +25,16 @@ class ConnectionRepositoryImpl implements ConnectionRepository {
   }
 
   @override
+  Future<void> sendRequest(int delegateId) async {
+    try {
+      await api.sendConnectionRequest(delegateId);
+    } catch (e) {
+      print('❌ sendRequest error: $e');
+      throw Exception('Failed to send connection request: $e');
+    }
+  }
+
+  @override
   Future<void> acceptRequest(int id) async {
     try {
       await api.acceptRequest(id);

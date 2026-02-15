@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:test_wpa/features/search/domain/entities/delegate.dart';
 import 'package:test_wpa/features/search/widgets/delegate_card.dart';
 
-//โหลดข้อมูล delegate จาก API และแสดงใน ListView 
+//โหลดข้อมูล delegate จาก API และแสดงใน ListView
 class DelegateListView extends StatelessWidget {
   final DelegateSearchResponse response;
   final ScrollController scrollController;

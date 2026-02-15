@@ -66,6 +66,13 @@ import 'package:test_wpa/features/notification/domain/repositories/notification_
 import 'package:test_wpa/features/notification/presentation/bloc/notification_bloc.dart';
 import 'package:test_wpa/features/notification/presentation/page/notification.dart';
 
+// Someone Profile (NEW)
+import 'package:test_wpa/features/someone_profile/data/repository/profile_detail_repository_impl.dart';
+import 'package:test_wpa/features/someone_profile/data/services/profile_detail_api.dart';
+import 'package:test_wpa/features/someone_profile/domain/repositories/profile_detail_repository.dart';
+import 'package:test_wpa/features/someone_profile/presentation/bloc/profile_detail_bloc.dart';
+import 'package:test_wpa/features/someone_profile/presentation/pages/someone_profile_page.dart';
+
 // Other features
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_wpa/features/scan/presentation/bloc/scan_bloc.dart';
@@ -83,13 +90,11 @@ class AppModule extends Module {
     i.addLazySingleton<AuthRepository>(
       () => AuthRepositoryImpl(Modular.get<AuthApi>()),
     );
-    //  add ถูกสร้างใหม่ถูกครั้งที่โดนเรียก
     i.add<AuthBloc>(
       () => AuthBloc(authRepository: Modular.get<AuthRepository>()),
     );
 
     /// ================= Profile =================
-    /// addLazySingleton ใช้สร้างครั้งเดียว และใช้instance เดิมตลอด เมื่อ .close() แล้ว ไม่สามารถใช้งานได้อีก
     i.addLazySingleton<ProfileApi>(() => ProfileApi(Modular.get<Dio>()));
     i.addLazySingleton<ProfileRepository>(
       () => ProfileRepositoryImpl(api: Modular.get<ProfileApi>()),
@@ -155,7 +160,7 @@ class AppModule extends Module {
       ),
     );
 
-    /// ================= Connection (NEW) =================
+    /// ================= Connection =================
     i.addLazySingleton<ConnectionApi>(() => ConnectionApi(Modular.get<Dio>()));
     i.addLazySingleton<ConnectionRepository>(
       () => ConnectionRepositoryImpl(api: Modular.get<ConnectionApi>()),
@@ -174,6 +179,20 @@ class AppModule extends Module {
     i.addLazySingleton<ScanBloc>(
       () => ScanBloc(qrRepository: Modular.get<QrRepository>()),
     );
+
+    /// ================= Someone Profile (NEW) =================
+    i.addLazySingleton<ProfileDetailApi>(
+      () => ProfileDetailApi(Modular.get<Dio>()),
+    );
+    i.addLazySingleton<ProfileDetailRepository>(
+      () => ProfileDetailRepositoryImpl(api: Modular.get<ProfileDetailApi>()),
+    );
+    i.add<ProfileDetailBloc>(
+      () => ProfileDetailBloc(
+        profileDetailRepository: Modular.get<ProfileDetailRepository>(),
+        connectionRepository: Modular.get<ConnectionRepository>(),
+      ),
+    );
   }
 
   @override
@@ -182,7 +201,6 @@ class AppModule extends Module {
     r.child(
       '/',
       child: (_) => BlocProvider<AuthBloc>(
-        // ✅ สร้าง AuthBloc instance ใหม่ทุกครั้งที่เข้าหน้า login
         create: (_) => Modular.get<AuthBloc>(),
         child: const LoginPage(),
       ),
@@ -249,6 +267,20 @@ class AppModule extends Module {
         value: Modular.get<ScheduleBloc>()..add(LoadSchedules()),
         child: const ScheduleWidget(),
       ),
+    );
+
+    /// ===== Someone Profile (NEW) =====
+    r.child(
+      '/someone_profile',
+      child: (_) {
+        final args = r.args.data as Map<String, dynamic>?;
+        final someoneId = args?['someoneId'] as int? ?? 0;
+
+        return BlocProvider(
+          create: (_) => Modular.get<ProfileDetailBloc>(),
+          child: SomeoneProfilePage(someoneId: someoneId),
+        );
+      },
     );
   }
 }

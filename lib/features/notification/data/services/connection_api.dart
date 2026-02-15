@@ -22,4 +22,23 @@ class ConnectionApi {
     final response = await dio.patch('/requests/$id/reject');
     return response.data as Map<String, dynamic>;
   }
+
+  // Future<Response> sendConnectionRequest(int someoneId) async {
+  //   try {
+  //     final response = await dio.post('/connections/requests/$someoneId');
+  //     return response;
+  //   } catch (e) {
+  //     print('❌ ConnectionApi.sendConnectionRequest error: $e');
+  //     rethrow;
+  //   }
+  // }
+  Future<Response> sendConnectionRequest(int someoneId) async {
+    try {
+      final response = await dio.post('/connections/requests/$someoneId');
+      return response;
+    } catch (e) {
+      print('❌ ConnectionApi.sendConnectionRequest error: $e');
+      rethrow;
+    }
+  }
 }
