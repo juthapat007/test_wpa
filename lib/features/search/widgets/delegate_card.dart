@@ -1,3 +1,5 @@
+// lib/features/search/widgets/delegate_card.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/theme/app_text.dart';
@@ -14,20 +16,11 @@ class DelegateCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: () {
-          // ✅ Debug log
-          print('🎯 DelegateCard tapped!');
-          print('   Delegate Name: ${delegate.name}');
-          print('   Delegate ID: ${delegate.id}');
-          print('   Delegate Email: ${delegate.email}');
-          print('   Delegate Company: ${delegate.companyName}');
-
-          // ✅ Navigate to someone's profile
+          // ✅ ส่ง Delegate object ทั้งก้อนไปเลย
           Modular.to.pushNamed(
             '/someone_profile',
-            arguments: {'delegateId': delegate.id},
+            arguments: {'delegate': delegate}, // ← เปลี่ยนตรงนี้
           );
-
-          print('✅ Navigation called with delegateId: ${delegate.id}');
         },
         borderRadius: BorderRadius.circular(12),
         child: ListTile(

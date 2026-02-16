@@ -1,6 +1,9 @@
 import 'package:test_wpa/features/schedules/data/models/schedule_model.dart';
+import 'package:test_wpa/features/schedules/data/models/leave_type_model.dart';
 import 'package:test_wpa/features/schedules/data/services/schedule_api.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
+import 'package:test_wpa/features/schedules/domain/entities/leave_type.dart';
+import 'package:test_wpa/features/schedules/domain/entities/leave_form.dart';
 import 'package:test_wpa/features/schedules/domain/repositories/schedule_repository.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 import 'package:dio/dio.dart';
@@ -54,6 +57,56 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
         date: '',
         schedules: [],
         message: 'Something went wrong',
+      );
+    }
+  }
+
+  @override
+  Future<List<LeaveType>> getLeaveTypes() async {
+    try {
+      final response = await api.getLeaveTypes();
+      final data = response.data as List;
+      return data
+          .map((json) => LeaveTypeModel.fromJson(json).toEntity())
+          .toList();
+    } on DioException catch (e) {
+      print('❌ Error fetching leave types: ${e.message}');
+      return [];
+    }
+  }
+
+  @override
+  Future<LeaveFormResponse> submitLeaveForms(LeaveFormsRequest request) async {
+    try {
+      print('📤 Submitting leave forms: ${request.toJson()}');
+
+      final response = await api.submitLeaveForms(request.toJson());
+
+      print('✅ Leave forms submitted successfully');
+
+      return LeaveFormResponse.fromJson(
+        response.data is Map<String, dynamic>
+            ? response.data
+            : {
+                'success': true,
+                'message': 'Leave forms submitted successfully',
+              },
+      );
+    } on DioException catch (e) {
+      print('❌ Error submitting leave forms: ${e.message}');
+      print('❌ Response: ${e.response?.data}');
+
+      final errorMessage =
+          e.response?.data?['message'] ??
+          e.response?.data?['error'] ??
+          'Failed to submit leave forms';
+
+      return LeaveFormResponse(success: false, message: errorMessage);
+    } catch (e) {
+      print('❌ Unexpected error: $e');
+      return const LeaveFormResponse(
+        success: false,
+        message: 'An unexpected error occurred',
       );
     }
   }

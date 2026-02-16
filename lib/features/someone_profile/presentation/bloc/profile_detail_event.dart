@@ -6,13 +6,13 @@ import 'package:flutter/foundation.dart';
 sealed class ProfileDetailEvent {}
 
 class LoadProfileDetail extends ProfileDetailEvent {
-  final int someoneId;
+  final int delegateId;
 
-  LoadProfileDetail(this.someoneId);
+  LoadProfileDetail(this.delegateId);
 }
 
 class SendFriendRequest extends ProfileDetailEvent {
-  final int someoneId;
+  final int delegateId;
 
-  SendFriendRequest(this.someoneId);
+  SendFriendRequest(this.delegateId);
 }

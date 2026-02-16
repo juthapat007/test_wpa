@@ -3,5 +3,5 @@
 import 'package:test_wpa/features/someone_profile/domain/entities/profile_detail.dart';
 
 abstract class ProfileDetailRepository {
-  Future<ProfileDetail> getProfileDetail(int someoneId);
+  Future<ProfileDetail> getProfileDetail(int delegateId);
 }

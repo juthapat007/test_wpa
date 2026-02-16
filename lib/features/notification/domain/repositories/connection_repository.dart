@@ -4,5 +4,5 @@ abstract class ConnectionRepository {
   Future<List<ConnectionRequest>> getReceivedRequests();
   Future<void> acceptRequest(int id);
   Future<void> rejectRequest(int id);
-  Future<void> sendRequest(int someoneId);
+  Future<void> sendRequest(int delegateId);
 }

@@ -69,6 +69,14 @@ class _SchedulePageState extends State<SchedulePage> {
     });
   }
 
+  // Cancel selection mode
+  void _cancelSelectionMode() {
+    setState(() {
+      isSelectionMode = false;
+      selectedScheduleIds.clear();
+    });
+  }
+
   // Toggle schedule selection
   void _toggleScheduleSelection(int scheduleId) {
     if (!isSelectionMode) return;
@@ -82,48 +90,93 @@ class _SchedulePageState extends State<SchedulePage> {
     });
   }
 
+  void _proceedToAttendanceStatus() async {
+    if (selectedScheduleIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select at least one meeting'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final state = ReadContext(context).read<ScheduleBloc>().state;
+    if (state is ScheduleLoaded) {
+      final selectedSchedules = state.scheduleResponse.schedules
+          .where((s) => selectedScheduleIds.contains(s.id))
+          .toList();
+
+      // Navigate และรอผลลัพธ์
+      final result = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              AttendanceStatus(selectedSchedules: selectedSchedules),
+        ),
+      );
+
+      // ถ้า submit สำเร็จ (result == true) ให้ reload schedules
+      if (result == true && mounted) {
+        setState(() {
+          isSelectionMode = false;
+          selectedScheduleIds.clear();
+        });
+
+        // Reload schedules
+        if (_selectedDateStr.isNotEmpty) {
+          ReadContext(
+            context,
+          ).read<ScheduleBloc>().add(LoadSchedules(date: _selectedDateStr));
+        } else {
+          ReadContext(context).read<ScheduleBloc>().add(LoadSchedules());
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: color.AppColors.surface,
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 100, right: 20),
-        child: FloatingActionButton(
-          backgroundColor: isSelectionMode
-              ? color.AppColors.success
-              : color.AppColors.warning,
-          child: Icon(isSelectionMode ? Icons.check_circle : Icons.event_busy),
-          onPressed: () {
-            if (isSelectionMode) {
-              if (selectedScheduleIds.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please select at least one meeting'),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-                return;
-              }
-
-              final state = ReadContext(context).read<ScheduleBloc>().state;
-              if (state is ScheduleLoaded) {
-                final selectedSchedules = state.scheduleResponse.schedules
-                    .where((s) => selectedScheduleIds.contains(s.id))
-                    .toList();
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        AttendanceStatus(selectedSchedules: selectedSchedules),
-                  ),
-                );
-              }
-            } else {
-              _toggleSelectionMode();
-            }
-          },
-        ),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          // Cancel button (X) - แสดงเฉพาะตอน selection mode
+          if (isSelectionMode)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12, right: 20),
+              child: FloatingActionButton(
+                heroTag: 'cancel_selection',
+                backgroundColor: color.AppColors.error,
+                mini: true,
+                child: const Icon(Icons.close, color: Colors.white),
+                onPressed: _cancelSelectionMode,
+              ),
+            ),
+          // Main action button
+          Padding(
+            padding: const EdgeInsets.only(bottom: 100, right: 20),
+            child: FloatingActionButton(
+              heroTag: 'main_action',
+              backgroundColor: isSelectionMode
+                  ? color.AppColors.success
+                  : color.AppColors.warning,
+              child: Icon(
+                isSelectionMode ? Icons.check_circle : Icons.event_busy,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                if (isSelectionMode) {
+                  _proceedToAttendanceStatus();
+                } else {
+                  _toggleSelectionMode();
+                }
+              },
+            ),
+          ),
+        ],
       ),
       body: AppScaffold(
         title: 'My Schedule',

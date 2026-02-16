@@ -41,6 +41,7 @@ import 'package:test_wpa/features/schedules/presentation/page/schedule_widget.da
 import 'package:test_wpa/features/search/data/repository/delegate_repository_impl.dart';
 import 'package:test_wpa/features/search/data/services/delegate_api.dart';
 import 'package:test_wpa/features/search/domain/repositories/delegate_repository.dart';
+import 'package:test_wpa/features/search/domain/entities/delegate.dart'; // ✅ เพิ่ม import นี้
 import 'package:test_wpa/features/search/presentation/bloc/search_bloc.dart';
 import 'package:test_wpa/features/search/views/search_page.dart';
 
@@ -66,7 +67,7 @@ import 'package:test_wpa/features/notification/domain/repositories/notification_
 import 'package:test_wpa/features/notification/presentation/bloc/notification_bloc.dart';
 import 'package:test_wpa/features/notification/presentation/page/notification.dart';
 
-// Someone Profile (NEW)
+// Someone Profile
 import 'package:test_wpa/features/someone_profile/data/repository/profile_detail_repository_impl.dart';
 import 'package:test_wpa/features/someone_profile/data/services/profile_detail_api.dart';
 import 'package:test_wpa/features/someone_profile/domain/repositories/profile_detail_repository.dart';
@@ -180,7 +181,7 @@ class AppModule extends Module {
       () => ScanBloc(qrRepository: Modular.get<QrRepository>()),
     );
 
-    /// ================= Someone Profile (NEW) =================
+    /// ================= Someone Profile =================
     i.addLazySingleton<ProfileDetailApi>(
       () => ProfileDetailApi(Modular.get<Dio>()),
     );
@@ -269,16 +270,18 @@ class AppModule extends Module {
       ),
     );
 
-    /// ===== Someone Profile (NEW) =====
+    /// ===== Someone Profile (UPDATED) =====
     r.child(
       '/someone_profile',
       child: (_) {
         final args = r.args.data as Map<String, dynamic>?;
-        final someoneId = args?['someoneId'] as int? ?? 0;
+        final delegate = args?['delegate'] as Delegate; // ✅ รับ Delegate object
 
         return BlocProvider(
           create: (_) => Modular.get<ProfileDetailBloc>(),
-          child: SomeoneProfilePage(someoneId: someoneId),
+          child: SomeoneProfilePage(
+            delegate: delegate,
+          ), // ✅ ส่ง Delegate object
         );
       },
     );

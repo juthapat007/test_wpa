@@ -27,7 +27,7 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
 
     try {
       final profile = await profileDetailRepository.getProfileDetail(
-        event.someoneId,
+        event.delegateId,
       );
 
       emit(ProfileDetailLoaded(profile));
@@ -47,7 +47,7 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
     emit(FriendRequestSending());
 
     try {
-      await connectionRepository.sendRequest(event.someoneId);
+      await connectionRepository.sendRequest(event.delegateId);
       // ✅ อัปเดต isConnected เป็น true (หรือ pending)
       final updatedProfile = ProfileDetail(
         id: currentState.profile.id,

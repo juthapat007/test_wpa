@@ -8,9 +8,9 @@ class ProfileDetailApi {
   ProfileDetailApi(this.dio);
 
   /// Get someone profile detail
-  Future<Map<String, dynamic>> getProfileDetail(int someoneId) async {
+  Future<Map<String, dynamic>> getProfileDetail(int delegateId) async {
     try {
-      final response = await dio.get('/delegates/$someoneId');
+      final response = await dio.get('/delegates/$delegateId');
       return response.data as Map<String, dynamic>;
     } catch (e) {
       print('❌ ProfileDetailApi error: $e');

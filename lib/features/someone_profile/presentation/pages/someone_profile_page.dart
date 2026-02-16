@@ -4,15 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
+import 'package:test_wpa/features/search/domain/entities/delegate.dart';
 import 'package:test_wpa/features/someone_profile/presentation/bloc/profile_detail_bloc.dart';
 import 'package:test_wpa/features/someone_profile/presentation/bloc/profile_detail_event.dart';
 import 'package:test_wpa/features/someone_profile/presentation/bloc/profile_detail_state.dart';
+import 'package:test_wpa/features/someone_profile/domain/entities/profile_detail.dart';
 import 'package:test_wpa/features/widgets/app_button.dart';
 
 class SomeoneProfilePage extends StatefulWidget {
-  final int someoneId;
+  final Delegate delegate; // ✅ รับ Delegate object แทน
 
-  const SomeoneProfilePage({super.key, required this.someoneId});
+  const SomeoneProfilePage({super.key, required this.delegate});
 
   @override
   State<SomeoneProfilePage> createState() => _SomeoneProfilePageState();
@@ -22,9 +24,20 @@ class _SomeoneProfilePageState extends State<SomeoneProfilePage> {
   @override
   void initState() {
     super.initState();
-    // ✅ โหลดข้อมูล delegate ที่เลือก
-    print('🔍 Loading profile for someoneId: ${widget.someoneId}');
-    context.read<ProfileDetailBloc>().add(LoadProfileDetail(widget.someoneId));
+    // ✅ แปลง Delegate เป็น ProfileDetail แล้วโหลดเข้า BLoC
+    final profile = ProfileDetail(
+      id: widget.delegate.id,
+      name: widget.delegate.name,
+      title: widget.delegate.title,
+      email: widget.delegate.email,
+      companyName: widget.delegate.companyName,
+      avatarUrl: widget.delegate.avatarUrl,
+      countryCode: widget.delegate.countryCode,
+      isConnected: widget.delegate.isConnected,
+    );
+
+    // โหลด profile เข้า state
+    context.read<ProfileDetailBloc>().emit(ProfileDetailLoaded(profile));
   }
 
   @override
@@ -55,7 +68,6 @@ class _SomeoneProfilePageState extends State<SomeoneProfilePage> {
         },
         child: BlocBuilder<ProfileDetailBloc, ProfileDetailState>(
           builder: (context, state) {
-            // Loading state
             if (state is ProfileDetailLoading) {
               return const Center(
                 child: CircularProgressIndicator(
@@ -64,7 +76,6 @@ class _SomeoneProfilePageState extends State<SomeoneProfilePage> {
               );
             }
 
-            // Error state
             if (state is ProfileDetailError) {
               return Center(
                 child: Column(
@@ -80,29 +91,19 @@ class _SomeoneProfilePageState extends State<SomeoneProfilePage> {
                       state.message,
                       style: const TextStyle(color: color.AppColors.error),
                     ),
-                    SizedBox(height: space.m),
-                    ElevatedButton(
-                      onPressed: () {
-                        context.read<ProfileDetailBloc>().add(
-                              LoadProfileDetail(widget.someoneId),
-                            );
-                      },
-                      child: const Text('Retry'),
-                    ),
                   ],
                 ),
               );
             }
 
-            // ✅ Loaded state - แสดงข้อมูลของ delegate ที่เลือก
-            if (state is ProfileDetailLoaded) {
-              final profile = state.profile;
-              
-              print('✅ Displaying profile:');
-              print('   Name: ${profile.name}');
-              print('   Email: ${profile.email}');
-              print('   Company: ${profile.companyName}');
-              print('   Connected: ${profile.isConnected}');
+            if (state is ProfileDetailLoaded || state is FriendRequestSending) {
+              final profile = state is ProfileDetailLoaded
+                  ? state.profile
+                  : null;
+
+              if (profile == null) {
+                return const Center(child: Text('No profile data'));
+              }
 
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
@@ -179,22 +180,6 @@ class _SomeoneProfilePageState extends State<SomeoneProfilePage> {
               );
             }
 
-            // ✅ Sending request state
-            if (state is FriendRequestSending) {
-              return const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      color: color.AppColors.primary,
-                    ),
-                    SizedBox(height: 16),
-                    Text('Sending friend request...'),
-                  ],
-                ),
-              );
-            }
-
             return const SizedBox.shrink();
           },
         ),
@@ -235,7 +220,7 @@ class _SomeoneProfilePageState extends State<SomeoneProfilePage> {
     );
   }
 
-  Widget _buildConnectionSection(profile, BuildContext context) {
+  Widget _buildConnectionSection(ProfileDetail profile, BuildContext context) {
     return Column(
       children: [
         // Connection Status Badge
@@ -257,9 +242,7 @@ class _SomeoneProfilePageState extends State<SomeoneProfilePage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                profile.isConnected
-                    ? Icons.people
-                    : Icons.person_add_disabled,
+                profile.isConnected ? Icons.people : Icons.person_add_disabled,
                 size: 18,
                 color: profile.isConnected
                     ? color.AppColors.success
@@ -289,10 +272,9 @@ class _SomeoneProfilePageState extends State<SomeoneProfilePage> {
             backgroundColor: color.AppColors.primary,
             textColor: color.AppColors.textOnPrimary,
             onPressed: () {
-              print('🔔 Sending friend request to: ${profile.name} (ID: ${profile.id})');
               context.read<ProfileDetailBloc>().add(
-                    SendFriendRequest(profile.id),
-                  );
+                SendFriendRequest(profile.id),
+              );
             },
           ),
 
@@ -305,9 +287,7 @@ class _SomeoneProfilePageState extends State<SomeoneProfilePage> {
             onPressed: () {
               // TODO: Navigate to chat with this user
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Chat feature coming soon!'),
-                ),
+                const SnackBar(content: Text('Chat feature coming soon!')),
               );
             },
           ),
@@ -319,9 +299,7 @@ class _SomeoneProfilePageState extends State<SomeoneProfilePage> {
             onPressed: () {
               // TODO: Navigate to their schedule
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Schedule view coming soon!'),
-                ),
+                const SnackBar(content: Text('Schedule view coming soon!')),
               );
             },
           ),

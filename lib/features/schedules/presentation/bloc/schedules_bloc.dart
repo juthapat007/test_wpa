@@ -9,6 +9,8 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
   ScheduleBloc({required this.scheduleRepository}) : super(ScheduleInitial()) {
     on<LoadSchedules>(_onLoadSchedules);
     on<ChangeDate>(_onChangeDate);
+    on<LoadLeaveTypes>(_onLoadLeaveTypes);
+    on<SubmitLeaveForms>(_onSubmitLeaveForms);
   }
 
   Future<void> _onLoadSchedules(
@@ -50,6 +52,44 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
     } catch (e) {
       print('ScheduleBloc error: $e');
       emit(ScheduleError('Cannot load schedules: $e'));
+    }
+  }
+
+  Future<void> _onLoadLeaveTypes(
+    LoadLeaveTypes event,
+    Emitter<ScheduleState> emit,
+  ) async {
+    try {
+      final leaveTypes = await scheduleRepository.getLeaveTypes();
+      print('✅ ScheduleBloc: Loaded ${leaveTypes.length} leave types');
+      emit(LeaveTypesLoaded(leaveTypes));
+    } catch (e) {
+      print('❌ ScheduleBloc error loading leave types: $e');
+      emit(LeaveTypesError('Cannot load leave types: $e'));
+    }
+  }
+
+  Future<void> _onSubmitLeaveForms(
+    SubmitLeaveForms event,
+    Emitter<ScheduleState> emit,
+  ) async {
+    emit(LeaveFormsSubmitting());
+
+    try {
+      print('📤 ScheduleBloc: Submitting leave forms...');
+
+      final response = await scheduleRepository.submitLeaveForms(event.request);
+
+      if (response.success) {
+        print('✅ ScheduleBloc: Leave forms submitted successfully');
+        emit(LeaveFormsSubmitted(response));
+      } else {
+        print('❌ ScheduleBloc: Submit failed: ${response.message}');
+        emit(LeaveFormsSubmitError(response.message));
+      }
+    } catch (e) {
+      print('❌ ScheduleBloc error submitting leave forms: $e');
+      emit(LeaveFormsSubmitError('Failed to submit leave forms: $e'));
     }
   }
 }

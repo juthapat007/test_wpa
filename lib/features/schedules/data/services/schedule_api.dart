@@ -6,9 +6,23 @@ class ScheduleApi {
 
   // 🔧 เอา year params ออกเพราะ backend fix ปีไว้ที่ 2025 แล้ว
   Future<Response> getMySchedule({String? date}) {
-    return dio.get(
-      '/schedules/my_schedule',
-      queryParameters: {'date': ?date},
-    );
+    return dio.get('/schedules/my_schedule', queryParameters: {'date': date});
+  }
+
+  /// ดึงรายการประเภทการลา
+  /// GET /api/v1/leave_types
+  Future<Response> getLeaveTypes() {
+    return dio.get('/leave_types');
+  }
+
+  /// ดึงข้อมูล leave type ตาม ID
+  /// GET /api/v1/leave_types/{id}
+  Future<Response> getLeaveTypeById(int id) {
+    return dio.get('/leave_types/$id');
+  }
+
+  // ส่งข้อมูลการแจ้งลา
+  Future<Response> submitLeaveForms(Map<String, dynamic> data) {
+    return dio.post('/leave_forms', data: data);
   }
 }

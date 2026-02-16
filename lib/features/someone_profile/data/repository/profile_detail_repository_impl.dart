@@ -11,9 +11,9 @@ class ProfileDetailRepositoryImpl implements ProfileDetailRepository {
   ProfileDetailRepositoryImpl({required this.api});
 
   @override
-  Future<ProfileDetail> getProfileDetail(int someoneId) async {
+  Future<ProfileDetail> getProfileDetail(int delegateId) async {
     try {
-      final json = await api.getProfileDetail(someoneId);
+      final json = await api.getProfileDetail(delegateId);
       final model = ProfileDetailModel.fromJson(json);
       return model.toEntity();
     } catch (e) {
