@@ -10,6 +10,7 @@ import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_state.dart';
+import 'package:test_wpa/features/schedules/presentation/widgets/schedule_event_card.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/timeline_event_card.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
@@ -303,7 +304,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
                           GestureDetector(
                             onTap: () =>
                                 _onScheduleTap(currentSchedule.schedule),
-                            child: TimelineEventCard(
+                            child: ScheduleEventCard(
                               schedule: currentSchedule.schedule,
                               type: EventCardType.meeting,
                             ),

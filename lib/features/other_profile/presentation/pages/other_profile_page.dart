@@ -1,3 +1,5 @@
+// lib/features/other_profile/presentation/pages/other_profile_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -6,8 +8,8 @@ import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_event.dart';
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_state.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
+import 'package:test_wpa/features/schedules/presentation/widgets/schedule_event_card.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
-import 'package:test_wpa/features/schedules/presentation/widgets/timeline_row.dart';
 
 class OtherProfilePage extends StatefulWidget {
   final int delegateId;
@@ -77,6 +79,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           if (state is ProfileDetailLoaded || state is FriendRequestSending) {
             final profile = state is ProfileDetailLoaded ? state.profile : null;
             if (profile == null) return const Center(child: Text('No data'));
+
             final schedules = state is ProfileDetailLoaded
                 ? state.schedules
                 : null;
@@ -123,40 +126,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
               children: [
                 _buildAvatar(profile),
                 const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        profile.name,
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A2340),
-                        ),
-                      ),
-                      if (profile.title != null &&
-                          profile.title!.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          profile.title!,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF8A94A6),
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 2),
-                      Text(
-                        profile.companyName,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF8A94A6),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                Expanded(child: _buildProfileInfo(profile)),
                 IconButton(
                   icon: const Icon(Icons.more_horiz, color: Color(0xFF8A94A6)),
                   onPressed: () {},
@@ -173,6 +143,34 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildProfileInfo(ProfileDetail profile) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          profile.name,
+          style: const TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1A2340),
+          ),
+        ),
+        if (profile.title != null && profile.title!.isNotEmpty) ...[
+          const SizedBox(height: 2),
+          Text(
+            profile.title!,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF8A94A6)),
+          ),
+        ],
+        const SizedBox(height: 2),
+        Text(
+          profile.companyName,
+          style: const TextStyle(fontSize: 13, color: Color(0xFF8A94A6)),
+        ),
+      ],
     );
   }
 
@@ -294,12 +292,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
 
   // ─────────────── Event Section ───────────────
   Widget _buildEventSection(List<Schedule> schedules) {
-    // group by date
-    final Map<String, List<Schedule>> grouped = {};
-    final dateKey = DateFormat('d MMMM yyyy');
-    for (final s in schedules) {
-      grouped.putIfAbsent(dateKey.format(s.startAt), () => []).add(s);
-    }
+    final grouped = _groupByDate(schedules);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -319,17 +312,13 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         children: [
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Row(
-              children: [
-                Text(
-                  'Event Plan',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A2340),
-                  ),
-                ),
-              ],
+            child: Text(
+              'Event Plan',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1A2340),
+              ),
             ),
           ),
           ...grouped.entries.map((e) => _buildDateGroup(e.key, e.value)),
@@ -337,6 +326,16 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         ],
       ),
     );
+  }
+
+  /// จัดกลุ่ม schedule ตามวันที่
+  Map<String, List<Schedule>> _groupByDate(List<Schedule> schedules) {
+    final formatter = DateFormat('d MMMM yyyy');
+    final grouped = <String, List<Schedule>>{};
+    for (final s in schedules) {
+      grouped.putIfAbsent(formatter.format(s.startAt), () => []).add(s);
+    }
+    return grouped;
   }
 
   Widget _buildDateGroup(String dateLabel, List<Schedule> items) {
@@ -354,7 +353,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
             ),
           ),
         ),
-        //เนี่ยแหละ row event แต่ละอัน — ใช้ TimelineRow เลย ไม่ต้องทำใหม่
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
@@ -362,11 +360,10 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                 .map(
                   (s) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    // ✅ reuse TimelineRow เลย — same widget ที่ใช้ใน schedule page หลัก
-                    child: TimelineRow(
+                    // ✅ ใช้ ScheduleEventCard (common widget) — style ตรงกับ schedule page เป๊ะ
+                    child: ScheduleEventCard(
                       schedule: s,
-                      cardType: _toCardType(s),
-                      // isSelectionMode: false  (default)
+                      type: _resolveCardType(s),
                     ),
                   ),
                 )
@@ -377,16 +374,16 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     );
   }
 
-  /// map Schedule.type → EventCardType
-  /// logic ตรงกับ ScheduleCardHelper ทุกอย่าง
-  EventCardType _toCardType(Schedule s) {
+  /// แปลง Schedule.type → EventCardType
+  /// logic เดียวกับที่ schedule page ใช้ใน ScheduleCardHelper
+  EventCardType _resolveCardType(Schedule s) {
     switch (s.type) {
       case 'event':
-        return EventCardType.breakTime; // amber card
+        return EventCardType.breakTime;
       case 'nomeeting':
-        return EventCardType.empty; // dashed card
+        return EventCardType.empty;
       default:
-        return EventCardType.meeting; // white card + status badge
+        return EventCardType.meeting;
     }
   }
 

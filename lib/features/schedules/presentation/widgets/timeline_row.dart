@@ -4,8 +4,8 @@ import 'package:test_wpa/core/theme/app_colors.dart' as color;
 import 'package:test_wpa/core/utils/date_time_helper.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:intl/intl.dart';
+import 'package:test_wpa/features/schedules/presentation/widgets/schedule_event_card.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
-import 'timeline_event_card.dart';
 
 class TimelineRow extends StatelessWidget {
   final Schedule? schedule;
@@ -69,7 +69,7 @@ class TimelineRow extends StatelessWidget {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              TimelineEventCard(schedule: schedule, type: cardType),
+              ScheduleEventCard(schedule: schedule, type: cardType),
               // Checkbox overlay
               if (isSelectionMode)
                 Positioned(
