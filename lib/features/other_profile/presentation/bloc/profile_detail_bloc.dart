@@ -1,4 +1,4 @@
-// lib/features/Other_profile/presentation/bloc/profile_detail_bloc.dart
+// lib/features/other_profile/presentation/bloc/profile_detail_bloc.dart
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_wpa/features/notification/domain/repositories/connection_repository.dart';
@@ -6,6 +6,7 @@ import 'package:test_wpa/features/other_profile/domain/entities/profile_detail.d
 import 'package:test_wpa/features/other_profile/domain/repositories/profile_detail_repository.dart';
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_event.dart';
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_state.dart';
+import 'package:test_wpa/features/schedules/domain/entities/schedule.dart'; // ✅ Schedule
 import 'package:test_wpa/features/schedules/domain/repositories/schedule_others_repository.dart';
 
 class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
@@ -28,18 +29,12 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
     Emitter<ProfileDetailState> emit,
   ) async {
     emit(ProfileDetailLoading());
-
     try {
-      final profile = await profileDetailRepository.getProfileDetail(
-        event.delegateId,
-      );
-
+      final profile = await profileDetailRepository.getProfileDetail(event.delegateId);
       emit(ProfileDetailLoaded(profile));
-
-      // โหลด schedule ของคนนั้นด้วยอัตโนมัติ
+      // โหลด schedule อัตโนมัติ
       add(LoadScheduleOthers(event.delegateId));
     } catch (e) {
-      print('❌ ProfileDetailBloc error: $e');
       emit(ProfileDetailError('Cannot load profile: $e'));
     }
   }
@@ -52,10 +47,9 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
     if (currentState is! ProfileDetailLoaded) return;
 
     emit(FriendRequestSending());
-
     try {
       await connectionRepository.sendRequest(event.delegateId);
-      // ✅ อัปเดต isConnected เป็น true (หรือ pending)
+
       final updatedProfile = ProfileDetail(
         id: currentState.profile.id,
         name: currentState.profile.name,
@@ -64,21 +58,14 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
         companyName: currentState.profile.companyName,
         avatarUrl: currentState.profile.avatarUrl,
         countryCode: currentState.profile.countryCode,
-        isConnected: true, // ถือว่าส่ง request แล้ว
+        isConnected: true,
+        connectionStatus: ConnectionStatus.requestedByMe,
       );
 
-      emit(
-        ProfileDetailLoaded(updatedProfile, schedules: currentState.schedules),
-      );
-      emit(FriendRequestSuccess('Friend request sent successfully!'));
+      emit(ProfileDetailLoaded(updatedProfile, schedules: currentState.schedules));
+      emit(FriendRequestSuccess('Friend request sent!'));
     } catch (e) {
-      print('❌ Send friend request error: $e');
-      emit(
-        ProfileDetailLoaded(
-          currentState.profile,
-          schedules: currentState.schedules,
-        ),
-      ); // คืนสถานะเดิม
+      emit(ProfileDetailLoaded(currentState.profile, schedules: currentState.schedules));
       emit(FriendRequestFailed('Failed to send friend request'));
     }
   }
@@ -88,18 +75,16 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
     Emitter<ProfileDetailState> emit,
   ) async {
     final currentState = state;
-
     try {
-      final schedules = await scheduleOthersRepository.getScheduleOthers(
-        event.delegateId,
-      );
+      // ✅ repository return List<Schedule> โดยตรง
+      final List<Schedule> schedules =
+          await scheduleOthersRepository.getScheduleOthers(event.delegateId);
 
       if (currentState is ProfileDetailLoaded) {
         emit(ProfileDetailLoaded(currentState.profile, schedules: schedules));
       }
     } catch (e) {
-      print('❌ Load schedule error: $e');
-      // ไม่ให้ error ของ schedule ทำให้หน้าพังทั้งหมด
+      print('❌ Load schedule others error: $e');
       if (currentState is ProfileDetailLoaded) {
         emit(ProfileDetailLoaded(currentState.profile, schedules: []));
       }

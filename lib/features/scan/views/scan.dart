@@ -89,40 +89,94 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
   }
 
   void _navigateToOtherProfile(String qrData) {
-    try {
-      // ✅ แปลง QR Code เป็น delegate_id
-      int delegateId;
+    // 🔍 Debug: แสดง QR data ที่สแกนได้
+    print('📱 QR Data scanned: $qrData');
+    print('📱 QR Data length: ${qrData.length}');
+    print('📱 QR Data type: ${qrData.runtimeType}');
 
-      // กรณี QR Code เป็น JSON
-      if (qrData.startsWith('{')) {
+    try {
+      int? delegateId;
+
+      // ตัด whitespace
+      qrData = qrData.trim();
+
+      // 🔍 กรณีที่ 1: QR Code เป็น JSON object
+      if (qrData.startsWith('{') && qrData.endsWith('}')) {
+        print('📋 Parsing as JSON...');
         final jsonData = jsonDecode(qrData);
-        delegateId = int.parse(jsonData['delegate_id'].toString());
-      } else {
-        // กรณี QR Code เป็น ID โดยตรง
-        delegateId = int.parse(qrData);
+        print('📋 JSON Data: $jsonData');
+        print('📋 JSON Keys: ${jsonData.keys.toList()}');
+
+        // ลองหา key ต่างๆ ที่อาจเป็น delegate_id
+        if (jsonData.containsKey('delegate_id')) {
+          delegateId = int.tryParse(jsonData['delegate_id'].toString());
+          print('📋 Found delegate_id: $delegateId');
+        } else if (jsonData.containsKey('id')) {
+          delegateId = int.tryParse(jsonData['id'].toString());
+          print('📋 Found id: $delegateId');
+        } else if (jsonData.containsKey('delegateId')) {
+          delegateId = int.tryParse(jsonData['delegateId'].toString());
+          print('📋 Found delegateId: $delegateId');
+        } else {
+          print('❌ No delegate_id field found in JSON');
+          print('📋 Available keys: ${jsonData.keys.join(", ")}');
+        }
+      }
+      // 🔍 กรณีที่ 2: QR Code เป็นตัวเลขโดยตรง
+      else {
+        print('🔢 Parsing as plain number...');
+        delegateId = int.tryParse(qrData);
+        print('🔢 Parsed result: $delegateId');
       }
 
+      // ตรวจสอบว่าได้ delegate_id หรือไม่
+      if (delegateId == null) {
+        throw Exception('Cannot parse delegate_id from QR data: $qrData');
+      }
+
+      print('✅ Delegate ID parsed: $delegateId');
+
       // ✅ นำทางไปหน้า other_profile พร้อม delegate_id
-      // หน้า other_profile จะโหลดข้อมูลจาก API เอง
       Modular.to.pushNamed(
         '/other_profile',
         arguments: {'delegate_id': delegateId},
       );
-    } catch (e) {
-      print('Error parsing QR code: $e');
 
-      // แสดง error message
+      print('🚀 Navigating to /other_profile with ID: $delegateId');
+    } catch (e, stackTrace) {
+      print('❌ Error parsing QR code: $e');
+      print('📍 Stack trace: $stackTrace');
+
+      // แสดง error message ที่ละเอียดกว่า
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(width: space.m),
-              Expanded(child: Text('QR Code ไม่ถูกต้อง: $qrData')),
+              Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.white),
+                  const SizedBox(width: space.m),
+                  const Expanded(
+                    child: Text(
+                      'QR Code ไม่ถูกต้อง',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: space.s),
+              Text(
+                'Data: ${qrData.length > 50 ? qrData.substring(0, 50) + "..." : qrData}',
+                style: const TextStyle(fontSize: 12),
+              ),
+              Text('Error: $e', style: const TextStyle(fontSize: 12)),
             ],
           ),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),

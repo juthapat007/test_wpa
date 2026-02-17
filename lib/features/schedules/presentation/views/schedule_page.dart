@@ -8,8 +8,8 @@ import 'package:test_wpa/features/schedules/presentation/bloc/schedules_state.da
 import 'package:test_wpa/features/schedules/presentation/views/attendance_status.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/timeline_row.dart';
-import 'package:test_wpa/features/schedules/presentation/widgets/empty_schedule_view.dart';
-import 'package:test_wpa/features/schedules/presentation/widgets/error_schedule_view.dart';
+import 'package:test_wpa/features/schedules/presentation/widgets/states/empty_schedule_view.dart';
+import 'package:test_wpa/features/schedules/presentation/widgets/states/error_schedule_view.dart';
 import 'package:test_wpa/features/widgets/date_tab_bar.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
 
@@ -79,7 +79,7 @@ class _SchedulePageState extends State<SchedulePage> {
   }
 
   // Toggle schedule selection
-  // ✅ เพิ่มเงื่อนไข: เลือกได้แค่ meeting ที่ไม่มี leave
+  //เพิ่มเงื่อนไข: เลือกได้แค่ meeting ที่ไม่มี leave
   void _toggleScheduleSelection(int scheduleId) {
     if (!isSelectionMode) return;
 
@@ -218,7 +218,7 @@ class _SchedulePageState extends State<SchedulePage> {
                           });
                         });
                       }
-
+                      //ตรงน้ชี้คือการแสดง DateTabBar
                       return DateTabBar(
                         availableDates: response.availableDates,
                         selectedDate: _selectedDateStr.isNotEmpty

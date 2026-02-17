@@ -107,7 +107,7 @@ class _MeetingCard extends StatelessWidget {
       return Row(
         children: [
           Icon(helper.leadingIcon, size: 14, color: helper.leadingIconColor),
-           SizedBox(width: 4),
+          SizedBox(width: 4),
           Text(
             helper.isEvent ? 'Break Time' : 'Free Time',
             style: TextStyle(
@@ -165,7 +165,7 @@ class _MeetingCard extends StatelessWidget {
           Row(
             children: [
               Icon(Icons.flag, size: 12, color: Colors.grey[400]),
-               SizedBox(width: 4),
+              SizedBox(width: 4),
               Text(
                 schedule.country,
                 style: TextStyle(fontSize: 11, color: Colors.grey[400]),
@@ -220,7 +220,6 @@ class _BreakTimeCard extends StatelessWidget {
               style: TextStyle(
                 fontFamily: 'Playfair Display',
                 fontSize: 20,
-                fontStyle: FontStyle.italic,
                 fontWeight: FontWeight.w500,
                 color: Colors.amber[700],
               ),

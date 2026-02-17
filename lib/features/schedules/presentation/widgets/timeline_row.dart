@@ -24,6 +24,7 @@ class TimelineRow extends StatelessWidget {
     return DateTimeHelper.formatTime12(dateTime);
   }
 
+  //เอามาบอกว่าเช้า บ่าย เย็น อะไรแบบนี้ — เอาไว้แสดงใต้เวลาตรงข้างบนอีกที
   String _formatPeriod(DateTime dateTime) {
     return DateFormat('a').format(dateTime).toUpperCase();
   }

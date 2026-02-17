@@ -1,560 +1,16 @@
-// // lib/features/other_profile/presentation/pages/other_profile_page.dart
-
-// import 'package:flutter/material.dart';
-// import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:test_wpa/core/constants/set_space.dart';
-// import 'package:test_wpa/core/theme/app_colors.dart' as color;
-// import 'package:test_wpa/features/other_profile/domain/entities/profile_detail.dart';
-// import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_bloc.dart';
-// import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_event.dart';
-// import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_state.dart';
-// import 'package:test_wpa/features/schedules/domain/entities/schedule_item.dart';
-// import 'package:test_wpa/features/widgets/app_button.dart';
-// import 'package:intl/intl.dart';
-
-// class OtherProfilePage extends StatefulWidget {
-//   final int delegateId; // ✅ รับ delegateId แทน Delegate object
-
-//   const OtherProfilePage({super.key, required this.delegateId});
-
-//   @override
-//   State<OtherProfilePage> createState() => _OtherProfilePageState();
-// }
-
-// class _OtherProfilePageState extends State<OtherProfilePage> {
-//   // ✅ ไม่ต้องมี initState เพราะ BLoC ได้ trigger LoadProfileDetail แล้วที่ app_module
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: color.AppColors.background,
-//       appBar: AppBar(
-//         title: const Text('Profile'),
-//         backgroundColor: color.AppColors.surface,
-//         elevation: 0,
-//       ),
-//       body: BlocListener<ProfileDetailBloc, ProfileDetailState>(
-//         listener: (context, state) {
-//           if (state is FriendRequestSuccess) {
-//             ScaffoldMessenger.of(context).showSnackBar(
-//               SnackBar(
-//                 content: Text(state.message),
-//                 backgroundColor: color.AppColors.success,
-//               ),
-//             );
-//           } else if (state is FriendRequestFailed) {
-//             ScaffoldMessenger.of(context).showSnackBar(
-//               SnackBar(
-//                 content: Text(state.message),
-//                 backgroundColor: color.AppColors.error,
-//               ),
-//             );
-//           }
-//         },
-//         child: BlocBuilder<ProfileDetailBloc, ProfileDetailState>(
-//           builder: (context, state) {
-//             if (state is ProfileDetailLoading) {
-//               return const Center(
-//                 child: CircularProgressIndicator(
-//                   color: color.AppColors.primary,
-//                 ),
-//               );
-//             }
-
-//             if (state is ProfileDetailError) {
-//               return Center(
-//                 child: Column(
-//                   mainAxisAlignment: MainAxisAlignment.center,
-//                   children: [
-//                     const Icon(
-//                       Icons.error_outline,
-//                       size: 64,
-//                       color: color.AppColors.error,
-//                     ),
-//                     SizedBox(height: space.m),
-//                     Text(
-//                       state.message,
-//                       style: const TextStyle(color: color.AppColors.error),
-//                     ),
-//                     SizedBox(height: space.l),
-//                     ElevatedButton(
-//                       onPressed: () {
-//                         context.read<ProfileDetailBloc>().add(
-//                           LoadProfileDetail(widget.delegateId),
-//                         );
-//                       },
-//                       child: const Text('ลองใหม่'),
-//                     ),
-//                   ],
-//                 ),
-//               );
-//             }
-
-//             if (state is ProfileDetailLoaded || state is FriendRequestSending) {
-//               final profile = state is ProfileDetailLoaded
-//                   ? state.profile
-//                   : null;
-
-//               if (profile == null) {
-//                 return const Center(child: Text('No profile data'));
-//               }
-
-//               final schedules = state is ProfileDetailLoaded
-//                   ? state.schedules
-//                   : null;
-
-//               return SingleChildScrollView(
-//                 child: Column(
-//                   children: [
-//                     // Profile Section
-//                     _buildProfileSection(profile, context),
-
-//                     const SizedBox(height: space.l),
-
-//                     // Schedule Section
-//                     if (schedules != null && schedules.isNotEmpty)
-//                       _buildScheduleSection(schedules, profile.name),
-//                   ],
-//                 ),
-//               );
-//             }
-
-//             return const SizedBox.shrink();
-//           },
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _buildProfileSection(ProfileDetail profile, BuildContext context) {
-//     return Container(
-//       width: double.infinity,
-//       decoration: BoxDecoration(
-//         color: color.AppColors.surface,
-//         boxShadow: [
-//           BoxShadow(
-//             color: Colors.black.withOpacity(0.05),
-//             blurRadius: 10,
-//             offset: const Offset(0, 2),
-//           ),
-//         ],
-//       ),
-//       child: Padding(
-//         padding: const EdgeInsets.all(20),
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.center,
-//           children: [
-//             // Avatar
-//             Hero(
-//               tag: 'avatar_${profile.id}',
-//               child: CircleAvatar(
-//                 radius: 60,
-//                 backgroundImage: profile.avatarUrl.isNotEmpty
-//                     ? NetworkImage(profile.avatarUrl)
-//                     : null,
-//                 backgroundColor: color.AppColors.primary.withOpacity(0.1),
-//                 child: profile.avatarUrl.isEmpty
-//                     ? Text(
-//                         profile.name.substring(0, 1).toUpperCase(),
-//                         style: const TextStyle(
-//                           fontSize: 40,
-//                           fontWeight: FontWeight.bold,
-//                           color: color.AppColors.primary,
-//                         ),
-//                       )
-//                     : null,
-//               ),
-//             ),
-
-//             SizedBox(height: space.l),
-
-//             // Name
-//             Text(
-//               profile.name,
-//               style: const TextStyle(
-//                 fontSize: 24,
-//                 fontWeight: FontWeight.bold,
-//                 color: color.AppColors.textPrimary,
-//               ),
-//               textAlign: TextAlign.center,
-//             ),
-
-//             SizedBox(height: space.xs),
-
-//             // Title
-//             if (profile.title != null && profile.title!.isNotEmpty)
-//               Text(
-//                 profile.title!,
-//                 style: const TextStyle(
-//                   fontSize: 16,
-//                   color: color.AppColors.textSecondary,
-//                 ),
-//                 textAlign: TextAlign.center,
-//               ),
-
-//             SizedBox(height: space.m),
-
-//             // Company
-//             _buildInfoRow(
-//               icon: Icons.business,
-//               label: 'Company',
-//               value: profile.companyName,
-//             ),
-
-//             // Email
-//             _buildInfoRow(
-//               icon: Icons.email,
-//               label: 'Email',
-//               value: profile.email,
-//             ),
-
-//             // Country
-//             _buildInfoRow(
-//               icon: Icons.flag,
-//               label: 'Country',
-//               value: profile.countryCode,
-//             ),
-
-//             SizedBox(height: space.xl),
-
-//             // Connection Status & Actions
-//             _buildConnectionSection(profile, context),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _buildScheduleSection(List<ScheduleItem> schedules, String userName) {
-//     return Container(
-//       margin: const EdgeInsets.symmetric(horizontal: 16),
-//       decoration: BoxDecoration(
-//         color: color.AppColors.surface,
-//         borderRadius: BorderRadius.circular(16),
-//         boxShadow: [
-//           BoxShadow(
-//             color: Colors.black.withOpacity(0.05),
-//             blurRadius: 10,
-//             offset: const Offset(0, 2),
-//           ),
-//         ],
-//       ),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           Padding(
-//             padding: const EdgeInsets.all(16),
-//             child: Row(
-//               children: [
-//                 Container(
-//                   padding: const EdgeInsets.all(8),
-//                   decoration: BoxDecoration(
-//                     color: color.AppColors.primary.withOpacity(0.1),
-//                     borderRadius: BorderRadius.circular(8),
-//                   ),
-//                   child: const Icon(
-//                     Icons.calendar_today,
-//                     color: color.AppColors.primary,
-//                     size: 20,
-//                   ),
-//                 ),
-//                 const SizedBox(width: space.m),
-//                 Expanded(
-//                   child: Text(
-//                     '$userName\'s Schedule',
-//                     style: const TextStyle(
-//                       fontSize: 18,
-//                       fontWeight: FontWeight.bold,
-//                       color: color.AppColors.textPrimary,
-//                     ),
-//                   ),
-//                 ),
-//                 Container(
-//                   padding: const EdgeInsets.symmetric(
-//                     horizontal: 12,
-//                     vertical: 6,
-//                   ),
-//                   decoration: BoxDecoration(
-//                     color: color.AppColors.primary.withOpacity(0.1),
-//                     borderRadius: BorderRadius.circular(12),
-//                   ),
-//                   child: Text(
-//                     '${schedules.length} events',
-//                     style: const TextStyle(
-//                       fontSize: 12,
-//                       fontWeight: FontWeight.w600,
-//                       color: color.AppColors.primary,
-//                     ),
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ),
-//           const Divider(height: 1),
-//           ListView.separated(
-//             shrinkWrap: true,
-//             physics: const NeverScrollableScrollPhysics(),
-//             padding: const EdgeInsets.all(16),
-//             itemCount: schedules.length,
-//             separatorBuilder: (context, index) =>
-//                 const SizedBox(height: space.m),
-//             itemBuilder: (context, index) {
-//               return _buildScheduleCard(schedules[index]);
-//             },
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildScheduleCard(ScheduleItem schedule) {
-//     final dateFormat = DateFormat('MMM dd, yyyy');
-//     final timeFormat = DateFormat('HH:mm');
-
-//     return Container(
-//       padding: const EdgeInsets.all(16),
-//       decoration: BoxDecoration(
-//         color: color.AppColors.background,
-//         borderRadius: BorderRadius.circular(12),
-//         border: Border.all(color: color.AppColors.primary.withOpacity(0.2)),
-//       ),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           // Title & Type
-//           Row(
-//             children: [
-//               Expanded(
-//                 child: Text(
-//                   schedule.title,
-//                   style: const TextStyle(
-//                     fontSize: 16,
-//                     fontWeight: FontWeight.w600,
-//                     color: color.AppColors.textPrimary,
-//                   ),
-//                 ),
-//               ),
-//               if (schedule.type != null)
-//                 Container(
-//                   padding: const EdgeInsets.symmetric(
-//                     horizontal: 8,
-//                     vertical: 4,
-//                   ),
-//                   decoration: BoxDecoration(
-//                     color: color.AppColors.secondary.withOpacity(0.1),
-//                     borderRadius: BorderRadius.circular(8),
-//                   ),
-//                   child: Text(
-//                     schedule.type!,
-//                     style: const TextStyle(
-//                       fontSize: 11,
-//                       fontWeight: FontWeight.w600,
-//                       color: color.AppColors.secondary,
-//                     ),
-//                   ),
-//                 ),
-//             ],
-//           ),
-
-//           if (schedule.description != null &&
-//               schedule.description!.isNotEmpty) ...[
-//             const SizedBox(height: space.s),
-//             Text(
-//               schedule.description!,
-//               style: const TextStyle(
-//                 fontSize: 14,
-//                 color: color.AppColors.textSecondary,
-//               ),
-//             ),
-//           ],
-
-//           const SizedBox(height: space.m),
-
-//           // Time & Location
-//           Row(
-//             children: [
-//               Icon(
-//                 Icons.access_time,
-//                 size: 16,
-//                 color: color.AppColors.textSecondary,
-//               ),
-//               const SizedBox(width: space.xs),
-//               Text(
-//                 '${timeFormat.format(schedule.startTime)} - ${timeFormat.format(schedule.endTime)}',
-//                 style: const TextStyle(
-//                   fontSize: 13,
-//                   color: color.AppColors.textSecondary,
-//                 ),
-//               ),
-//               const SizedBox(width: space.m),
-//               Icon(
-//                 Icons.calendar_today,
-//                 size: 16,
-//                 color: color.AppColors.textSecondary,
-//               ),
-//               const SizedBox(width: space.xs),
-//               Text(
-//                 dateFormat.format(schedule.startTime),
-//                 style: const TextStyle(
-//                   fontSize: 13,
-//                   color: color.AppColors.textSecondary,
-//                 ),
-//               ),
-//             ],
-//           ),
-
-//           if (schedule.location != null && schedule.location!.isNotEmpty) ...[
-//             const SizedBox(height: space.s),
-//             Row(
-//               children: [
-//                 Icon(
-//                   Icons.location_on,
-//                   size: 16,
-//                   color: color.AppColors.textSecondary,
-//                 ),
-//                 const SizedBox(width: space.xs),
-//                 Expanded(
-//                   child: Text(
-//                     schedule.location!,
-//                     style: const TextStyle(
-//                       fontSize: 13,
-//                       color: color.AppColors.textSecondary,
-//                     ),
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ],
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildInfoRow({
-//     required IconData icon,
-//     required String label,
-//     required String value,
-//   }) {
-//     return Padding(
-//       padding: const EdgeInsets.symmetric(vertical: 8),
-//       child: Row(
-//         children: [
-//           Icon(icon, size: 20, color: color.AppColors.textSecondary),
-//           SizedBox(width: space.s),
-//           Text(
-//             '$label: ',
-//             style: const TextStyle(
-//               fontSize: 14,
-//               fontWeight: FontWeight.w600,
-//               color: color.AppColors.textSecondary,
-//             ),
-//           ),
-//           Expanded(
-//             child: Text(
-//               value,
-//               style: const TextStyle(
-//                 fontSize: 14,
-//                 color: color.AppColors.textPrimary,
-//               ),
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildConnectionSection(ProfileDetail profile, BuildContext context) {
-//     return Column(
-//       children: [
-//         // Connection Status Badge
-//         Container(
-//           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-//           decoration: BoxDecoration(
-//             color: profile.isConnected
-//                 ? color.AppColors.success.withOpacity(0.1)
-//                 : color.AppColors.warning.withOpacity(0.1),
-//             borderRadius: BorderRadius.circular(20),
-//             border: Border.all(
-//               color: profile.isConnected
-//                   ? color.AppColors.success
-//                   : color.AppColors.warning,
-//               width: 1,
-//             ),
-//           ),
-//           child: Row(
-//             mainAxisSize: MainAxisSize.min,
-//             children: [
-//               Icon(
-//                 profile.isConnected ? Icons.people : Icons.person_add_disabled,
-//                 size: 18,
-//                 color: profile.isConnected
-//                     ? color.AppColors.success
-//                     : color.AppColors.warning,
-//               ),
-//               SizedBox(width: space.xs),
-//               Text(
-//                 profile.isConnected ? '✓ Connected' : 'Not Connected',
-//                 style: TextStyle(
-//                   fontSize: 14,
-//                   fontWeight: FontWeight.w600,
-//                   color: profile.isConnected
-//                       ? color.AppColors.success
-//                       : color.AppColors.warning,
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ),
-
-//         SizedBox(height: space.l),
-
-//         // Add Friend Button (only show if not connected)
-//         // if (!profile.isConnected)
-//         //   AppButton(
-//         //     text: 'Add Friend',
-//         //     backgroundColor: color.AppColors.primary,
-//         //     textColor: color.AppColors.textOnPrimary,
-//         //     onPressed: () {
-//         //       context.read<ProfileDetailBloc>().add(
-//         //         SendFriendRequest(profile.id),
-//         //       );
-//         //     },
-//         //   ),
-
-//         // Message Button (if connected)
-//         if (profile.isConnected) ...[
-//           AppButton(
-//             text: 'Send Message',
-//             backgroundColor: color.AppColors.primary,
-//             textColor: color.AppColors.textOnPrimary,
-//             onPressed: () {
-//               ScaffoldMessenger.of(context).showSnackBar(
-//                 const SnackBar(content: Text('Chat feature coming soon!')),
-//               );
-//             },
-//           ),
-//         ],
-//       ],
-//     );
-//   }
-// }
-// lib/features/other_profile/presentation/pages/other_profile_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:test_wpa/core/constants/set_space.dart';
-import 'package:test_wpa/core/theme/app_colors.dart' as color;
+import 'package:intl/intl.dart';
 import 'package:test_wpa/features/other_profile/domain/entities/profile_detail.dart';
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_bloc.dart';
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_event.dart';
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_state.dart';
-import 'package:test_wpa/features/schedules/domain/entities/schedule_item.dart';
-import 'package:test_wpa/features/widgets/app_button.dart';
-import 'package:intl/intl.dart';
+import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
+import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
+import 'package:test_wpa/features/schedules/presentation/widgets/timeline_row.dart';
 
 class OtherProfilePage extends StatefulWidget {
-  final int delegateId; // ✅ รับ delegateId แทน Delegate object
-
+  final int delegateId;
   const OtherProfilePage({super.key, required this.delegateId});
 
   @override
@@ -562,61 +18,65 @@ class OtherProfilePage extends StatefulWidget {
 }
 
 class _OtherProfilePageState extends State<OtherProfilePage> {
-  // ✅ ไม่ต้องมี initState เพราะ BLoC ได้ trigger LoadProfileDetail แล้วที่ app_module
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: color.AppColors.background,
+      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: const Text('Profile'),
-        backgroundColor: color.AppColors.surface,
+        backgroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.chevron_left,
+            color: Color(0xFF4A90D9),
+            size: 32,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'Profile Overview',
+          style: TextStyle(
+            color: Color(0xFF4A90D9),
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFE8ECF0), height: 1),
+        ),
       ),
-      body: BlocBuilder<ProfileDetailBloc, ProfileDetailState>(
-        builder: (context, state) {
-          if (state is ProfileDetailLoading) {
-            return const Center(
-              child: CircularProgressIndicator(color: color.AppColors.primary),
+      body: BlocConsumer<ProfileDetailBloc, ProfileDetailState>(
+        listener: (context, state) {
+          if (state is FriendRequestSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.green,
+              ),
             );
-          }
-
-          if (state is ProfileDetailError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: color.AppColors.error,
-                  ),
-                  SizedBox(height: space.m),
-                  Text(
-                    state.message,
-                    style: const TextStyle(color: color.AppColors.error),
-                  ),
-                  SizedBox(height: space.l),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<ProfileDetailBloc>().add(
-                        LoadProfileDetail(widget.delegateId),
-                      );
-                    },
-                    child: const Text('ลองใหม่'),
-                  ),
-                ],
+          } else if (state is FriendRequestFailed) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
               ),
             );
           }
-
+        },
+        builder: (context, state) {
+          if (state is ProfileDetailLoading) {
+            return const Center(
+              child: CircularProgressIndicator(color: Color(0xFF4A90D9)),
+            );
+          }
+          if (state is ProfileDetailError) {
+            return _buildErrorView(context, state.message);
+          }
           if (state is ProfileDetailLoaded || state is FriendRequestSending) {
             final profile = state is ProfileDetailLoaded ? state.profile : null;
-
-            if (profile == null) {
-              return const Center(child: Text('No profile data'));
-            }
-
+            if (profile == null) return const Center(child: Text('No data'));
             final schedules = state is ProfileDetailLoaded
                 ? state.schedules
                 : null;
@@ -624,434 +84,408 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
             return SingleChildScrollView(
               child: Column(
                 children: [
-                  // Profile Section
-                  _buildProfileSection(profile, context),
-
-                  const SizedBox(height: space.l),
-
-                  // Schedule Section
+                  const SizedBox(height: 16),
+                  _buildProfileCard(profile, context),
+                  const SizedBox(height: 16),
                   if (schedules != null && schedules.isNotEmpty)
-                    _buildScheduleSection(schedules, profile.name),
+                    _buildEventSection(schedules),
+                  const SizedBox(height: 32),
                 ],
               ),
             );
           }
-
           return const SizedBox.shrink();
         },
       ),
     );
   }
 
-  Widget _buildProfileSection(ProfileDetail profile, BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: color.AppColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Avatar
-            Hero(
-              tag: 'avatar_${profile.id}',
-              child: CircleAvatar(
-                radius: 60,
-                backgroundImage: profile.avatarUrl.isNotEmpty
-                    ? NetworkImage(profile.avatarUrl)
-                    : null,
-                backgroundColor: color.AppColors.primary.withOpacity(0.1),
-                child: profile.avatarUrl.isEmpty
-                    ? Text(
-                        profile.name.substring(0, 1).toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 40,
-                          fontWeight: FontWeight.bold,
-                          color: color.AppColors.primary,
-                        ),
-                      )
-                    : null,
-              ),
-            ),
-
-            SizedBox(height: space.l),
-
-            // Name
-            Text(
-              profile.name,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: color.AppColors.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-
-            SizedBox(height: space.xs),
-
-            // Title
-            if (profile.title != null && profile.title!.isNotEmpty)
-              Text(
-                profile.title!,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: color.AppColors.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-            SizedBox(height: space.m),
-
-            // Company
-            _buildInfoRow(
-              icon: Icons.business,
-              label: 'Company',
-              value: profile.companyName,
-            ),
-
-            // Email
-            _buildInfoRow(
-              icon: Icons.email,
-              label: 'Email',
-              value: profile.email,
-            ),
-
-            // Country
-            _buildInfoRow(
-              icon: Icons.flag,
-              label: 'Country',
-              value: profile.countryCode,
-            ),
-
-            SizedBox(height: space.xl),
-
-            // Connection Status & Actions
-            _buildConnectionSection(profile, context),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildScheduleSection(List<ScheduleItem> schedules, String userName) {
+  // ─────────────── Profile Card ───────────────
+  Widget _buildProfileCard(ProfileDetail profile, BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: color.AppColors.surface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+            child: Row(
+              children: [
+                _buildAvatar(profile),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        profile.name,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A2340),
+                        ),
+                      ),
+                      if (profile.title != null &&
+                          profile.title!.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          profile.title!,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF8A94A6),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 2),
+                      Text(
+                        profile.companyName,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF8A94A6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.more_horiz, color: Color(0xFF8A94A6)),
+                  onPressed: () {},
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+          ),
+          Container(height: 1, color: const Color(0xFFF0F2F5)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            child: _buildActionButtons(profile, context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvatar(ProfileDetail profile) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: color.AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.calendar_today,
-                    color: color.AppColors.primary,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: space.m),
-                Expanded(
-                  child: Text(
-                    '$userName\'s Schedule',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: color.AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: color.AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${schedules.length} events',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: color.AppColors.primary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            itemCount: schedules.length,
-            separatorBuilder: (context, index) =>
-                const SizedBox(height: space.m),
-            itemBuilder: (context, index) {
-              return _buildScheduleCard(schedules[index]);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildScheduleCard(ScheduleItem schedule) {
-    final dateFormat = DateFormat('MMM dd, yyyy');
-    final timeFormat = DateFormat('HH:mm');
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.AppColors.background,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.AppColors.primary.withOpacity(0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title & Type
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  schedule.title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: color.AppColors.textPrimary,
-                  ),
-                ),
-              ),
-              if (schedule.type != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: color.AppColors.secondary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    schedule.type!,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: color.AppColors.secondary,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-
-          if (schedule.description != null &&
-              schedule.description!.isNotEmpty) ...[
-            const SizedBox(height: space.s),
-            Text(
-              schedule.description!,
-              style: const TextStyle(
-                fontSize: 14,
-                color: color.AppColors.textSecondary,
-              ),
-            ),
-          ],
-
-          const SizedBox(height: space.m),
-
-          // Time & Location
-          Row(
-            children: [
-              Icon(
-                Icons.access_time,
-                size: 16,
-                color: color.AppColors.textSecondary,
-              ),
-              const SizedBox(width: space.xs),
-              Text(
-                '${timeFormat.format(schedule.startTime)} - ${timeFormat.format(schedule.endTime)}',
+      child: CircleAvatar(
+        radius: 36,
+        backgroundImage: profile.avatarUrl.isNotEmpty
+            ? NetworkImage(profile.avatarUrl)
+            : null,
+        backgroundColor: const Color(0xFF4A90D9).withOpacity(0.15),
+        child: profile.avatarUrl.isEmpty
+            ? Text(
+                profile.name.isNotEmpty ? profile.name[0].toUpperCase() : '?',
                 style: const TextStyle(
-                  fontSize: 13,
-                  color: color.AppColors.textSecondary,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF4A90D9),
                 ),
-              ),
-              const SizedBox(width: space.m),
-              Icon(
-                Icons.calendar_today,
-                size: 16,
-                color: color.AppColors.textSecondary,
-              ),
-              const SizedBox(width: space.xs),
-              Text(
-                dateFormat.format(schedule.startTime),
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: color.AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-
-          if (schedule.location != null && schedule.location!.isNotEmpty) ...[
-            const SizedBox(height: space.s),
-            Row(
-              children: [
-                Icon(
-                  Icons.location_on,
-                  size: 16,
-                  color: color.AppColors.textSecondary,
-                ),
-                const SizedBox(width: space.xs),
-                Expanded(
-                  child: Text(
-                    schedule.location!,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: color.AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
+              )
+            : null,
       ),
     );
   }
 
-  Widget _buildInfoRow({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: color.AppColors.textSecondary),
-          SizedBox(width: space.s),
-          Text(
-            '$label: ',
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: color.AppColors.textSecondary,
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                color: color.AppColors.textPrimary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // ─────────────── Action Buttons ───────────────
+  Widget _buildActionButtons(ProfileDetail profile, BuildContext context) {
+    final isSending =
+        context.watch<ProfileDetailBloc>().state is FriendRequestSending;
 
-  Widget _buildConnectionSection(ProfileDetail profile, BuildContext context) {
-    return Column(
+    return Row(
       children: [
-        // Connection Status Badge
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: profile.isConnected
-                ? color.AppColors.success.withOpacity(0.1)
-                : color.AppColors.warning.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: profile.isConnected
-                  ? color.AppColors.success
-                  : color.AppColors.warning,
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                profile.isConnected ? Icons.people : Icons.person_add_disabled,
-                size: 18,
-                color: profile.isConnected
-                    ? color.AppColors.success
-                    : color.AppColors.warning,
-              ),
-              SizedBox(width: space.xs),
-              Text(
-                profile.isConnected ? '✓ Connected' : 'Not Connected',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: profile.isConnected
-                      ? color.AppColors.success
-                      : color.AppColors.warning,
-                ),
-              ),
-            ],
+        Expanded(child: _buildConnectButton(profile, context, isSending)),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _OutlineButton(
+            icon: Icons.chat_bubble_outline,
+            label: 'Chat',
+            color: profile.connectionStatus == ConnectionStatus.connected
+                ? const Color(0xFF4A90D9)
+                : const Color(0xFFBCC5D3),
+            onTap: profile.connectionStatus == ConnectionStatus.connected
+                ? () => ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Chat coming soon!')),
+                  )
+                : null,
           ),
         ),
+        const SizedBox(width: 10),
+        const Expanded(
+          child: _FilledButton(label: 'Event Plan', color: Color(0xFF5DC98A)),
+        ),
+      ],
+    );
+  }
 
-        SizedBox(height: space.l),
+  Widget _buildConnectButton(
+    ProfileDetail profile,
+    BuildContext context,
+    bool isSending,
+  ) {
+    switch (profile.connectionStatus) {
+      case ConnectionStatus.none:
+        return _OutlineButton(
+          label: 'Add Friend',
+          color: const Color(0xFF4A90D9),
+          onTap: isSending
+              ? null
+              : () => context.read<ProfileDetailBloc>().add(
+                  SendFriendRequest(profile.id),
+                ),
+        );
+      case ConnectionStatus.requestedByMe:
+        return const _OutlineButton(
+          icon: Icons.access_time,
+          label: 'Pending',
+          color: Color(0xFF8A94A6),
+        );
+      case ConnectionStatus.requestedToMe:
+        return Row(
+          children: [
+            Expanded(
+              child: _FilledButton(
+                label: 'Accept',
+                color: const Color(0xFF5DC98A),
+                onTap: () => context.read<ProfileDetailBloc>().add(
+                  SendFriendRequest(profile.id),
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: _OutlineButton(
+                label: 'Reject',
+                color: const Color(0xFFE05454),
+                onTap: () {},
+              ),
+            ),
+          ],
+        );
+      case ConnectionStatus.connected:
+        return const _OutlineButton(
+          icon: Icons.check,
+          label: 'Connected',
+          color: Color(0xFF5DC98A),
+        );
+    }
+  }
 
-        // TODO: Add Friend Button - รอ backend พร้อมก่อน
-        // if (!profile.isConnected)
-        //   AppButton(
-        //     text: 'Add Friend',
-        //     backgroundColor: color.AppColors.primary,
-        //     textColor: color.AppColors.textOnPrimary,
-        //     onPressed: () {
-        //       context.read<ProfileDetailBloc>().add(
-        //         SendFriendRequest(profile.id),
-        //       );
-        //     },
-        //   ),
+  // ─────────────── Event Section ───────────────
+  Widget _buildEventSection(List<Schedule> schedules) {
+    // group by date
+    final Map<String, List<Schedule>> grouped = {};
+    final dateKey = DateFormat('d MMMM yyyy');
+    for (final s in schedules) {
+      grouped.putIfAbsent(dateKey.format(s.startAt), () => []).add(s);
+    }
 
-        // Message Button (if connected)
-        if (profile.isConnected) ...[
-          AppButton(
-            text: 'Send Message',
-            backgroundColor: color.AppColors.primary,
-            textColor: color.AppColors.textOnPrimary,
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Chat feature coming soon!')),
-              );
-            },
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              children: [
+                Text(
+                  'Event Plan',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A2340),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ...grouped.entries.map((e) => _buildDateGroup(e.key, e.value)),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateGroup(String dateLabel, List<Schedule> items) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: Text(
+            dateLabel,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF8A94A6),
+            ),
+          ),
+        ),
+        //เนี่ยแหละ row event แต่ละอัน — ใช้ TimelineRow เลย ไม่ต้องทำใหม่
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            children: items
+                .map(
+                  (s) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    // ✅ reuse TimelineRow เลย — same widget ที่ใช้ใน schedule page หลัก
+                    child: TimelineRow(
+                      schedule: s,
+                      cardType: _toCardType(s),
+                      // isSelectionMode: false  (default)
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        ),
       ],
+    );
+  }
+
+  /// map Schedule.type → EventCardType
+  /// logic ตรงกับ ScheduleCardHelper ทุกอย่าง
+  EventCardType _toCardType(Schedule s) {
+    switch (s.type) {
+      case 'event':
+        return EventCardType.breakTime; // amber card
+      case 'nomeeting':
+        return EventCardType.empty; // dashed card
+      default:
+        return EventCardType.meeting; // white card + status badge
+    }
+  }
+
+  Widget _buildErrorView(BuildContext context, String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 64, color: Colors.redAccent),
+          const SizedBox(height: 16),
+          Text(message, style: const TextStyle(color: Colors.redAccent)),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () => context.read<ProfileDetailBloc>().add(
+              LoadProfileDetail(widget.delegateId),
+            ),
+            child: const Text('ลองใหม่'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────── Button widgets ───────────────
+
+class _OutlineButton extends StatelessWidget {
+  final String label;
+  final IconData? icon;
+  final Color color;
+  final VoidCallback? onTap;
+
+  const _OutlineButton({
+    required this.label,
+    this.icon,
+    this.color = const Color(0xFF4A90D9),
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 40,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          border: Border.all(color: color, width: 1.5),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FilledButton extends StatelessWidget {
+  final String label;
+  final Color color;
+  final VoidCallback? onTap;
+
+  const _FilledButton({required this.label, required this.color, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 40,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+      ),
     );
   }
 }

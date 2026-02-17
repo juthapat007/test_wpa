@@ -1,4 +1,3 @@
-
 enum ScheduleStatus {
   past,
   now,
