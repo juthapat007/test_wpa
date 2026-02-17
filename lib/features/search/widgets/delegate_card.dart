@@ -1,5 +1,3 @@
-// lib/features/search/widgets/delegate_card.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/theme/app_text.dart';
@@ -19,7 +17,7 @@ class DelegateCard extends StatelessWidget {
           // ✅ ส่ง Delegate object ทั้งก้อนไปเลย
           Modular.to.pushNamed(
             '/someone_profile',
-            arguments: {'delegate': delegate}, // ← เปลี่ยนตรงนี้
+            arguments: {'delegate': delegate},
           );
         },
         borderRadius: BorderRadius.circular(12),
@@ -44,6 +42,7 @@ class DelegateCard extends StatelessWidget {
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ✅ title เป็น String (non-nullable) ตามที่ entity กำหนด
               if (delegate.title.isNotEmpty)
                 Text(delegate.title, style: TextStyle(color: Colors.grey[600])),
               AppText(delegate.companyName),

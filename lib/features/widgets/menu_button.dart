@@ -33,7 +33,7 @@ class MenuButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: backgroundColor,
         foregroundColor: foregroundColor,
-        padding: const EdgeInsets.symmetric(vertical: 20),
+        padding: const EdgeInsets.symmetric(vertical: 14),
         // elevation: isDanger ? 6 : (isSelected ? 4 : 1),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),

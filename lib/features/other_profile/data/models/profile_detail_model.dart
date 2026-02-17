@@ -1,6 +1,6 @@
-// lib/features/someone_profile/data/models/profile_detail_model.dart
+// lib/features/other_profile/data/models/profile_detail_model.dart
 
-import 'package:test_wpa/features/someone_profile/domain/entities/profile_detail.dart';
+import 'package:test_wpa/features/other_profile/domain/entities/profile_detail.dart';
 
 class ProfileDetailModel {
   final int id;

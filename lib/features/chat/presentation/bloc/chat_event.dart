@@ -97,13 +97,13 @@ class WebSocketMessageUpdated extends ChatEvent {
 
 // ============ 🆕 NEW: Typing Indicator Events ============
 
-/// Received from WebSocket: someone started typing
+/// Received from WebSocket: other started typing
 class TypingStarted extends ChatEvent {
   final String userId;
   TypingStarted(this.userId);
 }
 
-/// Received from WebSocket: someone stopped typing
+/// Received from WebSocket: other stopped typing
 class TypingStopped extends ChatEvent {
   final String userId;
   TypingStopped(this.userId);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
@@ -78,6 +79,7 @@ class _SchedulePageState extends State<SchedulePage> {
   }
 
   // Toggle schedule selection
+  // ✅ เพิ่มเงื่อนไข: เลือกได้แค่ meeting ที่ไม่มี leave
   void _toggleScheduleSelection(int scheduleId) {
     if (!isSelectionMode) return;
 
@@ -157,7 +159,7 @@ class _SchedulePageState extends State<SchedulePage> {
             ),
           // Main action button
           Padding(
-            padding: const EdgeInsets.only(bottom: 100, right: 20),
+            padding: const EdgeInsets.only(bottom: height.xxl, right: height.s),
             child: FloatingActionButton(
               heroTag: 'main_action',
               backgroundColor: isSelectionMode
@@ -253,25 +255,39 @@ class _SchedulePageState extends State<SchedulePage> {
                           padding: const EdgeInsets.only(
                             left: 16,
                             right: 16,
-                            bottom: 100,
+                            bottom: height.l,
                           ),
                           itemCount: schedules.length,
                           separatorBuilder: (context, index) =>
-                              const SizedBox(height: 16),
+                              const SizedBox(height: height.m),
                           itemBuilder: (context, index) {
                             final schedule = schedules[index];
                             final isSelected = selectedScheduleIds.contains(
                               schedule.id,
                             );
 
+                            // ✅ เช็คว่า schedule นี้เลือกได้หรือไม่
+                            // เลือกได้ก็ต่อเมื่อ: leave == null และ type == "meeting"
+                            final isSelectable =
+                                schedule.leave == null &&
+                                schedule.type == 'meeting';
+
                             return GestureDetector(
-                              onTap: () =>
-                                  _toggleScheduleSelection(schedule.id),
-                              child: TimelineRow(
-                                schedule: schedule,
-                                cardType: EventCardType.meeting,
-                                isSelectionMode: isSelectionMode,
-                                isSelected: isSelected,
+                              onTap: isSelectionMode && isSelectable
+                                  ? () => _toggleScheduleSelection(schedule.id)
+                                  : null,
+                              child: Opacity(
+                                // ถ้าอยู่ใน selection mode แต่เลือกไม่ได้ ให้โปร่งแสง
+                                opacity: isSelectionMode && !isSelectable
+                                    ? 0.4
+                                    : 1.0,
+                                child: TimelineRow(
+                                  schedule: schedule,
+                                  cardType: EventCardType.meeting,
+                                  isSelectionMode:
+                                      isSelectionMode && isSelectable,
+                                  isSelected: isSelected,
+                                ),
                               ),
                             );
                           },

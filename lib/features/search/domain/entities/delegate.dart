@@ -1,7 +1,7 @@
 class Delegate {
   final int id;
   final String name;
-  final String title;
+  final String title; // ✅ non-nullable ตามโค้ดเดิม
   final String email;
   final String companyName;
   final String avatarUrl;

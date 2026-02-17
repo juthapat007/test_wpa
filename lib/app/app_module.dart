@@ -32,6 +32,7 @@ import 'package:test_wpa/features/scan/domain/repositories/qr_repository.dart';
 // Schedule
 import 'package:test_wpa/features/schedules/data/repository/schedule_repository_impl.dart';
 import 'package:test_wpa/features/schedules/data/services/schedule_api.dart';
+import 'package:test_wpa/features/schedules/domain/repositories/schedule_others_repository.dart';
 import 'package:test_wpa/features/schedules/domain/repositories/schedule_repository.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
@@ -67,12 +68,12 @@ import 'package:test_wpa/features/notification/domain/repositories/notification_
 import 'package:test_wpa/features/notification/presentation/bloc/notification_bloc.dart';
 import 'package:test_wpa/features/notification/presentation/page/notification.dart';
 
-// Someone Profile
-import 'package:test_wpa/features/someone_profile/data/repository/profile_detail_repository_impl.dart';
-import 'package:test_wpa/features/someone_profile/data/services/profile_detail_api.dart';
-import 'package:test_wpa/features/someone_profile/domain/repositories/profile_detail_repository.dart';
-import 'package:test_wpa/features/someone_profile/presentation/bloc/profile_detail_bloc.dart';
-import 'package:test_wpa/features/someone_profile/presentation/pages/someone_profile_page.dart';
+// other Profile
+import 'package:test_wpa/features/other_profile/data/repository/profile_detail_repository_impl.dart';
+import 'package:test_wpa/features/other_profile/data/services/profile_detail_api.dart';
+import 'package:test_wpa/features/other_profile/domain/repositories/profile_detail_repository.dart';
+import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_bloc.dart';
+import 'package:test_wpa/features/other_profile/presentation/pages/other_profile_page.dart';
 
 // Other features
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -181,7 +182,7 @@ class AppModule extends Module {
       () => ScanBloc(qrRepository: Modular.get<QrRepository>()),
     );
 
-    /// ================= Someone Profile =================
+    /// ================= other Profile =================
     i.addLazySingleton<ProfileDetailApi>(
       () => ProfileDetailApi(Modular.get<Dio>()),
     );
@@ -192,6 +193,7 @@ class AppModule extends Module {
       () => ProfileDetailBloc(
         profileDetailRepository: Modular.get<ProfileDetailRepository>(),
         connectionRepository: Modular.get<ConnectionRepository>(),
+        scheduleOthersRepository: i<ScheduleOthersRepository>(),
       ),
     );
   }
@@ -270,18 +272,16 @@ class AppModule extends Module {
       ),
     );
 
-    /// ===== Someone Profile (UPDATED) =====
+    /// ===== other Profile (UPDATED) =====
     r.child(
-      '/someone_profile',
+      '/other_profile',
       child: (_) {
         final args = r.args.data as Map<String, dynamic>?;
         final delegate = args?['delegate'] as Delegate; // ✅ รับ Delegate object
 
         return BlocProvider(
           create: (_) => Modular.get<ProfileDetailBloc>(),
-          child: SomeoneProfilePage(
-            delegate: delegate,
-          ), // ✅ ส่ง Delegate object
+          child: OtherProfilePage(delegate: delegate), // ✅ ส่ง Delegate object
         );
       },
     );

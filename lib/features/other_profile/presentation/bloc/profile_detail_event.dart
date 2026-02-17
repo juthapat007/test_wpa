@@ -1,4 +1,4 @@
-// lib/features/someone_profile/presentation/bloc/profile_detail_event.dart
+// lib/features/other_profile/presentation/bloc/profile_detail_event.dart
 
 import 'package:flutter/foundation.dart';
 
@@ -15,4 +15,10 @@ class SendFriendRequest extends ProfileDetailEvent {
   final int delegateId;
 
   SendFriendRequest(this.delegateId);
+}
+
+class LoadScheduleOthers extends ProfileDetailEvent {
+  final int delegateId;
+
+  LoadScheduleOthers(this.delegateId);
 }

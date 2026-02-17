@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 
 class AppButton extends StatelessWidget {
@@ -7,7 +8,6 @@ class AppButton extends StatelessWidget {
   final Color? backgroundColor;
   final Color? textColor;
   final double borderRadius;
-  final double height;
   final double width;
   final bool isLoading;
 
@@ -19,7 +19,6 @@ class AppButton extends StatelessWidget {
 
     this.textColor,
     this.borderRadius = 12,
-    this.height = 48,
     this.width = double.infinity,
     this.isLoading = false,
   });
@@ -29,7 +28,7 @@ class AppButton extends StatelessWidget {
     final bool isDisabled = onPressed == null || isLoading;
 
     return SizedBox(
-      height: height,
+      height: height.m,
       width: width,
       child: ElevatedButton(
         onPressed: isDisabled ? null : onPressed,
@@ -42,12 +41,10 @@ class AppButton extends StatelessWidget {
         ),
         child: isLoading
             ? SizedBox(
-                width: 20,
-                height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    textColor ?? Colors.white,
+                    textColor ?? const Color.fromARGB(255, 150, 134, 134),
                   ),
                 ),
               )

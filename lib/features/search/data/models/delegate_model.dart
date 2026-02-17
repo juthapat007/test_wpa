@@ -8,9 +8,9 @@ class DelegateModel {
   final String companyName;
   final String avatarUrl;
   final String countryCode;
-  final int teamId;
-  final bool firstLogin;
   final bool isConnected;
+  final int? teamId;
+  final bool? firstLogin;
 
   DelegateModel({
     required this.id,
@@ -20,23 +20,23 @@ class DelegateModel {
     required this.companyName,
     required this.avatarUrl,
     required this.countryCode,
-    required this.teamId,
-    required this.firstLogin,
     required this.isConnected,
+    this.teamId,
+    this.firstLogin,
   });
 
   factory DelegateModel.fromJson(Map<String, dynamic> json) {
     return DelegateModel(
-      id: json['id'],
+      id: json['id'] ?? 0,
       name: json['name'] ?? '',
       title: json['title'],
       email: json['email'] ?? '',
       companyName: json['company_name'] ?? '',
       avatarUrl: json['avatar_url'] ?? '',
       countryCode: json['country_code'] ?? '',
-      teamId: json['team_id'],
-      firstLogin: json['first_login'] ?? false,
       isConnected: json['is_connected'] ?? false,
+      teamId: json['team_id'],
+      firstLogin: json['first_login'],
     );
   }
 
@@ -49,10 +49,25 @@ class DelegateModel {
       companyName: companyName,
       avatarUrl: avatarUrl,
       countryCode: countryCode,
-      teamId: teamId,
-      firstLogin: firstLogin,
       isConnected: isConnected,
+      teamId: teamId ?? 0,
+      firstLogin: firstLogin ?? false,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'title': title,
+      'email': email,
+      'company_name': companyName,
+      'avatar_url': avatarUrl,
+      'country_code': countryCode,
+      'is_connected': isConnected,
+      'team_id': teamId,
+      'first_login': firstLogin,
+    };
   }
 }
 
@@ -102,7 +117,6 @@ class DelegateSearchResponseModel {
       meta: DelegateMetaModel.fromJson(json['meta']),
     );
   }
-
 
   DelegateSearchResponse toEntity() {
     return DelegateSearchResponse(

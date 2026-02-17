@@ -1,22 +1,26 @@
-// lib/features/someone_profile/presentation/bloc/profile_detail_bloc.dart
+// lib/features/Other_profile/presentation/bloc/profile_detail_bloc.dart
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_wpa/features/notification/domain/repositories/connection_repository.dart';
-import 'package:test_wpa/features/someone_profile/domain/entities/profile_detail.dart';
-import 'package:test_wpa/features/someone_profile/domain/repositories/profile_detail_repository.dart';
-import 'package:test_wpa/features/someone_profile/presentation/bloc/profile_detail_event.dart';
-import 'package:test_wpa/features/someone_profile/presentation/bloc/profile_detail_state.dart';
+import 'package:test_wpa/features/other_profile/domain/entities/profile_detail.dart';
+import 'package:test_wpa/features/other_profile/domain/repositories/profile_detail_repository.dart';
+import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_event.dart';
+import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_state.dart';
+import 'package:test_wpa/features/schedules/domain/repositories/schedule_others_repository.dart';
 
 class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
   final ProfileDetailRepository profileDetailRepository;
   final ConnectionRepository connectionRepository;
+  final ScheduleOthersRepository scheduleOthersRepository;
 
   ProfileDetailBloc({
     required this.profileDetailRepository,
     required this.connectionRepository,
+    required this.scheduleOthersRepository,
   }) : super(ProfileDetailInitial()) {
     on<LoadProfileDetail>(_onLoadProfileDetail);
     on<SendFriendRequest>(_onSendFriendRequest);
+    on<LoadScheduleOthers>(_onLoadScheduleOthers);
   }
 
   Future<void> _onLoadProfileDetail(
@@ -31,6 +35,9 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
       );
 
       emit(ProfileDetailLoaded(profile));
+
+      // โหลด schedule ของคนนั้นด้วยอัตโนมัติ
+      add(LoadScheduleOthers(event.delegateId));
     } catch (e) {
       print('❌ ProfileDetailBloc error: $e');
       emit(ProfileDetailError('Cannot load profile: $e'));
@@ -60,12 +67,42 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
         isConnected: true, // ถือว่าส่ง request แล้ว
       );
 
-      emit(ProfileDetailLoaded(updatedProfile));
+      emit(
+        ProfileDetailLoaded(updatedProfile, schedules: currentState.schedules),
+      );
       emit(FriendRequestSuccess('Friend request sent successfully!'));
     } catch (e) {
       print('❌ Send friend request error: $e');
-      emit(ProfileDetailLoaded(currentState.profile)); // คืนสถานะเดิม
+      emit(
+        ProfileDetailLoaded(
+          currentState.profile,
+          schedules: currentState.schedules,
+        ),
+      ); // คืนสถานะเดิม
       emit(FriendRequestFailed('Failed to send friend request'));
+    }
+  }
+
+  Future<void> _onLoadScheduleOthers(
+    LoadScheduleOthers event,
+    Emitter<ProfileDetailState> emit,
+  ) async {
+    final currentState = state;
+
+    try {
+      final schedules = await scheduleOthersRepository.getScheduleOthers(
+        event.delegateId,
+      );
+
+      if (currentState is ProfileDetailLoaded) {
+        emit(ProfileDetailLoaded(currentState.profile, schedules: schedules));
+      }
+    } catch (e) {
+      print('❌ Load schedule error: $e');
+      // ไม่ให้ error ของ schedule ทำให้หน้าพังทั้งหมด
+      if (currentState is ProfileDetailLoaded) {
+        emit(ProfileDetailLoaded(currentState.profile, schedules: []));
+      }
     }
   }
 }

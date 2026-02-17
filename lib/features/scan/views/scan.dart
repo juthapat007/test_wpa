@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
+import 'package:test_wpa/features/other_profile/presentation/pages/other_profile_page.dart';
 import 'package:test_wpa/features/scan/presentation/bloc/scan_bloc.dart';
 import 'package:test_wpa/features/scan/views/qr_scanner_screen.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:test_wpa/features/search/domain/entities/delegate.dart';
 
 class Scan extends StatefulWidget {
   const Scan({super.key});
@@ -87,106 +89,67 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
         _scannedQrCode = result;
       });
 
-      // แสดง Dialog ผลการสแกน
-      _showScannedResultDialog(result);
+      // ✅ แปลง QR Code data เป็น delegate ID แล้วนำทางไป Profile Page
+      _navigateToProfilePage(result);
     }
   }
 
-  void _showScannedResultDialog(String qrData) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.success.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.check_circle,
-                color: AppColors.success,
-                size: 32,
-              ),
-            ),
-            const SizedBox(width: space.m),
-            const Expanded(
-              child: Text(
-                'สแกนสำเร็จ!',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'ข้อมูล QR Code:',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: space.s),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(space.m),
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Text(
-                qrData,
-                style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('ปิด'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: ส่งข้อมูลไป API เพื่อบันทึกการเช็คอิน
-              _processScannedQr(qrData);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text('ยืนยัน'),
-          ),
-        ],
-      ),
-    );
-  }
+  void _navigateToProfilePage(String qrData) {
+    try {
+      // ✅ สมมติว่า QR Code มีรูปแบบเป็น JSON หรือ delegate_id โดยตรง
+      int delegateId;
 
-  void _processScannedQr(String qrData) {
-    // TODO: เรียก API เพื่อบันทึกการเช็คอิน
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: space.m),
-            Expanded(child: Text('บันทึกข้อมูลสำเร็จ: $qrData')),
-          ],
+      // กรณี QR Code เป็น JSON
+      if (qrData.startsWith('{')) {
+        final jsonData = jsonDecode(qrData);
+        delegateId = int.parse(jsonData['delegate_id'].toString());
+      } else {
+        // กรณี QR Code เป็น ID โดยตรง
+        delegateId = int.parse(qrData);
+      }
+
+      // ✅ สร้าง Delegate object ชั่วคราว (จะดึงข้อมูลจริงจาก API ในหน้า Profile)
+      final delegate = Delegate(
+        id: delegateId,
+        name: 'Loading...', // จะอัพเดทจาก API
+        title: '', // ✅ ใช้ empty string แทน null
+        email: '',
+        companyName: '',
+        avatarUrl: '',
+        countryCode: '',
+        teamId: 0, // ✅ ใช้ 0 แทน null
+        firstLogin: false, // ✅ ใช้ false แทน null
+        isConnected: false,
+      );
+
+      // ✅ นำทางไปหน้า Profile
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OtherProfilePage(delegate: delegate),
         ),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
+      );
+    } catch (e) {
+      print('Error parsing QR code: $e');
+
+      // แสดง error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: space.m),
+              Expanded(child: Text('QR Code ไม่ถูกต้อง: $qrData')),
+            ],
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -575,7 +538,7 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
           ),
           _buildInstructionItem(
             '2',
-            'กดปุ่ม "สแกน QR Code คนอื่น" เพื่อสแกน QR Code ของผู้เข้าร่วมคนอื่น',
+            'กดปุ่ม "สแกน QR Code คนอื่น" เพื่อดูโปรไฟล์และตารางของผู้เข้าร่วมคนอื่น',
           ),
           _buildInstructionItem('3', 'ดึงลงเพื่อ Refresh QR Code ถ้าจำเป็น'),
         ],

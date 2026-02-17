@@ -18,7 +18,7 @@ class DateTimeHelper {
 
   /// แสดงเวลาแบบ 12-hour + AM/PM: "9:30 AM"
   static String formatTime12(DateTime dateTime) {
-    return DateFormat('h:mm a').format(dateTime); // มีเว้นวรรค สำหรับแสดงผล UI
+    return DateFormat('h:mm ').format(dateTime); // มีเว้นวรรค สำหรับแสดงผล UI
   }
 
   /// แสดงช่วงเวลา 24-hour: "09:30–10:15"

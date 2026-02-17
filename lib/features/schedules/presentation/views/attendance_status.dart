@@ -9,8 +9,8 @@ import 'package:test_wpa/features/schedules/domain/entities/leave_form.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_state.dart';
-import 'package:test_wpa/features/widgets/app_button.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
+import 'package:test_wpa/features/widgets/bottom_action_bar.dart';
 import 'package:intl/intl.dart';
 
 class AttendanceStatus extends StatefulWidget {
@@ -115,14 +115,26 @@ class _AttendanceStatusState extends State<AttendanceStatus> {
     );
   }
 
+  void _handleCancel() {
+    Navigator.pop(context); // กลับไปหน้าเดิมพร้อมข้อมูลเดิม
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: Modular.get<ScheduleBloc>(),
-      child: AppScaffold(
-        title: 'Attendance Status',
-        currentIndex: -1,
-        showAvatar: false,
+      child: Scaffold(
+        backgroundColor: color.AppColors.background,
+        appBar: AppBar(
+          title: const Text('Attendance Status'),
+          centerTitle: true,
+        ),
+        bottomNavigationBar: BottomActionBar(
+          onCancel: _handleCancel,
+          onConfirm: _handleConfirm,
+          isLoading: _isSubmitting,
+        ),
+
         body: BlocConsumer<ScheduleBloc, ScheduleState>(
           listener: (context, state) {
             // จัดการ leave types loaded
@@ -166,84 +178,20 @@ class _AttendanceStatusState extends State<AttendanceStatus> {
 
             return Stack(
               children: [
+                // Scrollable content
                 SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                  padding: EdgeInsets.fromLTRB(
+                    space.m,
+                    space.m,
+                    space.m,
+                    space.m + 80, // Extra padding for bottom action bar
+                  ),
                   child: Form(
                     key: _formKey,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Selected Schedules Section
-                        Text(
-                          'Selected Meetings (${widget.selectedSchedules.length})',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: color.AppColors.textPrimary,
-                          ),
-                        ),
-                        SizedBox(height: space.m),
-
-                        // List of selected schedules
-                        ...widget.selectedSchedules.map((schedule) {
-                          final startTime = DateFormat(
-                            'h:mm a',
-                          ).format(schedule.startAt);
-                          final endTime = DateFormat(
-                            'h:mm a',
-                          ).format(schedule.endAt);
-
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.blue[50],
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.blue[200]!),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.event,
-                                  color: color.AppColors.warning,
-                                  size: 20,
-                                ),
-                                SizedBox(width: space.s),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '$startTime - $endTime',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                      if (schedule.delegate?.company != null)
-                                        Text(
-                                          schedule.delegate!.company!,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[700],
-                                          ),
-                                        ),
-                                      Text(
-                                        'Table ${schedule.tableNumber}',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.grey[600],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }),
-
                         SizedBox(height: space.l),
 
                         // Leave Type Dropdown
@@ -317,43 +265,84 @@ class _AttendanceStatusState extends State<AttendanceStatus> {
                             return null;
                           },
                         ),
+                        SizedBox(height: height.s),
 
-                        SizedBox(height: space.xl),
-
-                        // Buttons Row
-                        Row(
-                          children: [
-                            Expanded(
-                              child: AppButton(
-                                text: 'Cancel',
-                                backgroundColor: color.AppColors.background,
-                                textColor: color.AppColors.textPrimary,
-                                onPressed: _isSubmitting
-                                    ? null
-                                    : () => Navigator.pop(context),
-                              ),
-                            ),
-                            SizedBox(width: space.xs),
-                            Expanded(
-                              child: AppButton(
-                                text: _isSubmitting
-                                    ? 'Submitting...'
-                                    : 'Confirm',
-                                backgroundColor: color.AppColors.primary,
-                                textColor: color.AppColors.textOnPrimary,
-                                onPressed: _isSubmitting
-                                    ? null
-                                    : _handleConfirm,
-                              ),
-                            ),
-                          ],
+                        Text(
+                          'Selected Meetings (${widget.selectedSchedules.length})',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: color.AppColors.textPrimary,
+                          ),
                         ),
+                        SizedBox(height: space.s),
+
+                        // List of selected schedules
+                        ...widget.selectedSchedules.map((schedule) {
+                          final startTime = DateFormat(
+                            'h:mm a',
+                          ).format(schedule.startAt);
+                          final endTime = DateFormat(
+                            'h:mm a',
+                          ).format(schedule.endAt);
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.blue[50],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.blue[200]!),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.event,
+                                  color: color.AppColors.warning,
+                                  size: 20,
+                                ),
+                                SizedBox(width: space.s),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '$startTime - $endTime',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      if (schedule.delegate?.company != null)
+                                        Text(
+                                          schedule.delegate!.company!,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[700],
+                                          ),
+                                        ),
+                                      Text(
+                                        'Table ${schedule.tableNumber}',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+
+                        SizedBox(height: height.xl),
                       ],
                     ),
                   ),
                 ),
 
-                // Loading overlay
                 if (_isSubmitting)
                   Container(
                     color: Colors.black26,

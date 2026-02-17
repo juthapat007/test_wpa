@@ -1,4 +1,4 @@
-// lib/features/someone_profile/domain/entities/profile_detail.dart
+// lib/features/other_profile/domain/entities/profile_detail.dart
 
 class ProfileDetail {
   final int id;

@@ -1,4 +1,4 @@
-// lib/features/someone_profile/data/services/profile_detail_api.dart
+// lib/features/other_profile/data/services/profile_detail_api.dart
 
 import 'package:dio/dio.dart';
 
@@ -7,7 +7,7 @@ class ProfileDetailApi {
 
   ProfileDetailApi(this.dio);
 
-  /// Get someone profile detail
+  /// Get other profile detail
   Future<Map<String, dynamic>> getProfileDetail(int delegateId) async {
     try {
       final response = await dio.get('/delegates/$delegateId');
