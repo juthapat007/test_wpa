@@ -32,7 +32,7 @@ class AuthRepositoryImpl implements AuthRepository {
           'avatar_url': loginResponse.user!.avatarUrl,
         };
         await storage.write(key: 'user_data', value: jsonEncode(userData));
-        
+
         // 🔥 เก็บ delegate_id สำหรับดึง QR Code
         await storage.write(
           key: 'delegate_id',
@@ -58,5 +58,32 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<String?> getToken() async {
     final storage = Modular.get<FlutterSecureStorage>();
     return await storage.read(key: 'auth_token');
+  }
+
+  @override
+  Future<void> forgotPassword({required String email}) async {
+    try {
+      await authApi.forgotPassword(email);
+    } catch (e) {
+      throw Exception('Failed to send reset email: $e');
+    }
+  }
+
+  // ✅ เพิ่ม resetPassword
+  @override
+  Future<void> resetPassword({
+    required String token,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    try {
+      await authApi.resetPassword(
+        token: token,
+        password: password,
+        passwordConfirmation: passwordConfirmation,
+      );
+    } catch (e) {
+      throw Exception('Failed to reset password: $e');
+    }
   }
 }

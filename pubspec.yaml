@@ -43,6 +43,7 @@ dependencies:
   mobile_scanner: ^7.1.4
 # เอาไว้ขออนุญาตใช้กล้อง
   permission_handler: ^12.0.1
+  app_links: ^7.0.0
 
 
 dev_dependencies:

@@ -20,4 +20,34 @@ class AuthApi {
       rethrow;
     }
   }
+
+  /// POST /forgot_password
+  Future<Response> forgotPassword(String email) async {
+    try {
+      return await dio.post('/forgot_password', data: {'email': email});
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// POST /reset_password
+  /// Body: { token, password, password_confirmation }
+  Future<Response> resetPassword({
+    required String token,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    try {
+      return await dio.post(
+        '/reset_password',
+        data: {
+          'token': token,
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+        },
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

@@ -18,6 +18,7 @@ import 'package:test_wpa/features/notification/data/repository/connection_reposi
 import 'package:test_wpa/features/notification/data/services/connection_api.dart';
 import 'package:test_wpa/features/notification/domain/repositories/connection_repository.dart';
 import 'package:test_wpa/features/notification/presentation/bloc/connection_bloc.dart';
+import 'package:test_wpa/features/auth/views/change_password_page.dart';
 
 // Profile
 import 'package:test_wpa/features/profile/data/repository/profile_repository_impl.dart';
@@ -306,5 +307,12 @@ class AppModule extends Module {
         );
       },
     );
+    r.child(
+  '/change_password',
+  child: (_) => BlocProvider.value(
+    value: Modular.get<AuthBloc>(),
+    child:  ChangePasswordPage(),
+  ),
+);
   }
 }
