@@ -10,6 +10,7 @@ import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_event_card.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
+import 'package:test_wpa/features/schedules/utils/schedule_card_helper.dart';
 
 class OtherProfilePage extends StatefulWidget {
   final int delegateId;
@@ -363,7 +364,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                     // ✅ ใช้ ScheduleEventCard (common widget) — style ตรงกับ schedule page เป๊ะ
                     child: ScheduleEventCard(
                       schedule: s,
-                      type: _resolveCardType(s),
+                      type: ScheduleCardHelper.resolveCardType(s),
                     ),
                   ),
                 )
@@ -372,19 +373,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         ),
       ],
     );
-  }
-
-  /// แปลง Schedule.type → EventCardType
-  /// logic เดียวกับที่ schedule page ใช้ใน ScheduleCardHelper
-  EventCardType _resolveCardType(Schedule s) {
-    switch (s.type) {
-      case 'event':
-        return EventCardType.breakTime;
-      case 'nomeeting':
-        return EventCardType.empty;
-      default:
-        return EventCardType.meeting;
-    }
   }
 
   Widget _buildErrorView(BuildContext context, String message) {

@@ -10,6 +10,7 @@ import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status
 import 'package:test_wpa/features/schedules/presentation/widgets/timeline_row.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/states/empty_schedule_view.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/states/error_schedule_view.dart';
+import 'package:test_wpa/features/schedules/utils/schedule_card_helper.dart';
 import 'package:test_wpa/features/widgets/date_tab_bar.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
 
@@ -283,7 +284,8 @@ class _SchedulePageState extends State<SchedulePage> {
                                     : 1.0,
                                 child: TimelineRow(
                                   schedule: schedule,
-                                  cardType: EventCardType.meeting,
+                                  // cardType: EventCardType.meeting,
+                                  cardType: ScheduleCardHelper.resolveCardType(schedule),
                                   isSelectionMode:
                                       isSelectionMode && isSelectable,
                                   isSelected: isSelected,

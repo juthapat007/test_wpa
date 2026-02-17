@@ -8,6 +8,18 @@ class ScheduleCardHelper {
 
   ScheduleCardHelper(this.schedule);
 
+  // เพิ่มใน class ScheduleCardHelper
+  static EventCardType resolveCardType(Schedule s) {
+    switch (s.type) {
+      case 'event':
+        return EventCardType.breakTime;
+      case 'nomeeting':
+        return EventCardType.empty;
+      default:
+        return EventCardType.meeting;
+    }
+  }
+
   // ========== Type Checks ==========
   bool get isOnLeave => schedule.leave != null;
   bool get isEvent => schedule.type == 'event';

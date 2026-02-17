@@ -22,9 +22,10 @@ class ScheduleEventCard extends StatelessWidget {
     switch (type) {
       case EventCardType.meeting:
         assert(schedule != null, 'schedule must not be null for meeting card');
-        return _MeetingCard(schedule: schedule!);
+        return MeetingCard(schedule: schedule!);
       case EventCardType.breakTime:
-        return BreakTimeCard(title: schedule?.title);
+        assert(schedule != null);
+        return MeetingCard(schedule: schedule!);
       case EventCardType.empty:
         return const EmptySlotCard();
     }
@@ -34,10 +35,10 @@ class ScheduleEventCard extends StatelessWidget {
 // ─────────────────────────────────────────────
 // Meeting Card
 // ─────────────────────────────────────────────
-class _MeetingCard extends StatelessWidget {
+class MeetingCard extends StatelessWidget {
   final Schedule schedule;
 
-  const _MeetingCard({required this.schedule});
+  const MeetingCard({required this.schedule});
 
   @override
   Widget build(BuildContext context) {
@@ -193,7 +194,7 @@ class BreakTimeCard extends StatelessWidget {
   /// ชื่อ event จาก schedule.title (optional — fallback เป็น 'Break')
   final String? title;
 
-  const BreakTimeCard({this.title});
+  const BreakTimeCard({super.key, this.title});
 
   @override
   Widget build(BuildContext context) {

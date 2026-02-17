@@ -12,7 +12,7 @@ import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.da
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_state.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_event_card.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
-import 'package:test_wpa/features/schedules/presentation/widgets/timeline_event_card.dart';
+import 'package:test_wpa/features/schedules/utils/schedule_card_helper.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
 import 'package:test_wpa/features/widgets/date_tab_bar.dart';
 import 'package:flutter_modular/flutter_modular.dart';
@@ -306,7 +306,10 @@ class _MeetingWidgetState extends State<MeetingWidget> {
                                 _onScheduleTap(currentSchedule.schedule),
                             child: ScheduleEventCard(
                               schedule: currentSchedule.schedule,
-                              type: EventCardType.meeting,
+                              // type: EventCardType.meeting,
+                              type: ScheduleCardHelper.resolveCardType(
+                                currentSchedule.schedule,
+                              ),
                             ),
                           ),
                           SizedBox(height: space.m),
@@ -325,9 +328,11 @@ class _MeetingWidgetState extends State<MeetingWidget> {
                           SizedBox(height: space.s),
                           GestureDetector(
                             onTap: () => _onScheduleTap(nextSchedule.schedule),
-                            child: TimelineEventCard(
+                            child: ScheduleEventCard(
                               schedule: nextSchedule.schedule,
-                              type: EventCardType.meeting,
+                              type: ScheduleCardHelper.resolveCardType(
+                                nextSchedule.schedule,
+                              ),
                             ),
                           ),
                           SizedBox(height: space.m),
@@ -365,9 +370,11 @@ class _MeetingWidgetState extends State<MeetingWidget> {
                                 opacity: canTap ? 1.0 : 0.7,
                                 child: Padding(
                                   padding: const EdgeInsets.only(bottom: 16),
-                                  child: TimelineEventCard(
+                                  child: ScheduleEventCard(
                                     schedule: s.schedule,
-                                    type: EventCardType.meeting,
+                                    type: ScheduleCardHelper.resolveCardType(
+                                      s.schedule,
+                                    ),
                                   ),
                                 ),
                               ),
