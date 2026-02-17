@@ -1,14 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
-import 'package:test_wpa/features/other_profile/presentation/pages/other_profile_page.dart';
 import 'package:test_wpa/features/scan/presentation/bloc/scan_bloc.dart';
 import 'package:test_wpa/features/scan/views/qr_scanner_screen.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:test_wpa/features/search/domain/entities/delegate.dart';
 
 class Scan extends StatefulWidget {
   const Scan({super.key});
@@ -21,7 +20,6 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
   String? _delegateId;
   String? _userName;
   final _storage = const FlutterSecureStorage();
-  String? _scannedQrCode;
 
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
@@ -66,13 +64,13 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
     });
 
     if (id != null && mounted) {
-      context.read<ScanBloc>().add(LoadQrCode(id));
+      ReadContext(context).read<ScanBloc>().add(LoadQrCode(id));
     }
   }
 
   void _refreshQrCode() {
     if (_delegateId != null) {
-      context.read<ScanBloc>().add(RefreshQrCode(_delegateId!));
+      ReadContext(context).read<ScanBloc>().add(RefreshQrCode(_delegateId!));
     }
   }
 
@@ -85,18 +83,14 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
     );
 
     if (result != null && mounted) {
-      setState(() {
-        _scannedQrCode = result;
-      });
-
-      // ✅ แปลง QR Code data เป็น delegate ID แล้วนำทางไป Profile Page
-      _navigateToProfilePage(result);
+      // ✅ นำทางไปหน้า other_profile โดยส่ง delegate_id ที่สแกนได้
+      _navigateToOtherProfile(result);
     }
   }
 
-  void _navigateToProfilePage(String qrData) {
+  void _navigateToOtherProfile(String qrData) {
     try {
-      // ✅ สมมติว่า QR Code มีรูปแบบเป็น JSON หรือ delegate_id โดยตรง
+      // ✅ แปลง QR Code เป็น delegate_id
       int delegateId;
 
       // กรณี QR Code เป็น JSON
@@ -108,26 +102,11 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
         delegateId = int.parse(qrData);
       }
 
-      // ✅ สร้าง Delegate object ชั่วคราว (จะดึงข้อมูลจริงจาก API ในหน้า Profile)
-      final delegate = Delegate(
-        id: delegateId,
-        name: 'Loading...', // จะอัพเดทจาก API
-        title: '', // ✅ ใช้ empty string แทน null
-        email: '',
-        companyName: '',
-        avatarUrl: '',
-        countryCode: '',
-        teamId: 0, // ✅ ใช้ 0 แทน null
-        firstLogin: false, // ✅ ใช้ false แทน null
-        isConnected: false,
-      );
-
-      // ✅ นำทางไปหน้า Profile
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => OtherProfilePage(delegate: delegate),
-        ),
+      // ✅ นำทางไปหน้า other_profile พร้อม delegate_id
+      // หน้า other_profile จะโหลดข้อมูลจาก API เอง
+      Modular.to.pushNamed(
+        '/other_profile',
+        arguments: {'delegate_id': delegateId},
       );
     } catch (e) {
       print('Error parsing QR code: $e');

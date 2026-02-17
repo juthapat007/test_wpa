@@ -14,10 +14,10 @@ class DelegateCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: () {
-          // ✅ ส่ง Delegate object ทั้งก้อนไปเลย
+          // ✅ ส่งไปยัง /other_profile พร้อม delegate_id
           Modular.to.pushNamed(
-            '/someone_profile',
-            arguments: {'delegate': delegate},
+            '/other_profile',
+            arguments: {'delegate_id': delegate.id},
           );
         },
         borderRadius: BorderRadius.circular(12),
@@ -42,7 +42,6 @@ class DelegateCard extends StatelessWidget {
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ✅ title เป็น String (non-nullable) ตามที่ entity กำหนด
               if (delegate.title.isNotEmpty)
                 Text(delegate.title, style: TextStyle(color: Colors.grey[600])),
               AppText(delegate.companyName),

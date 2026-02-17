@@ -1,6 +1,7 @@
 // lib/app/app_module.dart
 
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/network/dio_client.dart';
@@ -32,17 +33,20 @@ import 'package:test_wpa/features/scan/domain/repositories/qr_repository.dart';
 // Schedule
 import 'package:test_wpa/features/schedules/data/repository/schedule_repository_impl.dart';
 import 'package:test_wpa/features/schedules/data/services/schedule_api.dart';
-import 'package:test_wpa/features/schedules/domain/repositories/schedule_others_repository.dart';
 import 'package:test_wpa/features/schedules/domain/repositories/schedule_repository.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
 import 'package:test_wpa/features/schedules/presentation/page/schedule_widget.dart';
 
+// ✅ Schedule Others (เพิ่มใหม่)
+import 'package:test_wpa/features/schedules/data/services/schedule_others_api.dart';
+import 'package:test_wpa/features/schedules/data/repository/schedule_others_repository_impl.dart';
+import 'package:test_wpa/features/schedules/domain/repositories/schedule_others_repository.dart';
+
 // Search
 import 'package:test_wpa/features/search/data/repository/delegate_repository_impl.dart';
 import 'package:test_wpa/features/search/data/services/delegate_api.dart';
 import 'package:test_wpa/features/search/domain/repositories/delegate_repository.dart';
-import 'package:test_wpa/features/search/domain/entities/delegate.dart'; // ✅ เพิ่ม import นี้
 import 'package:test_wpa/features/search/presentation/bloc/search_bloc.dart';
 import 'package:test_wpa/features/search/views/search_page.dart';
 
@@ -73,6 +77,7 @@ import 'package:test_wpa/features/other_profile/data/repository/profile_detail_r
 import 'package:test_wpa/features/other_profile/data/services/profile_detail_api.dart';
 import 'package:test_wpa/features/other_profile/domain/repositories/profile_detail_repository.dart';
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_bloc.dart';
+import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_event.dart';
 import 'package:test_wpa/features/other_profile/presentation/pages/other_profile_page.dart';
 
 // Other features
@@ -115,6 +120,14 @@ class AppModule extends Module {
     );
     i.addLazySingleton<ScheduleBloc>(
       () => ScheduleBloc(scheduleRepository: Modular.get<ScheduleRepository>()),
+    );
+
+    /// ================= Schedule Others =================
+    i.addLazySingleton<ScheduleOthersApi>(
+      () => ScheduleOthersApi(dio: Modular.get<Dio>()),
+    );
+    i.addLazySingleton<ScheduleOthersRepository>(
+      () => ScheduleOthersRepositoryImpl(api: Modular.get<ScheduleOthersApi>()),
     );
 
     /// ================= Search/Delegate =================
@@ -193,7 +206,7 @@ class AppModule extends Module {
       () => ProfileDetailBloc(
         profileDetailRepository: Modular.get<ProfileDetailRepository>(),
         connectionRepository: Modular.get<ConnectionRepository>(),
-        scheduleOthersRepository: i<ScheduleOthersRepository>(),
+        scheduleOthersRepository: Modular.get<ScheduleOthersRepository>(),
       ),
     );
   }
@@ -272,16 +285,24 @@ class AppModule extends Module {
       ),
     );
 
-    /// ===== other Profile (UPDATED) =====
+    /// ===== other Profile (FIXED) =====
     r.child(
       '/other_profile',
       child: (_) {
         final args = r.args.data as Map<String, dynamic>?;
-        final delegate = args?['delegate'] as Delegate; // ✅ รับ Delegate object
+        final delegateId = args?['delegate_id'] as int?;
+
+        if (delegateId == null) {
+          return const Scaffold(
+            body: Center(child: Text('Error: Delegate ID not found')),
+          );
+        }
 
         return BlocProvider(
-          create: (_) => Modular.get<ProfileDetailBloc>(),
-          child: OtherProfilePage(delegate: delegate), // ✅ ส่ง Delegate object
+          create: (_) =>
+              Modular.get<ProfileDetailBloc>()
+                ..add(LoadProfileDetail(delegateId)),
+          child: OtherProfilePage(delegateId: delegateId),
         );
       },
     );

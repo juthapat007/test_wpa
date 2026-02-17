@@ -1,5 +1,3 @@
-// lib/features/other_profile/data/services/profile_detail_api.dart
-
 import 'package:dio/dio.dart';
 
 class ProfileDetailApi {
