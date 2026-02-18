@@ -66,6 +66,30 @@ class ChatApi {
       rethrow;
     }
   }
+  //   Future<Response> sendMessage({
+  //   required int chatRoomId,
+  //   required String content,
+  //   String? tempId,
+  // }) async {
+  //   try {
+  //     final response = await dio.post(
+  //       '/messages',
+  //       data: {
+  //         'message': {
+  //           'content': content,
+  //           'chat_room_id': chatRoomId,
+  //           if (tempId != null) 'temp_id': tempId,
+  //         }
+  //       },
+  //     );
+
+  //     debugPrint('✅ Message sent via REST');
+  //     return response;
+  //   } catch (e) {
+  //     debugPrint('❌ Error sending message: $e');
+  //     rethrow;
+  //   }
+  // }
 
   /// ทำเครื่องหมายว่าอ่านข้อความจากคนนั้นแล้วทั้งหมด
   Future<Response> markAllAsRead(String senderId) async {

@@ -515,9 +515,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       final totalPages = response['totalPages'] ?? 1;
       _hasMoreMessages = _currentPage < totalPages;
 
-      if (event.room.unreadCount > 0) {
-        add(MarkAsRead(event.room.id));
-      }
+      // ❌ ลบ markAsRead ออกแล้ว - จะ mark เมื่อรับ message จาก WebSocket เท่านั้น
 
       emit(
         ChatRoomSelected(

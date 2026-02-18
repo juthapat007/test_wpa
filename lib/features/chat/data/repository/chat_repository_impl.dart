@@ -63,8 +63,6 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<void> sendMessage(ChatMessage message) async {
-    // Use REST API for reliable message delivery
-    // WebSocket is only used for receiving real-time updates
     try {
       await api.sendMessage(
         recipientId: message.receiverId,
@@ -77,6 +75,19 @@ class ChatRepositoryImpl implements ChatRepository {
       await webSocketService.sendMessage(message);
     }
   }
+  // @override
+  // Future<void> sendMessage(ChatMessage message) async {
+  //   try {
+  //     await api.sendMessage(
+  //       chatRoomId: message.chatRoomId, // ✅ ต้องมี field นี้
+  //       content: message.content,
+  //       tempId: message.id,
+  //     );
+  //   } catch (e) {
+  //     debugPrint('REST send failed, falling back to WebSocket: $e');
+  //     await webSocketService.sendMessage(message);
+  //   }
+  // }
 
   @override
   Future<List<ChatRoom>> getChatRooms() async {
