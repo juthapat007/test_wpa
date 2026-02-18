@@ -37,7 +37,7 @@
         <data
             android:scheme="https"
             android:host="wpa-docker.onrender.com"
-            
+            android:pathPrefix="/api/v1/reset-password"
             />
     </intent-filter>
         </activity>

@@ -34,7 +34,8 @@ class BackToRoomList extends ChatEvent {}
 
 class CreateChatRoom extends ChatEvent {
   final String participantId;
-  CreateChatRoom(this.participantId);
+  final String participantName;
+  CreateChatRoom(this.participantId, this.participantName);
 }
 
 // Message Events

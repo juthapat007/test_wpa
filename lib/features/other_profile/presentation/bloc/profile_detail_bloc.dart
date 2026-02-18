@@ -30,7 +30,9 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
   ) async {
     emit(ProfileDetailLoading());
     try {
-      final profile = await profileDetailRepository.getProfileDetail(event.delegateId);
+      final profile = await profileDetailRepository.getProfileDetail(
+        event.delegateId,
+      );
       emit(ProfileDetailLoaded(profile));
       // โหลด schedule อัตโนมัติ
       add(LoadScheduleOthers(event.delegateId));
@@ -62,10 +64,17 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
         connectionStatus: ConnectionStatus.requestedByMe,
       );
 
-      emit(ProfileDetailLoaded(updatedProfile, schedules: currentState.schedules));
+      emit(
+        ProfileDetailLoaded(updatedProfile, schedules: currentState.schedules),
+      );
       emit(FriendRequestSuccess('Friend request sent!'));
     } catch (e) {
-      emit(ProfileDetailLoaded(currentState.profile, schedules: currentState.schedules));
+      emit(
+        ProfileDetailLoaded(
+          currentState.profile,
+          schedules: currentState.schedules,
+        ),
+      );
       emit(FriendRequestFailed('Failed to send friend request'));
     }
   }
@@ -77,8 +86,8 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
     final currentState = state;
     try {
       // ✅ repository return List<Schedule> โดยตรง
-      final List<Schedule> schedules =
-          await scheduleOthersRepository.getScheduleOthers(event.delegateId);
+      final List<Schedule> schedules = await scheduleOthersRepository
+          .getScheduleOthers(event.delegateId);
 
       if (currentState is ProfileDetailLoaded) {
         emit(ProfileDetailLoaded(currentState.profile, schedules: schedules));

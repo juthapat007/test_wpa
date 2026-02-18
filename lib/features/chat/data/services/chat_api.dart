@@ -137,15 +137,14 @@ class ChatApi {
     }
   }
 
-  /// สร้างห้องแชทใหม่
+  // /// สร้างห้องแชทใหม่
   Future<Response> createChatRoom({required String title}) async {
     try {
-      final response = await dio.post(
-        '/chat_rooms',
-        data: {
-          'chat_room': {'title': title, 'room_kind': 'group'},
-        },
-      );
+      final body = {
+        'chat_room': {'title': title, 'room_kind': 'group'},
+      };
+      debugPrint('📤 createChatRoom body: $body');
+      final response = await dio.post('/chat_rooms', data: body);
       debugPrint('✅ Chat room created: ${response.data}');
       return response;
     } catch (e) {
@@ -153,4 +152,28 @@ class ChatApi {
       rethrow;
     }
   }
+
+  // Future<Response> createChatRoom({
+  //   required String title,
+  //   String? participantId,
+  // }) async {
+  //   try {
+  //     final response = await dio.post(
+  //       '/chat_rooms',
+  //       data: {
+  //         'chat_room': {
+  //           'title': title,
+  //           'room_kind': 'group',
+  //           if (participantId != null)
+  //             'participant_id': int.parse(participantId),
+  //         },
+  //       },
+  //     );
+  //     debugPrint('✅ Chat room created: ${response.data}');
+  //     return response;
+  //   } catch (e) {
+  //     debugPrint('❌ Error creating chat room: $e');
+  //     rethrow;
+  //   }
+  // }
 }

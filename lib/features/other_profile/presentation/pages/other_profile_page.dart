@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 import 'package:intl/intl.dart';
 import 'package:test_wpa/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:test_wpa/features/other_profile/domain/entities/profile_detail.dart';
@@ -10,10 +11,8 @@ import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_state.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_event_card.dart';
-import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 import 'package:test_wpa/features/schedules/utils/schedule_card_helper.dart';
 import 'package:test_wpa/features/widgets/app_button.dart';
-import 'package:flutter_modular/flutter_modular.dart';
 
 class OtherProfilePage extends StatefulWidget {
   final int delegateId;
@@ -77,10 +76,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           BlocListener<ChatBloc, ChatState>(
             listener: (context, state) {
               if (state is ChatRoomSelected) {
-                if (Navigator.of(context).canPop()) Navigator.of(context).pop();
                 Modular.to.pushNamed('/chat/room');
               } else if (state is ChatError) {
-                if (Navigator.of(context).canPop()) Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(state.message),
@@ -235,7 +232,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   }
 
   // ─────────────── Action Buttons ───────────────
-
   Widget _buildActionButtons(ProfileDetail profile, BuildContext context) {
     final isSending =
         WatchContext(context).watch<ProfileDetailBloc>().state
@@ -245,36 +241,21 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       children: [
         Expanded(child: _buildConnectButton(profile, context, isSending)),
         const SizedBox(width: 10),
-        // ใน _buildActionButtons แก้ส่วนปุ่ม Chat
         Expanded(
           child: AppButton(
             text: 'Chat',
-            backgroundColor:
-                profile.connectionStatus == ConnectionStatus.connected
-                ? const Color(0xFF4A90D9)
-                : const Color(0xFFBCC5D3),
+            backgroundColor: const Color(0xFF4A90D9),
             textColor: Colors.white,
-            onPressed: profile.connectionStatus == ConnectionStatus.connected
-                ? () async {
-                    // แสดง loading
-                    showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (_) =>
-                          const Center(child: CircularProgressIndicator()),
-                    );
-
-                    try {
-                      // สร้างหรือหาห้องที่มีอยู่แล้ว
-                      ReadContext(context).read<ChatBloc>().add(
-                        CreateChatRoom(profile.id.toString()),
-                      );
-                    } finally {
-                      if (context.mounted)
-                        Navigator.of(context).pop(); // ปิด loading
-                    }
-                  }
-                : null,
+            // onPressed: () {
+            //   ReadContext(
+            //     context,
+            //   ).read<ChatBloc>().add(CreateChatRoom(profile.id.toString()),);
+            // },
+            onPressed: () {
+              ReadContext(context).read<ChatBloc>().add(
+                CreateChatRoom(profile.id.toString(), profile.name),
+              );
+            },
           ),
         ),
       ],
@@ -378,7 +359,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     );
   }
 
-  /// จัดกลุ่ม schedule ตามวันที่
   Map<String, List<Schedule>> _groupByDate(List<Schedule> schedules) {
     final formatter = DateFormat('d MMMM yyyy');
     final grouped = <String, List<Schedule>>{};
@@ -410,7 +390,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                 .map(
                   (s) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    // ✅ ใช้ ScheduleEventCard (common widget) — style ตรงกับ schedule page เป๊ะ
                     child: ScheduleEventCard(
                       schedule: s,
                       type: ScheduleCardHelper.resolveCardType(s),

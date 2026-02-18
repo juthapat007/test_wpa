@@ -176,32 +176,40 @@ class ChatRepositoryImpl implements ChatRepository {
     }
   }
 
+  // @override
+  // Future<ChatRoom> createChatRoom(
+  //   String participantId, {
+  //   String title = '',
+  // }) async {
+  //   final response = await api.createChatRoom(title: title);
+  //   try {
+  //     final response = await api.createChatRoom(
+  //       title: participantId, // ส่ง participantId ไปก่อน หรือจะส่งชื่อก็ได้
+  //     );
+  //     final data = response.data;
+  //     final id = (data['id'] as int?) ?? 0;
+
+  //     return ChatRoom(
+  //       id: id.toString(),
+  //       participantId: participantId,
+  //       participantName: data['title'] ?? '',
+  //       unreadCount: 0,
+  //     );
+  //   } catch (e) {
+  //     throw Exception('Failed to create chat room: $e');
+  //   }
+  // }
   @override
-  Future<ChatRoom> createChatRoom(String participantId) async {
+  Future<ChatRoom> createChatRoom(
+    String participantId, {
+    String title = '',
+  }) async {
     try {
-      // เช็คก่อนว่ามีห้องกับคนนี้อยู่แล้วมั้ย
-      final rooms = await getChatRooms();
-      final existing = rooms.firstWhere(
-        (r) => r.participantId == participantId,
-        orElse: () => ChatRoom(
-          id: '',
-          participantId: '',
-          participantName: '',
-          unreadCount: 0,
-        ),
-      );
-
-      if (existing.id.isNotEmpty) {
-        debugPrint('✅ Found existing room: ${existing.id}');
-        return existing;
-      }
-
-      // ไม่มีห้อง → สร้างใหม่
-      final response = await api.createChatRoom(title: '');
+      final response = await api.createChatRoom(title: title);
       final data = response.data;
-
+      final id = (data['id'] as int?) ?? 0;
       return ChatRoom(
-        id: data['id'].toString(),
+        id: id.toString(),
         participantId: participantId,
         participantName: data['title'] ?? '',
         unreadCount: 0,

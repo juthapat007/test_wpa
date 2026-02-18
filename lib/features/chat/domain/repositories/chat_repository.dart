@@ -25,7 +25,7 @@ abstract class ChatRepository {
     int? limit,
   });
 
-  Future<ChatRoom> createChatRoom(String participantId);
+  Future<ChatRoom> createChatRoom(String participantId, {String title = ''});
   Future<void> markAsRead(String roomId);
 
   /// Mark a single message as read by its ID

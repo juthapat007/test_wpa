@@ -82,8 +82,8 @@ class ChatWebSocketService {
         _channel = null;
       }
 
-      final wsUrl = 'wss://wpa-docker.onrender.com/cable?token=$token';
-
+      // final wsUrl = 'wss://wpa-docker.onrender.com/cable?token=$token';
+      final wsUrl = 'ws://192.168.1.30:3000/cable?token=$token';
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
 
       _channel!.stream.listen(
