@@ -15,7 +15,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthLogout>(_onLogout);
     on<AuthReset>(_onReset);
     on<AuthForgotPassword>(_onForgotPassword);
-    on<AuthResetPassword>(_onResetPassword); // ✅
+    on<AuthResetPassword>(_onResetPassword);
+    on<AuthChangePassword>(_onChangePassword); // ✅ เพิ่มตรงนี้
   }
 
   Future<void> _onLoginRequested(
@@ -63,7 +64,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  // ✅ Reset Password handler
   Future<void> _onResetPassword(
     AuthResetPassword event,
     Emitter<AuthState> emit,
@@ -79,6 +79,33 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(ResetPasswordSuccess());
     } catch (e) {
       emit(ResetPasswordError('Failed to reset password. Token may be expired.'));
+    }
+  }
+
+  // ✅ Change Password handler
+  Future<void> _onChangePassword(
+    AuthChangePassword event,
+    Emitter<AuthState> emit,
+  ) async {
+    print('🔒 Changing password...');
+    emit(AuthLoading());
+    try {
+      await authRepository.changePassword(
+        oldPassword: event.oldPassword,
+        newPassword: event.newPassword,
+      );
+      print('✅ Password changed successfully');
+      emit(ChangePasswordSuccess());
+
+      // Logout อัตโนมัติหลังเปลี่ยนรหัสผ่านสำเร็จ
+      await authRepository.logout();
+    } catch (e) {
+      print('❌ Change password error: $e');
+      // ดึง error message ที่อ่านได้
+      final message = e.toString().contains('wrong')
+          ? 'Current password is incorrect'
+          : 'Failed to change password. Please try again.';
+      emit(ChangePasswordError(message));
     }
   }
 }

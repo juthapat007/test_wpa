@@ -116,7 +116,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const SizedBox(height: space.xl),
+                       SizedBox(height: space.xl),
 
                       // Icon
                       Container(
@@ -132,7 +132,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         ),
                       ),
 
-                      const SizedBox(height: space.l),
+                       SizedBox(height: space.l),
 
                       // Title
                       const Text(
@@ -144,7 +144,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         ),
                       ),
 
-                      const SizedBox(height: space.xs),
+                       SizedBox(height: space.xs),
 
                       const Text(
                         'Please enter a strong password',
@@ -154,7 +154,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         ),
                       ),
 
-                      const SizedBox(height: space.xl),
+                       SizedBox(height: space.xl),
 
                       // New Password
                       AppTextFormField(
@@ -175,29 +175,29 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         },
                       ),
 
-                      const SizedBox(height: space.m),
+                       SizedBox(height: space.m),
 
                       // Confirm Password
-                      AppTextFormField(
-                        controller: _confirmPasswordCtrl,
-                        label: 'Confirm new password',
-                        icon: Icons.lock_outlined,
-                        obscureText: true,
-                        enabled: !isLoading,
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: (_) => _handleReset(),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please confirm your password';
-                          }
-                          if (value != _newPasswordCtrl.text) {
-                            return 'Passwords do not match';
-                          }
-                          return null;
-                        },
-                      ),
+                   AppTextFormField(
+  controller: _confirmPasswordCtrl,
+  label: 'Confirm new password',
+  icon: Icons.lock_outlined,
+  obscureText: true,
+  enabled: !isLoading,
+  textInputAction: TextInputAction.done,
+  // ลบบรรทัด onSubmitted ออก
+  validator: (value) {
+    if (value == null || value.isEmpty) {
+      return 'Please confirm your password';
+    }
+    if (value != _newPasswordCtrl.text) {
+      return 'Passwords do not match';
+    }
+    return null;
+  },
+),
 
-                      const SizedBox(height: space.l),
+                       SizedBox(height: space.l),
 
                       // Reset Button
                       isLoading

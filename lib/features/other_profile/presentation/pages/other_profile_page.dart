@@ -231,9 +231,9 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           ),
         ),
         const SizedBox(width: 10),
-        const Expanded(
-          child: _FilledButton(label: 'Event Plan', color: Color(0xFF5DC98A)),
-        ),
+        // const Expanded(
+        //   child: _FilledButton(label: 'Event Plan', color: Color(0xFF5DC98A)),
+        // ),
       ],
     );
   }

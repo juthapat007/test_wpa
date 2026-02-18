@@ -349,37 +349,37 @@ class _MeetingWidgetState extends State<MeetingWidget> {
                         ),
                         SizedBox(height: space.s),
 
-                        if (schedulesWithStatus.isEmpty)
-                          Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(32),
-                              child: Text(
-                                'No schedules for this date',
-                                style: TextStyle(
-                                  color: color.AppColors.textSecondary,
-                                ),
-                              ),
-                            ),
-                          )
-                        else
-                          ...schedulesWithStatus.map((s) {
-                            final canTap = _canTapSchedule(s.schedule);
-                            return GestureDetector(
-                              onTap: () => _onScheduleTap(s.schedule),
-                              child: Opacity(
-                                opacity: canTap ? 1.0 : 0.7,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(bottom: 16),
-                                  child: ScheduleEventCard(
-                                    schedule: s.schedule,
-                                    type: ScheduleCardHelper.resolveCardType(
-                                      s.schedule,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          }),
+                        // if (schedulesWithStatus.isEmpty)
+                        //   Center(
+                        //     child: Padding(
+                        //       padding: const EdgeInsets.all(32),
+                        //       child: Text(
+                        //         'No schedules for this date',
+                        //         style: TextStyle(
+                        //           color: color.AppColors.textSecondary,
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   )
+                        // else
+                        //   ...schedulesWithStatus.map((s) {
+                        //     final canTap = _canTapSchedule(s.schedule);
+                        //     return GestureDetector(
+                        //       onTap: () => _onScheduleTap(s.schedule),
+                        //       child: Opacity(
+                        //         opacity: canTap ? 1.0 : 0.7,
+                        //         child: Padding(
+                        //           padding: const EdgeInsets.only(bottom: 16),
+                        //           child: ScheduleEventCard(
+                        //             schedule: s.schedule,
+                        //             type: ScheduleCardHelper.resolveCardType(
+                        //               s.schedule,
+                        //             ),
+                        //           ),
+                        //         ),
+                        //       ),
+                        //     );
+                        //   }),
                       ],
                     ),
                   );

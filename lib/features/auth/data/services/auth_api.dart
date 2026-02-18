@@ -31,7 +31,6 @@ class AuthApi {
   }
 
   /// POST /reset_password
-  /// Body: { token, password, password_confirmation }
   Future<Response> resetPassword({
     required String token,
     required String password,
@@ -44,6 +43,24 @@ class AuthApi {
           'token': token,
           'password': password,
           'password_confirmation': passwordConfirmation,
+        },
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// POST /change_password
+  Future<Response> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    try {
+      return await dio.post(
+        '/change_password',
+        data: {
+          'old_password': oldPassword,
+          'new_password': newPassword,
         },
       );
     } catch (e) {

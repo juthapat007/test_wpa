@@ -15,3 +15,10 @@ class height {
   static const double xl = 128;
   static const double xxl = 150;
 }
+
+class space_bottom {
+  static const double s = 20;
+  static const double m = 30;
+  static const double l = 40;
+  static const double xl = 50;
+}

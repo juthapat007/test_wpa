@@ -1,3 +1,9 @@
 {
-    "cmake.sourceDirectory": "D:/All_project_flutter/test_wpa/linux"
+  "cmake.sourceDirectory": "D:/All_project_flutter/test_wpa/linux",
+  "xml.downloadExternalResources.enabled": true,
+
+  // เพิ่มใหม่ทดสอบการซ่อม analyzer
+  "cmake.ignoreCMakeListsMissing": true,
+  "cmake.configureOnOpen": false,
+  "cmake.autoSelectActiveFolder": false
 }

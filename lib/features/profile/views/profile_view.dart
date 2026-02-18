@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
+import 'package:test_wpa/features/auth/views/change_password_page.dart';
 import 'package:test_wpa/features/profile/data/models/show_edit_profile.dart';
 import 'package:test_wpa/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:test_wpa/features/profile/presentation/bloc/profile_event.dart';
@@ -11,6 +13,7 @@ import '../widgets/profile_info_card.dart';
 import '../widgets/profile_toggle_card.dart';
 import '../widgets/profile_section_header.dart';
 import '../widgets/logout_dialog.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 
 class ProfileView extends StatelessWidget {
   final ProfileState state;
@@ -148,38 +151,6 @@ class ProfileView extends StatelessWidget {
                         );
                       },
                     ),
-                    // ProfileInfoCard(
-                    //   label: 'My QR Code',
-                    //   value: '',
-                    //   showBorder: false,
-                    //   trailing: Row(
-                    //     mainAxisSize: MainAxisSize.min,
-                    //     children: [
-                    //       Container(
-                    //         padding: const EdgeInsets.all(4),
-                    //         decoration: BoxDecoration(
-                    //           color: Colors.grey[200],
-                    //           borderRadius: BorderRadius.circular(4),
-                    //         ),
-                    //         child: const Icon(
-                    //           Icons.qr_code,
-                    //           size: 24,
-                    //           color: Colors.black87,
-                    //         ),
-                    //       ),
-                    //       const SizedBox(width: 8),
-                    //       const Icon(Icons.chevron_right, color: Colors.grey),
-                    //     ],
-                    //   ),
-                    //   onTap: () {
-                    //     ScaffoldMessenger.of(context).showSnackBar(
-                    //       const SnackBar(
-                    //         content: Text('QR Code feature coming soon'),
-                    //         duration: Duration(seconds: 2),
-                    //       ),
-                    //     );
-                    //   },
-                    // ),
                   ],
                 ),
               ),
@@ -199,12 +170,7 @@ class ProfileView extends StatelessWidget {
                   value: '',
                   showBorder: false,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Change password feature coming soon'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
+                    Modular.to.pushNamed('/change_password');
                   },
                 ),
               ),
@@ -225,23 +191,23 @@ class ProfileView extends StatelessWidget {
                       label: 'Push Notifications',
                       value: profile.pushNotifications,
                       showBorder: true,
-                      onChanged: (val) => context.read<ProfileBloc>().add(
-                        TogglePushNotification(val),
-                      ),
+                      onChanged: (val) => ReadContext(
+                        context,
+                      ).read<ProfileBloc>().add(TogglePushNotification(val)),
                     ),
                     ProfileToggleCard(
                       label: 'Email Notifications',
                       value: profile.emailNotifications,
                       showBorder: false,
-                      onChanged: (val) => context.read<ProfileBloc>().add(
-                        ToggleEmailNotification(val),
-                      ),
+                      onChanged: (val) => ReadContext(
+                        context,
+                      ).read<ProfileBloc>().add(ToggleEmailNotification(val)),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 32),
+              SizedBox(height: space.m),
 
               // ========== Log Out Button ==========
               Center(
@@ -258,7 +224,7 @@ class ProfileView extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 32),
+              SizedBox(height: space_bottom.l),
             ],
           ),
         ),
@@ -306,7 +272,8 @@ class _ErrorView extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: () => context.read<ProfileBloc>().add(LoadProfile()),
+            onPressed: () =>
+                ReadContext(context).read<ProfileBloc>().add(LoadProfile()),
             child: const Text('Retry'),
           ),
         ],

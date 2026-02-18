@@ -19,11 +19,9 @@ class AuthRepositoryImpl implements AuthRepository {
 
       final loginResponse = LoginResponse.fromJson(response.data);
 
-      // เก็บ token ใน secure storage
       final storage = Modular.get<FlutterSecureStorage>();
       await storage.write(key: 'auth_token', value: loginResponse.accessToken);
 
-      //  เก็บ delegate/user data ไว้ด้วย
       if (loginResponse.user != null) {
         final userData = {
           'id': loginResponse.user!.id,
@@ -32,8 +30,6 @@ class AuthRepositoryImpl implements AuthRepository {
           'avatar_url': loginResponse.user!.avatarUrl,
         };
         await storage.write(key: 'user_data', value: jsonEncode(userData));
-
-        // 🔥 เก็บ delegate_id สำหรับดึง QR Code
         await storage.write(
           key: 'delegate_id',
           value: loginResponse.user!.id.toString(),
@@ -51,7 +47,7 @@ class AuthRepositoryImpl implements AuthRepository {
     final storage = Modular.get<FlutterSecureStorage>();
     await storage.delete(key: 'auth_token');
     await storage.delete(key: 'user_data');
-    await storage.delete(key: 'delegate_id'); // 🔥 ลบ delegate_id ด้วย
+    await storage.delete(key: 'delegate_id');
   }
 
   @override
@@ -69,7 +65,6 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
-  // ✅ เพิ่ม resetPassword
   @override
   Future<void> resetPassword({
     required String token,
@@ -84,6 +79,22 @@ class AuthRepositoryImpl implements AuthRepository {
       );
     } catch (e) {
       throw Exception('Failed to reset password: $e');
+    }
+  }
+
+  @override
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    try {
+      await authApi.changePassword(
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+      );
+    } catch (e) {
+      // ดึง error message จาก API response ถ้ามี
+      throw Exception('Failed to change password: $e');
     }
   }
 }
