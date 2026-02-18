@@ -34,7 +34,10 @@ class ConnectionApi {
   // }
   Future<Response> sendConnectionRequest(int delegateId) async {
     try {
-      final response = await dio.post('/connections/requests/$delegateId');
+      final response = await dio.post(
+        '/requests',
+        data: {'target_id': delegateId},
+      );
       return response;
     } catch (e) {
       print('❌ ConnectionApi.sendConnectionRequest error: $e');

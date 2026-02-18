@@ -136,4 +136,21 @@ class ChatApi {
       rethrow;
     }
   }
+
+  /// สร้างห้องแชทใหม่
+  Future<Response> createChatRoom({required String title}) async {
+    try {
+      final response = await dio.post(
+        '/chat_rooms',
+        data: {
+          'chat_room': {'title': title, 'room_kind': 'group'},
+        },
+      );
+      debugPrint('✅ Chat room created: ${response.data}');
+      return response;
+    } catch (e) {
+      debugPrint('❌ Error creating chat room: $e');
+      rethrow;
+    }
+  }
 }

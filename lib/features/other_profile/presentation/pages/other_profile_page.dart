@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:test_wpa/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:test_wpa/features/other_profile/domain/entities/profile_detail.dart';
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_bloc.dart';
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_event.dart';
@@ -11,6 +12,8 @@ import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_event_card.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 import 'package:test_wpa/features/schedules/utils/schedule_card_helper.dart';
+import 'package:test_wpa/features/widgets/app_button.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 
 class OtherProfilePage extends StatefulWidget {
   final int delegateId;
@@ -50,56 +53,80 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           child: Container(color: const Color(0xFFE8ECF0), height: 1),
         ),
       ),
-      body: BlocConsumer<ProfileDetailBloc, ProfileDetailState>(
-        listener: (context, state) {
-          if (state is FriendRequestSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.green,
-              ),
-            );
-          } else if (state is FriendRequestFailed) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        },
-        builder: (context, state) {
-          if (state is ProfileDetailLoading) {
-            return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF4A90D9)),
-            );
-          }
-          if (state is ProfileDetailError) {
-            return _buildErrorView(context, state.message);
-          }
-          if (state is ProfileDetailLoaded || state is FriendRequestSending) {
-            final profile = state is ProfileDetailLoaded ? state.profile : null;
-            if (profile == null) return const Center(child: Text('No data'));
+      body: MultiBlocListener(
+        listeners: [
+          BlocListener<ProfileDetailBloc, ProfileDetailState>(
+            listener: (context, state) {
+              if (state is FriendRequestSuccess) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else if (state is FriendRequestFailed) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+          ),
+          BlocListener<ChatBloc, ChatState>(
+            listener: (context, state) {
+              if (state is ChatRoomSelected) {
+                if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+                Modular.to.pushNamed('/chat/room');
+              } else if (state is ChatError) {
+                if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+          ),
+        ],
+        child: BlocBuilder<ProfileDetailBloc, ProfileDetailState>(
+          builder: (context, state) {
+            if (state is ProfileDetailLoading) {
+              return const Center(
+                child: CircularProgressIndicator(color: Color(0xFF4A90D9)),
+              );
+            }
+            if (state is ProfileDetailError) {
+              return _buildErrorView(context, state.message);
+            }
+            if (state is ProfileDetailLoaded || state is FriendRequestSending) {
+              final profile = state is ProfileDetailLoaded
+                  ? state.profile
+                  : null;
+              if (profile == null) return const Center(child: Text('No data'));
 
-            final schedules = state is ProfileDetailLoaded
-                ? state.schedules
-                : null;
+              final schedules = state is ProfileDetailLoaded
+                  ? state.schedules
+                  : null;
 
-            return SingleChildScrollView(
-              child: Column(
-                children: [
-                  const SizedBox(height: 16),
-                  _buildProfileCard(profile, context),
-                  const SizedBox(height: 16),
-                  if (schedules != null && schedules.isNotEmpty)
-                    _buildEventSection(schedules),
-                  const SizedBox(height: 32),
-                ],
-              ),
-            );
-          }
-          return const SizedBox.shrink();
-        },
+              return SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 16),
+                    _buildProfileCard(profile, context),
+                    const SizedBox(height: 16),
+                    if (schedules != null && schedules.isNotEmpty)
+                      _buildEventSection(schedules),
+                    const SizedBox(height: 32),
+                  ],
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          },
+        ),
       ),
     );
   }
@@ -208,32 +235,48 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   }
 
   // ─────────────── Action Buttons ───────────────
+
   Widget _buildActionButtons(ProfileDetail profile, BuildContext context) {
     final isSending =
-        context.watch<ProfileDetailBloc>().state is FriendRequestSending;
+        WatchContext(context).watch<ProfileDetailBloc>().state
+            is FriendRequestSending;
 
     return Row(
       children: [
         Expanded(child: _buildConnectButton(profile, context, isSending)),
         const SizedBox(width: 10),
+        // ใน _buildActionButtons แก้ส่วนปุ่ม Chat
         Expanded(
-          child: _OutlineButton(
-            icon: Icons.chat_bubble_outline,
-            label: 'Chat',
-            color: profile.connectionStatus == ConnectionStatus.connected
+          child: AppButton(
+            text: 'Chat',
+            backgroundColor:
+                profile.connectionStatus == ConnectionStatus.connected
                 ? const Color(0xFF4A90D9)
                 : const Color(0xFFBCC5D3),
-            onTap: profile.connectionStatus == ConnectionStatus.connected
-                ? () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Chat coming soon!')),
-                  )
+            textColor: Colors.white,
+            onPressed: profile.connectionStatus == ConnectionStatus.connected
+                ? () async {
+                    // แสดง loading
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (_) =>
+                          const Center(child: CircularProgressIndicator()),
+                    );
+
+                    try {
+                      // สร้างหรือหาห้องที่มีอยู่แล้ว
+                      ReadContext(context).read<ChatBloc>().add(
+                        CreateChatRoom(profile.id.toString()),
+                      );
+                    } finally {
+                      if (context.mounted)
+                        Navigator.of(context).pop(); // ปิด loading
+                    }
+                  }
                 : null,
           ),
         ),
-        const SizedBox(width: 10),
-        // const Expanded(
-        //   child: _FilledButton(label: 'Event Plan', color: Color(0xFF5DC98A)),
-        // ),
       ],
     );
   }
@@ -245,48 +288,54 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   ) {
     switch (profile.connectionStatus) {
       case ConnectionStatus.none:
-        return _OutlineButton(
-          label: 'Add Friend',
-          color: const Color(0xFF4A90D9),
-          onTap: isSending
+        return AppButton(
+          text: 'Add Friend',
+          backgroundColor: const Color(0xFF4A90D9),
+          textColor: Colors.white,
+          isLoading: isSending,
+          onPressed: isSending
               ? null
-              : () => context.read<ProfileDetailBloc>().add(
-                  SendFriendRequest(profile.id),
-                ),
+              : () => ReadContext(
+                  context,
+                ).read<ProfileDetailBloc>().add(SendFriendRequest(profile.id)),
         );
       case ConnectionStatus.requestedByMe:
-        return const _OutlineButton(
-          icon: Icons.access_time,
-          label: 'Pending',
-          color: Color(0xFF8A94A6),
+        return AppButton(
+          text: 'Pending',
+          backgroundColor: const Color(0xFF8A94A6),
+          textColor: Colors.white,
+          onPressed: null,
         );
       case ConnectionStatus.requestedToMe:
         return Row(
           children: [
             Expanded(
-              child: _FilledButton(
-                label: 'Accept',
-                color: const Color(0xFF5DC98A),
-                onTap: () => context.read<ProfileDetailBloc>().add(
-                  SendFriendRequest(profile.id),
-                ),
+              child: AppButton(
+                text: 'Accept',
+                backgroundColor: const Color(0xFF5DC98A),
+                textColor: Colors.white,
+                onPressed: () => ReadContext(
+                  context,
+                ).read<ProfileDetailBloc>().add(SendFriendRequest(profile.id)),
               ),
             ),
             const SizedBox(width: 6),
             Expanded(
-              child: _OutlineButton(
-                label: 'Reject',
-                color: const Color(0xFFE05454),
-                onTap: () {},
+              child: AppButton(
+                text: 'Reject',
+                backgroundColor: Colors.white,
+                textColor: const Color(0xFFE05454),
+                onPressed: () {},
               ),
             ),
           ],
         );
       case ConnectionStatus.connected:
-        return const _OutlineButton(
-          icon: Icons.check,
-          label: 'Connected',
-          color: Color(0xFF5DC98A),
+        return AppButton(
+          text: 'Connected',
+          backgroundColor: const Color(0xFF5DC98A),
+          textColor: Colors.white,
+          onPressed: null,
         );
     }
   }
@@ -385,91 +434,12 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           Text(message, style: const TextStyle(color: Colors.redAccent)),
           const SizedBox(height: 24),
           ElevatedButton(
-            onPressed: () => context.read<ProfileDetailBloc>().add(
+            onPressed: () => ReadContext(context).read<ProfileDetailBloc>().add(
               LoadProfileDetail(widget.delegateId),
             ),
             child: const Text('ลองใหม่'),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ─────────────── Button widgets ───────────────
-
-class _OutlineButton extends StatelessWidget {
-  final String label;
-  final IconData? icon;
-  final Color color;
-  final VoidCallback? onTap;
-
-  const _OutlineButton({
-    required this.label,
-    this.icon,
-    this.color = const Color(0xFF4A90D9),
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 40,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          border: Border.all(color: color, width: 1.5),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 14, color: color),
-              const SizedBox(width: 4),
-            ],
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FilledButton extends StatelessWidget {
-  final String label;
-  final Color color;
-  final VoidCallback? onTap;
-
-  const _FilledButton({required this.label, required this.color, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 40,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
       ),
     );
   }

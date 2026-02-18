@@ -299,20 +299,25 @@ class AppModule extends Module {
           );
         }
 
-        return BlocProvider(
-          create: (_) =>
-              Modular.get<ProfileDetailBloc>()
-                ..add(LoadProfileDetail(delegateId)),
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider(
+              create: (_) =>
+                  Modular.get<ProfileDetailBloc>()
+                    ..add(LoadProfileDetail(delegateId)),
+            ),
+            BlocProvider.value(value: Modular.get<ChatBloc>()),
+          ],
           child: OtherProfilePage(delegateId: delegateId),
         );
       },
     );
     r.child(
-  '/change_password',
-  child: (_) => BlocProvider.value(
-    value: Modular.get<AuthBloc>(),
-    child:  ChangePasswordPage(),
-  ),
-);
+      '/change_password',
+      child: (_) => BlocProvider.value(
+        value: Modular.get<AuthBloc>(),
+        child: ChangePasswordPage(),
+      ),
+    );
   }
 }
