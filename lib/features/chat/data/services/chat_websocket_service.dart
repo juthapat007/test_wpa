@@ -240,15 +240,15 @@ class ChatWebSocketService {
         print('✅ [READ RECEIPT] Received message_read event!');
         _handleMessageRead(message);
         break;
-      case 'messages_read':
-        print('✅ [READ RECEIPT] Received messages_read event!');
-        _handleMessagesRead(message);
-        break;
+      // case 'messages_read':
+      //   print('✅ [READ RECEIPT] Received messages_read event!');
+      //   _handleMessagesRead(message);
+      //   break;
 
-      case 'bulk_read':
-        print('✅ [BULK READ RECEIPT] Received bulk_read event!');
-        _handleBulkRead(message);
-        break;
+      // case 'bulk_read':
+      //   print('✅ [BULK READ RECEIPT] Received bulk_read event!');
+      //   _handleBulkRead(message);
+      //   break;
 
       // 🔥 NEW: Handle ทุก possible format ของ read receipt
       case 'read_receipt':
@@ -548,6 +548,7 @@ class ChatWebSocketService {
         senderName: senderName,
         senderAvatar: senderAvatar,
         receiverId: receiverId,
+        chatRoomId: messageData['chat_room_id'] as int? ?? 0,
         content: messageData['content'] ?? '',
         createdAt: messageData['created_at'] != null
             ? DateTime.parse(messageData['created_at'])

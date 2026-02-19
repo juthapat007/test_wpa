@@ -57,7 +57,6 @@ class ChatRepositoryImpl implements ChatRepository {
   Stream<MessageUpdatedEvent> get messageUpdatedStream =>
       webSocketService.messageUpdatedStream;
 
-  // 🆕 NEW: Typing stream
   @override
   Stream<TypingEvent> get typingStream => webSocketService.typingStream;
 
@@ -65,29 +64,14 @@ class ChatRepositoryImpl implements ChatRepository {
   Future<void> sendMessage(ChatMessage message) async {
     try {
       await api.sendMessage(
-        recipientId: message.receiverId,
+        chatRoomId: message.chatRoomId,
         content: message.content,
-        tempId: message.id,
       );
     } catch (e) {
       debugPrint('REST send failed, falling back to WebSocket: $e');
-      // Fallback to WebSocket if REST fails
       await webSocketService.sendMessage(message);
     }
   }
-  // @override
-  // Future<void> sendMessage(ChatMessage message) async {
-  //   try {
-  //     await api.sendMessage(
-  //       chatRoomId: message.chatRoomId, // ✅ ต้องมี field นี้
-  //       content: message.content,
-  //       tempId: message.id,
-  //     );
-  //   } catch (e) {
-  //     debugPrint('REST send failed, falling back to WebSocket: $e');
-  //     await webSocketService.sendMessage(message);
-  //   }
-  // }
 
   @override
   Future<List<ChatRoom>> getChatRooms() async {
@@ -111,6 +95,7 @@ class ChatRepositoryImpl implements ChatRepository {
                   senderId: delegate['id'].toString(),
                   senderName: delegate['name'] ?? '',
                   receiverId: '',
+                  chatRoomId: json['id'] as int? ?? 0,
                   content: lastMessageText,
                   createdAt: DateTime.parse(lastMessageAt),
                 )
@@ -164,6 +149,7 @@ class ChatRepositoryImpl implements ChatRepository {
           senderName: json['sender']['name'] ?? '',
           senderAvatar: json['sender']['avatar_url'],
           receiverId: json['recipient']['id'].toString(),
+          chatRoomId: json['chat_room_id'] as int? ?? 0,
           content: json['content'] ?? '',
           createdAt: DateTime.parse(json['created_at']),
           isRead: json['read_at'] != null,

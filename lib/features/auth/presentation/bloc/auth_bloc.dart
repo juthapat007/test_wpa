@@ -1,9 +1,11 @@
 // lib/features/auth/presentation/bloc/auth_bloc.dart
 
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:meta/meta.dart';
 import 'package:test_wpa/core/network/dio_client.dart';
 import 'package:test_wpa/features/auth/domain/repositories/auth_repository.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 part 'auth_event.dart';
 part 'auth_state.dart';
 
@@ -16,7 +18,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthReset>(_onReset);
     on<AuthForgotPassword>(_onForgotPassword);
     on<AuthResetPassword>(_onResetPassword);
-    on<AuthChangePassword>(_onChangePassword); // ✅ เพิ่มตรงนี้
+    on<AuthChangePassword>(_onChangePassword);
   }
 
   Future<void> _onLoginRequested(
@@ -30,7 +32,27 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         password: event.password,
       );
       await DioClient().init();
-      emit(AuthAuthenticated(avatarUrl: result.user?.avatarUrl));
+
+      //ส่ง device token หลัง login
+      // final fcmToken = await FirebaseMessaging.instance.getToken();
+      // if (fcmToken != null) {
+      //   await authRepository.registerDeviceToken(fcmToken);
+      // }
+      try {
+        final fcmToken = await FirebaseMessaging.instance.getToken();
+        if (fcmToken != null) {
+          await authRepository.registerDeviceToken(fcmToken);
+        }
+      } catch (e) {
+        debugPrint('⚠️ FCM token failed: $e');
+      }
+      emit(
+        AuthAuthenticated(
+          avatarUrl: result.user?.avatarUrl,
+          name: result.user?.name,
+          userId: result.user?.id.toString(),
+        ),
+      );
     } catch (e) {
       emit(AuthError('email or Password is wrong'));
       emit(AuthInitial());
@@ -60,7 +82,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await authRepository.forgotPassword(email: event.email);
       emit(ForgotPasswordSuccess());
     } catch (e) {
-      emit(ForgotPasswordError('Failed to send reset email. Please try again.'));
+      emit(
+        ForgotPasswordError('Failed to send reset email. Please try again.'),
+      );
     }
   }
 
@@ -78,34 +102,26 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       );
       emit(ResetPasswordSuccess());
     } catch (e) {
-      emit(ResetPasswordError('Failed to reset password. Token may be expired.'));
+      emit(
+        ResetPasswordError('Failed to reset password. Token may be expired.'),
+      );
     }
   }
 
-  // ✅ Change Password handler
   Future<void> _onChangePassword(
     AuthChangePassword event,
     Emitter<AuthState> emit,
   ) async {
-    print('🔒 Changing password...');
     emit(AuthLoading());
     try {
       await authRepository.changePassword(
         oldPassword: event.oldPassword,
         newPassword: event.newPassword,
       );
-      print('✅ Password changed successfully');
+      await authRepository.logout(); //ล้าง token
       emit(ChangePasswordSuccess());
-
-      // Logout อัตโนมัติหลังเปลี่ยนรหัสผ่านสำเร็จ
-      await authRepository.logout();
     } catch (e) {
-      print('❌ Change password error: $e');
-      // ดึง error message ที่อ่านได้
-      final message = e.toString().contains('wrong')
-          ? 'Current password is incorrect'
-          : 'Failed to change password. Please try again.';
-      emit(ChangePasswordError(message));
+      emit(ChangePasswordError(e.toString()));
     }
   }
 }

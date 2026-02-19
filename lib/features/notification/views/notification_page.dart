@@ -23,12 +23,11 @@ class _NotificationPageState extends State<NotificationPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
 
-    // Load initial data
-    ReadContext(
-      context,
-    ).read<NotificationBloc>().add(LoadNotifications(type: 'system'));
+    ReadContext(context)
+        .read<NotificationBloc>()
+        .add(LoadNotifications(type: 'system'));
     ReadContext(context).read<ConnectionBloc>().add(LoadConnectionRequests());
   }
 
@@ -54,6 +53,7 @@ class _NotificationPageState extends State<NotificationPage>
               controller: _tabController,
               children: [
                 _buildSystemNotificationsTab(),
+                _buildAttendanceTab(),
                 _buildConnectionRequestsTab(),
               ],
             ),
@@ -63,6 +63,7 @@ class _NotificationPageState extends State<NotificationPage>
     );
   }
 
+  // ─── Tab Bar ────────────────────────────────────────────────────────────
   Widget _buildTabBar() {
     return Container(
       decoration: BoxDecoration(
@@ -71,45 +72,35 @@ class _NotificationPageState extends State<NotificationPage>
       ),
       child: TabBar(
         controller: _tabController,
-        labelColor: color.AppColors.primary,
-        unselectedLabelColor: color.AppColors.textSecondary,
-        indicatorColor: color.AppColors.primary,
-        indicatorWeight: 3,
-        labelStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w500,
-        ),
+        labelColor: const Color(0xFF1A3A6B),
+        unselectedLabelColor: Colors.grey[400],
+        indicatorColor: const Color(0xFF1A3A6B),
+        indicatorWeight: 2.5,
+        labelStyle:
+            const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+        unselectedLabelStyle:
+            const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
         onTap: (index) {
-          // Reload data when switching tabs
           if (index == 0) {
-            ReadContext(
-              context,
-            ).read<NotificationBloc>().add(LoadNotifications(type: 'system'));
-          } else {
-            ReadContext(
-              context,
-            ).read<ConnectionBloc>().add(LoadConnectionRequests());
+            ReadContext(context)
+                .read<NotificationBloc>()
+                .add(LoadNotifications(type: 'system'));
+          } else if (index == 2) {
+            ReadContext(context)
+                .read<ConnectionBloc>()
+                .add(LoadConnectionRequests());
           }
         },
         tabs: [
+          const Tab(text: 'EVENT PLAN'),
+          const Tab(text: 'ATTENDANCE STATUS'),
           Tab(
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('System'),
-                const SizedBox(width: 6),
-                _buildSystemBadge(),
-              ],
-            ),
-          ),
-          Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('Connections'),
-                const SizedBox(width: 6),
-                _buildConnectionBadge(),
+                const Text('FRIENDS REQUETS'),
+                const SizedBox(width: 4),
+                _buildConnectionBadgeDot(),
               ],
             ),
           ),
@@ -118,62 +109,21 @@ class _NotificationPageState extends State<NotificationPage>
     );
   }
 
-  Widget _buildSystemBadge() {
-    return BlocBuilder<NotificationBloc, NotificationState>(
-      builder: (context, state) {
-        int unreadCount = 0;
-        if (state is NotificationLoaded) {
-          unreadCount = state.notifications.where((n) => n.isUnread).length;
-        }
-
-        if (unreadCount == 0) return const SizedBox.shrink();
-
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-          decoration: BoxDecoration(
-            color: color.AppColors.error,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          constraints: const BoxConstraints(minWidth: 20),
-          child: Text(
-            unreadCount > 99 ? '99+' : '$unreadCount',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildConnectionBadge() {
+  // จุดแดงเล็กๆ แบบในรูป
+  Widget _buildConnectionBadgeDot() {
     return BlocBuilder<ConnectionBloc, ConnectionRequestState>(
       builder: (context, state) {
         int pendingCount = 0;
         if (state is ConnectionRequestLoaded) {
           pendingCount = state.requests.where((r) => r.isPending).length;
         }
-
         if (pendingCount == 0) return const SizedBox.shrink();
-
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-          decoration: BoxDecoration(
-            color: color.AppColors.error,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          constraints: const BoxConstraints(minWidth: 20),
-          child: Text(
-            pendingCount > 99 ? '99+' : '$pendingCount',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
+          width: 7,
+          height: 7,
+          decoration: const BoxDecoration(
+            color: Colors.red,
+            shape: BoxShape.circle,
           ),
         );
       },
@@ -183,20 +133,15 @@ class _NotificationPageState extends State<NotificationPage>
   Widget _buildMarkAllReadButton() {
     return BlocBuilder<NotificationBloc, NotificationState>(
       builder: (context, state) {
-        // Only show for system notifications tab
         if (_tabController.index != 0) return const SizedBox.shrink();
-
-        final hasUnread =
-            state is NotificationLoaded &&
+        final hasUnread = state is NotificationLoaded &&
             state.notifications.any((n) => n.isUnread);
-
         if (!hasUnread) return const SizedBox.shrink();
-
         return TextButton(
           onPressed: () {
             ReadContext(context).read<NotificationBloc>().add(
-              MarkAllNotificationsRead(type: 'system'),
-            );
+                  MarkAllNotificationsRead(type: 'system'),
+                );
           },
           child: Text(
             'Read All',
@@ -211,14 +156,13 @@ class _NotificationPageState extends State<NotificationPage>
     );
   }
 
-  // System Notifications Tab
+  // ─── Tab 1: Event Plan / System ──────────────────────────────────────────
   Widget _buildSystemNotificationsTab() {
     return BlocBuilder<NotificationBloc, NotificationState>(
       builder: (context, state) {
         if (state is NotificationLoading) {
           return const Center(child: CircularProgressIndicator());
         }
-
         if (state is NotificationLoaded) {
           if (state.notifications.isEmpty) {
             return _buildEmptyState(
@@ -228,12 +172,11 @@ class _NotificationPageState extends State<NotificationPage>
                   'You\'re all caught up. New notifications\nwill appear here.',
             );
           }
-
           return RefreshIndicator(
             onRefresh: () async {
-              ReadContext(
-                context,
-              ).read<NotificationBloc>().add(LoadNotifications(type: 'system'));
+              ReadContext(context)
+                  .read<NotificationBloc>()
+                  .add(LoadNotifications(type: 'system'));
             },
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -246,9 +189,9 @@ class _NotificationPageState extends State<NotificationPage>
                   item: item,
                   onTap: () {
                     if (item.isUnread) {
-                      ReadContext(context).read<NotificationBloc>().add(
-                        MarkNotificationRead(item.id),
-                      );
+                      ReadContext(context)
+                          .read<NotificationBloc>()
+                          .add(MarkNotificationRead(item.id));
                     }
                   },
                 );
@@ -256,24 +199,29 @@ class _NotificationPageState extends State<NotificationPage>
             ),
           );
         }
-
         if (state is NotificationError) {
           return _buildErrorState(
             message: state.message,
-            onRetry: () {
-              ReadContext(
-                context,
-              ).read<NotificationBloc>().add(LoadNotifications(type: 'system'));
-            },
+            onRetry: () => ReadContext(context)
+                .read<NotificationBloc>()
+                .add(LoadNotifications(type: 'system')),
           );
         }
-
         return const SizedBox.shrink();
       },
     );
   }
 
-  // Connection Requests Tab
+  // ─── Tab 2: Attendance Status ────────────────────────────────────────────
+  Widget _buildAttendanceTab() {
+    return _buildEmptyState(
+      icon: Icons.how_to_reg_outlined,
+      title: 'Attendance Status',
+      message: 'Your attendance records\nwill appear here.',
+    );
+  }
+
+  // ─── Tab 3: Friends Requests ─────────────────────────────────────────────
   Widget _buildConnectionRequestsTab() {
     return BlocConsumer<ConnectionBloc, ConnectionRequestState>(
       listener: (context, state) {
@@ -281,7 +229,7 @@ class _NotificationPageState extends State<NotificationPage>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
-              backgroundColor: color.AppColors.success,
+              backgroundColor: Colors.green,
               duration: const Duration(seconds: 2),
             ),
           );
@@ -290,7 +238,7 @@ class _NotificationPageState extends State<NotificationPage>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
-              backgroundColor: color.AppColors.error,
+              backgroundColor: Colors.red,
               duration: const Duration(seconds: 2),
             ),
           );
@@ -302,42 +250,41 @@ class _NotificationPageState extends State<NotificationPage>
         }
 
         if (state is ConnectionRequestLoaded) {
-          final pendingRequests = state.requests
-              .where((r) => r.isPending)
-              .toList();
+          final pendingRequests =
+              state.requests.where((r) => r.isPending).toList();
 
           if (pendingRequests.isEmpty) {
             return _buildEmptyState(
               icon: Icons.people_outline,
-              title: 'No Connection Requests',
-              message: 'You don\'t have any pending\nconnection requests.',
+              title: 'No Friend Requests',
+              message: 'You don\'t have any pending\nfriend requests.',
             );
           }
 
           return RefreshIndicator(
             onRefresh: () async {
-              ReadContext(
-                context,
-              ).read<ConnectionBloc>().add(LoadConnectionRequests());
+              ReadContext(context)
+                  .read<ConnectionBloc>()
+                  .add(LoadConnectionRequests());
             },
             child: ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               itemCount: pendingRequests.length,
-              separatorBuilder: (_, __) =>
-                  Divider(height: 1, color: Colors.grey[200]),
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
                 final request = pendingRequests[index];
-                return _ConnectionRequestTile(
+                return _FriendRequestCard(
                   request: request,
-                  onAccept: () {
+                  onConfirm: () {
                     ReadContext(context).read<ConnectionBloc>().add(
-                      AcceptConnectionRequest(request.id),
-                    );
+                          AcceptConnectionRequest(request.id),
+                        );
                   },
-                  onReject: () {
+                  onNotNow: () {
                     ReadContext(context).read<ConnectionBloc>().add(
-                      RejectConnectionRequest(request.id),
-                    );
+                          RejectConnectionRequest(request.id),
+                        );
                   },
                 );
               },
@@ -348,11 +295,9 @@ class _NotificationPageState extends State<NotificationPage>
         if (state is ConnectionRequestError) {
           return _buildErrorState(
             message: state.message,
-            onRetry: () {
-              ReadContext(
-                context,
-              ).read<ConnectionBloc>().add(LoadConnectionRequests());
-            },
+            onRetry: () => ReadContext(context)
+                .read<ConnectionBloc>()
+                .add(LoadConnectionRequests()),
           );
         }
 
@@ -361,6 +306,7 @@ class _NotificationPageState extends State<NotificationPage>
     );
   }
 
+  // ─── Shared helpers ──────────────────────────────────────────────────────
   Widget _buildEmptyState({
     required IconData icon,
     required String title,
@@ -436,9 +382,9 @@ class _NotificationPageState extends State<NotificationPage>
   }
 }
 
-// ========================================
-// Notification Tile Widget
-// ========================================
+// ═══════════════════════════════════════════════════════════════════════════
+// Notification Tile (System tab)
+// ═══════════════════════════════════════════════════════════════════════════
 class _NotificationTile extends StatelessWidget {
   final NotificationItem item;
   final VoidCallback onTap;
@@ -504,7 +450,8 @@ class _NotificationTile extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       _formatTime(item.createdAt),
-                      style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+                      style:
+                          TextStyle(fontSize: 12, color: Colors.grey[400]),
                     ),
                   ],
                 ),
@@ -518,7 +465,6 @@ class _NotificationTile extends StatelessWidget {
 
   Widget _buildLeading() {
     final sender = item.notifiable?.sender;
-
     if (sender != null &&
         sender.avatarUrl != null &&
         sender.avatarUrl!.isNotEmpty) {
@@ -528,10 +474,8 @@ class _NotificationTile extends StatelessWidget {
         onBackgroundImageError: (_, __) {},
       );
     }
-
     final iconData = _getIconForType(item.type);
     final iconColor = _getColorForType(item.type);
-
     return CircleAvatar(
       radius: 22,
       backgroundColor: iconColor.withOpacity(0.12),
@@ -602,18 +546,18 @@ class _NotificationTile extends StatelessWidget {
   }
 }
 
-// ========================================
-// Connection Request Tile Widget
-// ========================================
-class _ConnectionRequestTile extends StatelessWidget {
+// ═══════════════════════════════════════════════════════════════════════════
+// Friend Request Card — ตรงกับ UI ในรูป
+// ═══════════════════════════════════════════════════════════════════════════
+class _FriendRequestCard extends StatelessWidget {
   final ConnectionRequest request;
-  final VoidCallback onAccept;
-  final VoidCallback onReject;
+  final VoidCallback onConfirm;
+  final VoidCallback onNotNow;
 
-  const _ConnectionRequestTile({
+  const _FriendRequestCard({
     required this.request,
-    required this.onAccept,
-    required this.onReject,
+    required this.onConfirm,
+    required this.onNotNow,
   });
 
   @override
@@ -621,22 +565,25 @@ class _ConnectionRequestTile extends StatelessWidget {
     final sender = request.sender;
 
     return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Avatar
-          CircleAvatar(
-            radius: 28,
-            backgroundImage:
-                sender?.avatarUrl != null && sender!.avatarUrl!.isNotEmpty
-                ? NetworkImage(sender.avatarUrl!)
-                : const AssetImage('assets/images/empty_state.png')
-                      as ImageProvider,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          const SizedBox(width: 12),
-          // Info
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          // ── Avatar ──────────────────────────────────────────────────
+          _buildAvatar(sender),
+          const SizedBox(width: 14),
+
+          // ── Name + Company • Title ───────────────────────────────────
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -645,60 +592,115 @@ class _ConnectionRequestTile extends StatelessWidget {
                   sender?.name ?? 'Unknown',
                   style: const TextStyle(
                     fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: color.AppColors.textPrimary,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A2340),
                   ),
                 ),
-                const SizedBox(height: 2),
-                if (sender?.title != null)
+                const SizedBox(height: 3),
+                if (_buildSubtitle(sender).isNotEmpty)
                   Text(
-                    sender!.title!,
+                    _buildSubtitle(sender),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 13,
-                      color: color.AppColors.textSecondary,
+                      color: Colors.grey[500],
                     ),
                   ),
-                if (sender?.companyName != null)
-                  Text(
-                    sender!.companyName!,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: color.AppColors.textSecondary,
-                    ),
-                  ),
-                const SizedBox(height: 12),
-                // Action buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: onReject,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: color.AppColors.textSecondary,
-                          side: BorderSide(color: Colors.grey[300]!),
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                        ),
-                        child: const Text('Decline'),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: onAccept,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: color.AppColors.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                        ),
-                        child: const Text('Accept'),
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
+
+          const SizedBox(width: 10),
+
+          // ── Buttons ──────────────────────────────────────────────────
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _ActionButton(
+                label: 'Not Now',
+                onTap: onNotNow,
+                isFilled: false,
+              ),
+              const SizedBox(width: 8),
+              _ActionButton(
+                label: 'Confirm',
+                onTap: onConfirm,
+                isFilled: true,
+              ),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAvatar(ConnectionRequestDelegate? sender) {
+    final hasAvatar =
+        sender?.avatarUrl != null && sender!.avatarUrl!.isNotEmpty;
+    return CircleAvatar(
+      radius: 26,
+      backgroundImage: hasAvatar ? NetworkImage(sender!.avatarUrl!) : null,
+      backgroundColor: const Color(0xFFE0B89A).withOpacity(0.35),
+      child: !hasAvatar
+          ? Text(
+              (sender?.name ?? 'U').substring(0, 1).toUpperCase(),
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFFC47F4F),
+              ),
+            )
+          : null,
+    );
+  }
+
+  String _buildSubtitle(ConnectionRequestDelegate? sender) {
+    final parts = <String>[];
+    if (sender?.companyName != null && sender!.companyName!.isNotEmpty) {
+      parts.add(sender.companyName!);
+    }
+    if (sender?.title != null && sender!.title!.isNotEmpty) {
+      parts.add(sender.title!);
+    }
+    return parts.join(' • ');
+  }
+}
+
+// ─── ปุ่ม Not Now / Confirm ──────────────────────────────────────────────
+class _ActionButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  final bool isFilled; // true = Confirm (golden), false = Not Now (outline)
+
+  const _ActionButton({
+    required this.label,
+    required this.onTap,
+    required this.isFilled,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          // Confirm = สีทอง amber, Not Now = ขอบฟ้าใส
+          color: isFilled ? const Color(0xFFD4A843) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: isFilled
+              ? null
+              : Border.all(color: const Color(0xFF4A90D9), width: 1.2),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: isFilled ? Colors.white : const Color(0xFF4A90D9),
+          ),
+        ),
       ),
     );
   }

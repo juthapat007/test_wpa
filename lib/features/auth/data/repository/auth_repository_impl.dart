@@ -83,6 +83,11 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> registerDeviceToken(String token) async {
+    await authApi.registerDeviceToken(token);
+  }
+
+  @override
   Future<void> changePassword({
     required String oldPassword,
     required String newPassword,

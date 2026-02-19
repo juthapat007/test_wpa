@@ -22,7 +22,27 @@ class ScheduleApi {
   }
 
   // ส่งข้อมูลการแจ้งลา
+  // Future<Response> submitLeaveForms(Map<String, dynamic> data) {
+  //   return dio.post('/leave_forms', data: {'leave_form': data});
+  // }
+  // Future<Response> submitLeaveForms(List<Map<String, dynamic>> leaves) {
+  //   return dio.post(
+  //     '/leave_forms',
+  //     data: {
+  //       'leave_form': {
+  //         'leaves': leaves, // ✅ array ข้างใน
+  //       },
+  //     },
+  //   );
+  // }
   Future<Response> submitLeaveForms(Map<String, dynamic> data) {
-    return dio.post('/leave_forms', data: data);
+    return dio.post(
+      '/leave_forms',
+      data: {
+        'leave_form': {
+          'leaves': data['leaves'], // ✅ ดึง leaves array จาก map
+        },
+      },
+    );
   }
 }

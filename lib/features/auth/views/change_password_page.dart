@@ -50,10 +50,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           content: const Text(
             'After changing your password,\nyou will be logged out automatically\nand need to login again.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
+            style: TextStyle(color: AppColors.textSecondary, height: 1.5),
           ),
           actions: [
             Row(
@@ -75,7 +72,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 ),
                 const SizedBox(width: space.s),
                 Expanded(
-                  child: TextButton(
+                  child: AppButton(
+                    text: 'Confirm',
                     onPressed: () {
                       Navigator.pop(context);
                       FocusScope.of(context).unfocus();
@@ -86,18 +84,33 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                         ),
                       );
                     },
-                    style: TextButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      'Confirm',
-                      style: TextStyle(color: Colors.white),
-                    ),
                   ),
                 ),
+                // Expanded(
+
+                // child: TextButton(
+                //   onPressed: () {
+                //     Navigator.pop(context);
+                //     FocusScope.of(context).unfocus();
+                //     BlocProvider.of<AuthBloc>(context).add(
+                //       AuthChangePassword(
+                //         oldPassword: _oldPasswordCtrl.text,
+                //         newPassword: _newPasswordCtrl.text,
+                //       ),
+                //     );
+                //   },
+                //   style: TextButton.styleFrom(
+                //     backgroundColor: AppColors.primary,
+                //     shape: RoundedRectangleBorder(
+                //       borderRadius: BorderRadius.circular(8),
+                //     ),
+                //   ),
+                //   child: const Text(
+                //     'Confirm',
+                //     style: TextStyle(color: Colors.white),
+                //   ),
+                // ),
+                // ),
               ],
             ),
           ],
@@ -132,29 +145,17 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               content: const Text(
                 'Your password has been changed.\nPlease login with your new password.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  height: 1.5,
-                ),
+                style: TextStyle(color: AppColors.textSecondary, height: 1.5),
               ),
               actions: [
                 SizedBox(
                   width: double.infinity,
-                  child: TextButton(
+                  child: AppButton(
+                    text: 'Login Again',
                     onPressed: () {
                       Navigator.pop(context); // ปิด dialog
                       Modular.to.navigate('/'); // ไปหน้า login
                     },
-                    style: TextButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      'Login Again',
-                      style: TextStyle(color: Colors.white),
-                    ),
                   ),
                 ),
               ],

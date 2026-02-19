@@ -26,6 +26,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   List<ChatMessage> _messages = [];
   bool _isWebSocketConnected = false;
   String? _currentUserId;
+  String? _currentUserName;
 
   final Set<String> _pendingReadReceipts = {};
 
@@ -304,6 +305,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       if (userDataJson != null) {
         final userData = jsonDecode(userDataJson);
         _currentUserId = userData['id'].toString();
+        _currentUserName = userData['name'] ?? userData['full_name'] ?? 'Me';
       }
     } catch (e) {
       print('❌ ChatBloc: Failed to get current user ID: $e');
@@ -665,8 +667,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     final message = ChatMessage(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       senderId: senderId,
-      senderName: 'Me',
+      senderName: _currentUserName ?? 'Me',
+
       receiverId: _selectedRoom!.participantId,
+      chatRoomId: int.tryParse(_selectedRoom!.id) ?? 0,
       content: event.content,
       createdAt: DateTime.now(),
       type: event.type,

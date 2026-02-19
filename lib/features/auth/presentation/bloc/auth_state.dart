@@ -10,7 +10,9 @@ class AuthLoading extends AuthState {}
 
 class AuthAuthenticated extends AuthState {
   final String? avatarUrl;
-  AuthAuthenticated({this.avatarUrl});
+  final String? name;
+  final String? userId;
+  AuthAuthenticated({this.avatarUrl, this.name, this.userId});
 }
 
 class AuthUnauthenticated extends AuthState {}

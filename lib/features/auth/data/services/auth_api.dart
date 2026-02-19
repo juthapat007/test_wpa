@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
@@ -51,20 +53,26 @@ class AuthApi {
   }
 
   /// POST /change_password
-  Future<Response> changePassword({
+  Future<void> changePassword({
     required String oldPassword,
     required String newPassword,
   }) async {
-    try {
-      return await dio.post(
-        '/change_password',
-        data: {
-          'old_password': oldPassword,
-          'new_password': newPassword,
+    await dio.put(
+      '/change_password',
+      data: {'old_password': oldPassword, 'new_password': newPassword},
+    );
+  }
+
+  Future<Response> registerDeviceToken(String token) async {
+    return dio.post(
+      '/device_token',
+      data: {
+        'device': {
+          // ✅ เปลี่ยนจาก device_token
+          'push_token': token, // ✅ เปลี่ยนจาก token
+          'platform': Platform.isAndroid ? 'android' : 'ios',
         },
-      );
-    } catch (e) {
-      rethrow;
-    }
+      },
+    );
   }
 }

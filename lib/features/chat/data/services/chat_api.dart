@@ -46,50 +46,29 @@ class ChatApi {
 
   /// ส่งข้อความ (ผ่าน REST API)
   Future<Response> sendMessage({
-    required String recipientId,
+    required int chatRoomId,
     required String content,
-    String? tempId,
+    // String? tempId,
   }) async {
     try {
       final response = await dio.post(
         '/messages',
         data: {
-          'recipient_id': int.parse(recipientId),
-          'content': content,
-          if (tempId != null) 'tempId': tempId,
+          'message': {'content': content, 'chat_room_id': chatRoomId},
         },
+        // data: {
+        //   'recipient_id': int.parse(recipientId),
+        //   'content': content,
+        //   if (tempId != null) 'tempId': tempId,
+        // },
       );
-      debugPrint('✅ Message sent via REST');
+      debugPrint('✅ Message sent: ${response.data}');
       return response;
     } catch (e) {
       debugPrint('❌ Error sending message: $e');
       rethrow;
     }
   }
-  //   Future<Response> sendMessage({
-  //   required int chatRoomId,
-  //   required String content,
-  //   String? tempId,
-  // }) async {
-  //   try {
-  //     final response = await dio.post(
-  //       '/messages',
-  //       data: {
-  //         'message': {
-  //           'content': content,
-  //           'chat_room_id': chatRoomId,
-  //           if (tempId != null) 'temp_id': tempId,
-  //         }
-  //       },
-  //     );
-
-  //     debugPrint('✅ Message sent via REST');
-  //     return response;
-  //   } catch (e) {
-  //     debugPrint('❌ Error sending message: $e');
-  //     rethrow;
-  //   }
-  // }
 
   /// ทำเครื่องหมายว่าอ่านข้อความจากคนนั้นแล้วทั้งหมด
   Future<Response> markAllAsRead(String senderId) async {
@@ -127,7 +106,9 @@ class ChatApi {
     try {
       final response = await dio.put(
         '/messages/$messageId',
-        data: {'content': content},
+        data: {
+          'message': {'content': content},
+        },
       );
       debugPrint('✅ Message updated');
       return response;
@@ -176,28 +157,4 @@ class ChatApi {
       rethrow;
     }
   }
-
-  // Future<Response> createChatRoom({
-  //   required String title,
-  //   String? participantId,
-  // }) async {
-  //   try {
-  //     final response = await dio.post(
-  //       '/chat_rooms',
-  //       data: {
-  //         'chat_room': {
-  //           'title': title,
-  //           'room_kind': 'group',
-  //           if (participantId != null)
-  //             'participant_id': int.parse(participantId),
-  //         },
-  //       },
-  //     );
-  //     debugPrint('✅ Chat room created: ${response.data}');
-  //     return response;
-  //   } catch (e) {
-  //     debugPrint('❌ Error creating chat room: $e');
-  //     rethrow;
-  //   }
-  // }
 }

@@ -6,6 +6,7 @@ abstract class AuthRepository {
     required String password,
   });
   Future<void> logout();
+  Future<void> registerDeviceToken(String token);
   Future<String?> getToken();
   Future<void> forgotPassword({required String email});
   Future<void> resetPassword({

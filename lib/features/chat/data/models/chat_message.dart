@@ -4,6 +4,7 @@ class ChatMessage {
   final String senderName;
   final String? senderAvatar;
   final String receiverId;
+  final int chatRoomId;
   final String content;
   final DateTime createdAt;
   final bool isRead;
@@ -17,6 +18,7 @@ class ChatMessage {
     required this.senderName,
     this.senderAvatar,
     required this.receiverId,
+    required this.chatRoomId,
     required this.content,
     required this.createdAt,
     this.isRead = false,
@@ -36,6 +38,7 @@ class ChatMessage {
           json['receiver_id']?.toString() ??
           json['receiverId']?.toString() ??
           '',
+      chatRoomId: json['chat_room_id'] as int,
       content: json['content'] ?? json['message'] ?? '',
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
@@ -57,6 +60,7 @@ class ChatMessage {
     'sender_name': senderName,
     'sender_avatar': senderAvatar,
     'receiver_id': receiverId,
+    'chat_room_id': chatRoomId,
     'content': content,
     'created_at': createdAt.toIso8601String(),
     'is_read': isRead,
@@ -85,6 +89,7 @@ class ChatMessage {
     String? senderName,
     String? senderAvatar,
     String? receiverId,
+    int? chatRoomId,
     String? content,
     DateTime? createdAt,
     bool? isRead,
@@ -98,6 +103,7 @@ class ChatMessage {
       senderName: senderName ?? this.senderName,
       senderAvatar: senderAvatar ?? this.senderAvatar,
       receiverId: receiverId ?? this.receiverId,
+      chatRoomId: chatRoomId ?? this.chatRoomId,
       content: content ?? this.content,
       createdAt: createdAt ?? this.createdAt,
       isRead: isRead ?? this.isRead,
