@@ -1,31 +1,27 @@
+
 import 'package:test_wpa/features/notification/domain/entities/connection_request_entity.dart';
 
 class ConnectionRequestModel {
   final int id;
-  final int senderId;
-  final int receiverId;
-  final String status;
+  final int requesterId; 
   final String createdAt;
-  final ConnectionRequestDelegateModel? sender;
+  final ConnectionRequestDelegateModel? requester;
 
   ConnectionRequestModel({
     required this.id,
-    required this.senderId,
-    required this.receiverId,
-    required this.status,
+    required this.requesterId,
     required this.createdAt,
-    this.sender,
+    this.requester,
   });
 
   factory ConnectionRequestModel.fromJson(Map<String, dynamic> json) {
+    final requesterJson = json['requester'] as Map<String, dynamic>?;
     return ConnectionRequestModel(
       id: json['id'],
-      senderId: json['sender_id'],
-      receiverId: json['receiver_id'],
-      status: json['status'] ?? 'pending',
+      requesterId: requesterJson?['id'] ?? 0,
       createdAt: json['created_at'] ?? '',
-      sender: json['sender'] != null
-          ? ConnectionRequestDelegateModel.fromJson(json['sender'])
+      requester: requesterJson != null
+          ? ConnectionRequestDelegateModel.fromJson(requesterJson)
           : null,
     );
   }
@@ -33,11 +29,11 @@ class ConnectionRequestModel {
   ConnectionRequest toEntity() {
     return ConnectionRequest(
       id: id,
-      senderId: senderId,
-      receiverId: receiverId,
-      status: status,
+      senderId: requesterId,       // map requester → sender
+      receiverId: 0,               // ไม่มีใน response, ใส่ 0 ไปก่อน
+      status: 'pending',           // ทุก record ใน my_received = pending เสมอ
       createdAt: DateTime.tryParse(createdAt) ?? DateTime.now(),
-      sender: sender?.toEntity(),
+      sender: requester?.toEntity(),
     );
   }
 }
@@ -45,17 +41,18 @@ class ConnectionRequestModel {
 class ConnectionRequestDelegateModel {
   final int id;
   final String name;
-  final String email;
-  final String? avatarUrl;
   final String? title;
+  final String? avatarUrl;
+  // ✅ my_received ไม่ส่ง email, company_name มา ใส่ optional
+  final String? email;
   final String? companyName;
 
   ConnectionRequestDelegateModel({
     required this.id,
     required this.name,
-    required this.email,
-    this.avatarUrl,
     this.title,
+    this.avatarUrl,
+    this.email,
     this.companyName,
   });
 
@@ -63,9 +60,9 @@ class ConnectionRequestDelegateModel {
     return ConnectionRequestDelegateModel(
       id: json['id'],
       name: json['name'] ?? '',
-      email: json['email'] ?? '',
-      avatarUrl: json['avatar_url'],
       title: json['title'],
+      avatarUrl: json['avatar_url'],
+      email: json['email'],
       companyName: json['company_name'],
     );
   }
@@ -74,7 +71,7 @@ class ConnectionRequestDelegateModel {
     return ConnectionRequestDelegate(
       id: id,
       name: name,
-      email: email,
+      email: email ?? '',
       avatarUrl: avatarUrl,
       title: title,
       companyName: companyName,

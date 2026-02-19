@@ -13,7 +13,7 @@ class ProfileDetail {
   final bool isConnected;
   final ConnectionStatus connectionStatus;
   final int? teamId;
-
+final int? connectionRequestId;
   ProfileDetail({
     required this.id,
     required this.name,
@@ -25,9 +25,10 @@ class ProfileDetail {
     required this.isConnected,
     this.connectionStatus = ConnectionStatus.none,
     this.teamId,
+        this.connectionRequestId,
   });
 
-  static ConnectionStatus parseConnectionStatus(String? raw) {
+ static ConnectionStatus parseConnectionStatus(String? raw) {
     switch (raw) {
       case 'requested_by_me':
         return ConnectionStatus.requestedByMe;

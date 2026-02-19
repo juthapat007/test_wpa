@@ -5,4 +5,5 @@ abstract class ConnectionRepository {
   Future<void> acceptRequest(int id);
   Future<void> rejectRequest(int id);
   Future<void> sendRequest(int delegateId);
+  Future<void> unfriend(int delegateId);
 }

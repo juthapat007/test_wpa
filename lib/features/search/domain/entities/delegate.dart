@@ -9,6 +9,7 @@ class Delegate {
   final int teamId;
   final bool firstLogin;
   final bool isConnected;
+  final String connectionStatus; 
 
   Delegate({
     required this.id,
@@ -21,6 +22,7 @@ class Delegate {
     required this.teamId,
     required this.firstLogin,
     required this.isConnected,
+    this.connectionStatus = 'none',
   });
 }
 

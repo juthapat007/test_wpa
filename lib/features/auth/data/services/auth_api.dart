@@ -14,12 +14,33 @@ class AuthApi {
         '/login',
         data: {'email': email, 'password': password},
       );
-      debugPrint(' API response: ${response.data}');
+      debugPrint('API response: ${response.data}');
       return response;
     } catch (e, s) {
-      debugPrint(' API error: $e');
+      debugPrint('API error: $e');
       debugPrintStack(stackTrace: s);
       rethrow;
+    }
+  }
+
+  /// PATCH /api/v1/device_token
+  /// ส่ง FCM token หลัง login สำเร็จ
+  /// body: { "device": { "device_token": "xxx" } }
+  Future<void> registerDeviceToken(String token) async {
+    try {
+      await dio.patch(
+        '/device_token',
+        data: {
+          'device': {
+            'device_token': token,
+            'platform': Platform.isAndroid ? 'android' : 'ios',
+          },
+        },
+      );
+      debugPrint('✅ Device token registered');
+    } catch (e) {
+      // ไม่ throw — ถ้าส่งไม่ได้แค่ไม่ได้รับ push ไม่ให้ login พัง
+      debugPrint('⚠️ Failed to register device token: $e');
     }
   }
 
@@ -52,7 +73,7 @@ class AuthApi {
     }
   }
 
-  /// POST /change_password
+  /// PUT /change_password
   Future<void> changePassword({
     required String oldPassword,
     required String newPassword,
@@ -60,19 +81,6 @@ class AuthApi {
     await dio.put(
       '/change_password',
       data: {'old_password': oldPassword, 'new_password': newPassword},
-    );
-  }
-
-  Future<Response> registerDeviceToken(String token) async {
-    return dio.post(
-      '/device_token',
-      data: {
-        'device': {
-          // ✅ เปลี่ยนจาก device_token
-          'push_token': token, // ✅ เปลี่ยนจาก token
-          'platform': Platform.isAndroid ? 'android' : 'ios',
-        },
-      },
     );
   }
 }

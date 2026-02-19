@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "510832445289",
-    "project_id": "wpa-dev-serve564",
-    "storage_bucket": "wpa-dev-serve564.firebasestorage.app"
+    "project_number": "572242374862",
+    "project_id": "wpaapp2026",
+    "storage_bucket": "wpaapp2026.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:510832445289:android:68d6c220e84bb68fd71ff8",
+        "mobilesdk_app_id": "1:572242374862:android:3e0515dc5cc365b533609f",
         "android_client_info": {
-          "package_name": "com.wpa.conference"
+          "package_name": "com.example.test_wpa"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCpWD5Ap_pyeC_5Q91NUCqilcFOaWp0Mno"
+          "current_key": "AIzaSyDsdTpMgODdvpTYD_7h3YWn-PpvXVwhBI4"
         }
       ],
       "services": {

@@ -1,3 +1,5 @@
+// lib/features/other_profile/data/models/profile_detail_model.dart
+
 import 'package:test_wpa/features/other_profile/domain/entities/profile_detail.dart';
 
 class ProfileDetailModel {
@@ -11,6 +13,8 @@ class ProfileDetailModel {
   final bool isConnected;
   final String? connectionStatus;
   final int? teamId;
+  // ✅ เพิ่ม field นี้ — backend ส่ง connection_request_id มาด้วยเมื่อสถานะเป็น requested_to_me
+  final int? connectionRequestId;
 
   ProfileDetailModel({
     required this.id,
@@ -23,6 +27,7 @@ class ProfileDetailModel {
     required this.isConnected,
     this.connectionStatus,
     this.teamId,
+    this.connectionRequestId,
   });
 
   factory ProfileDetailModel.fromJson(Map<String, dynamic> json) {
@@ -37,6 +42,8 @@ class ProfileDetailModel {
       isConnected: json['is_connected'] ?? false,
       connectionStatus: json['connection_status'],
       teamId: json['team_id'],
+      // ✅ รับ request id จาก backend (ชื่อ field อาจต้องปรับตาม API จริง)
+      connectionRequestId: json['connection_request_id'],
     );
   }
 
@@ -52,6 +59,7 @@ class ProfileDetailModel {
       isConnected: isConnected,
       connectionStatus: ProfileDetail.parseConnectionStatus(connectionStatus),
       teamId: teamId,
+      connectionRequestId: connectionRequestId,
     );
   }
 }

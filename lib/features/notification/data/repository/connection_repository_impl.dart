@@ -51,4 +51,12 @@ class ConnectionRepositoryImpl implements ConnectionRepository {
       throw Exception('Failed to reject request: $e');
     }
   }
+    @override
+  Future<void> unfriend(int delegateId) async {
+    try {
+      await api.unfriend(delegateId);
+    } catch (e) {
+      throw Exception('Failed to unfriend: $e');
+    }
+  }
 }

@@ -33,19 +33,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       );
       await DioClient().init();
 
-      //ส่ง device token หลัง login
-      // final fcmToken = await FirebaseMessaging.instance.getToken();
-      // if (fcmToken != null) {
-      //   await authRepository.registerDeviceToken(fcmToken);
+      // ส่ง device token หลัง login ค่อยกลับมาเปิด
+      // try {
+      //   final fcmToken = await FirebaseMessaging.instance.getToken();
+      //   if (fcmToken != null) {
+      //     await authRepository.registerDeviceToken(fcmToken);
+      //   }
+      // } catch (e) {
+      //   debugPrint('⚠️ FCM token failed: $e');
       // }
-      try {
-        final fcmToken = await FirebaseMessaging.instance.getToken();
-        if (fcmToken != null) {
-          await authRepository.registerDeviceToken(fcmToken);
-        }
-      } catch (e) {
-        debugPrint('⚠️ FCM token failed: $e');
-      }
       emit(
         AuthAuthenticated(
           avatarUrl: result.user?.avatarUrl,

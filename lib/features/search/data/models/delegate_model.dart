@@ -1,3 +1,5 @@
+// lib/features/search/data/models/delegate_model.dart
+
 import 'package:test_wpa/features/search/domain/entities/delegate.dart';
 
 class DelegateModel {
@@ -11,6 +13,8 @@ class DelegateModel {
   final bool isConnected;
   final int? teamId;
   final bool? firstLogin;
+  // ✅ เพิ่ม connection_status
+  final String connectionStatus;
 
   DelegateModel({
     required this.id,
@@ -23,6 +27,7 @@ class DelegateModel {
     required this.isConnected,
     this.teamId,
     this.firstLogin,
+    this.connectionStatus = 'none',
   });
 
   factory DelegateModel.fromJson(Map<String, dynamic> json) {
@@ -37,6 +42,7 @@ class DelegateModel {
       isConnected: json['is_connected'] ?? false,
       teamId: json['team_id'],
       firstLogin: json['first_login'],
+      connectionStatus: json['connection_status'] ?? 'none', // ✅
     );
   }
 
@@ -52,6 +58,7 @@ class DelegateModel {
       isConnected: isConnected,
       teamId: teamId ?? 0,
       firstLogin: firstLogin ?? false,
+      connectionStatus: connectionStatus, // ✅
     );
   }
 
@@ -67,6 +74,7 @@ class DelegateModel {
       'is_connected': isConnected,
       'team_id': teamId,
       'first_login': firstLogin,
+      'connection_status': connectionStatus,
     };
   }
 }

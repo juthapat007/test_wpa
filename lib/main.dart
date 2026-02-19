@@ -5,11 +5,12 @@ import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/network/dio_client.dart';
 import 'package:test_wpa/services/deep_link_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-// import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:test_wpa/firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // await Firebase.initializeApp();
+  // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   final deepLinkService = DeepLinkService();
   deepLinkService.init();
 
