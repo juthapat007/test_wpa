@@ -517,8 +517,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       final totalPages = response['totalPages'] ?? 1;
       _hasMoreMessages = _currentPage < totalPages;
 
-      // ❌ ลบ markAsRead ออกแล้ว - จะ mark เมื่อรับ message จาก WebSocket เท่านั้น
-
       emit(
         ChatRoomSelected(
           room: event.room,
@@ -601,24 +599,44 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
   }
 
-  // ✅ แก้ไขแล้ว: ไม่ emit ChatLoading เพื่อไม่ให้ UI กระพริบ
-  // และ BlocListener ใน other_profile_page จะรับ ChatRoomSelected ได้ถูกต้อง
+  // ✅ แก้ไขแล้ว: เช็คก่อนว่ามีห้องแชทกับคนนี้อยู่แล้วหรือเปล่า
+  // ถ้ามี → เปิดห้องเดิมพร้อมประวัติแชท
+  // ถ้าไม่มี → สร้างห้องใหม่
   Future<void> _onCreateChatRoom(
     CreateChatRoom event,
     Emitter<ChatState> emit,
   ) async {
     try {
+      // 1️⃣ ถ้ายังไม่ได้โหลด chat rooms → โหลดก่อน เพื่อเช็คว่ามีห้องอยู่แล้วหรือเปล่า
+      if (_chatRooms.isEmpty) {
+        try {
+          _chatRooms = await chatRepository.getChatRooms();
+        } catch (_) {
+          // ถ้าโหลดไม่ได้ก็ข้ามไป สร้างห้องใหม่เลย
+        }
+      }
+
+      // 2️⃣ เช็คว่ามีห้องที่คุยกับคนนี้อยู่แล้วหรือเปล่า
+      final existingRoom = _chatRooms
+          .where((r) => r.participantId == event.participantId)
+          .firstOrNull;
+
+      if (existingRoom != null) {
+        // ✅ มีห้องอยู่แล้ว → เปิดห้องเดิมพร้อมประวัติแชทเดิม
+        add(SelectChatRoom(existingRoom));
+        return;
+      }
+
+      // 3️⃣ ยังไม่มีห้อง → สร้างใหม่
       final newRoom = await chatRepository.createChatRoom(
         event.participantId,
-        title: event.participantName, // เพิ่มตรงนี้
+        title: event.participantName,
       );
 
-      // อัปเดต room list ถ้ายังไม่มีห้องนี้
       if (!_chatRooms.any((r) => r.participantId == newRoom.participantId)) {
         _chatRooms = [newRoom, ..._chatRooms];
       }
 
-      // SelectChatRoom จะ emit ChatRoomSelected ซึ่ง BlocListener จะรับแล้ว navigate
       add(SelectChatRoom(newRoom));
     } catch (e) {
       emit(ChatError('Failed to create chat room: $e'));
@@ -668,7 +686,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       senderId: senderId,
       senderName: _currentUserName ?? 'Me',
-
       receiverId: _selectedRoom!.participantId,
       chatRoomId: int.tryParse(_selectedRoom!.id) ?? 0,
       content: event.content,
