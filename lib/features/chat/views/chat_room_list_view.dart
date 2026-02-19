@@ -62,6 +62,13 @@ class ChatRoomListView extends StatelessWidget {
                           ).read<ChatBloc>().add(SelectChatRoom(room));
                           Modular.to.pushNamed('/chat/room');
                         },
+                        onProfileTap: () {
+                          // ✅ แค่ navigate ไป profile อย่างเดียว ไม่ต้อง SelectChatRoom
+                          final id = int.tryParse(room.participantId);
+                          if (id != null) {
+                            Modular.to.pushNamed('/other-profile/$id');
+                          }
+                        },
                       );
                     },
                   ),
