@@ -15,7 +15,8 @@ abstract class AuthRepository {
     required String passwordConfirmation,
   });
   Future<void> changePassword({
-    required String oldPassword,
+    required String currentPassword,
     required String newPassword,
+    required String newPasswordConfirmation,
   });
 }

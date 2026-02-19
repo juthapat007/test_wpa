@@ -17,6 +17,7 @@ import 'package:test_wpa/features/widgets/app_scaffold.dart';
 import 'package:test_wpa/features/widgets/date_tab_bar.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'dart:async';
+import 'package:test_wpa/features/schedules/presentation/widgets/time_slot_chip.dart';
 
 class MeetingWidget extends StatefulWidget {
   const MeetingWidget({super.key});
@@ -29,6 +30,37 @@ class _MeetingWidgetState extends State<MeetingWidget> {
   Timer? _timer;
   DateTime _currentTime = DateTime.now();
   String _selectedDateStr = '';
+  Map<String, TimeSlotType> _buildSlotTypeMap(List<Schedule> schedules) {
+    final map = <String, TimeSlotType>{};
+    for (final s in schedules) {
+      final timeKey = DateTimeHelper.formatApiTime12(s.startAt);
+
+      TimeSlotType slotType;
+      if (s.leave != null) {
+        slotType = TimeSlotType.leave;
+      } else {
+        switch (s.type) {
+          case 'event':
+            slotType = TimeSlotType.breakTime;
+            break;
+          case 'nomeeting':
+            slotType = TimeSlotType.free;
+            break;
+          default:
+            slotType = TimeSlotType.meeting;
+        }
+      }
+
+      // ใส่ทั้ง format เผื่อ backend ส่งต่างกัน
+      map[timeKey] = slotType; // "9:00 AM"
+      map[timeKey.replaceAll(' ', '')] = slotType; // "9:00AM"
+      // เพิ่ม leading zero เผื่อ backend ส่ง "09:00 AM"
+      if (timeKey.length < 8) {
+        map['0$timeKey'] = slotType; // "09:00 AM"
+      }
+    }
+    return map;
+  }
 
   @override
   void initState() {
@@ -246,9 +278,29 @@ class _MeetingWidgetState extends State<MeetingWidget> {
                   );
                 }
 
+                // if (state is TableLoaded) {
+                //   return TableGridWidget(
+                //     response: state.response,
+                //     onTimeSlotChanged: (time) {
+                //       Modular.get<TableBloc>().add(ChangeTimeSlot(time));
+                //     },
+                //   );
+                // }
+                // ใน BlocBuilder<TableBloc, TableState>
                 if (state is TableLoaded) {
+                  // ดึง schedules จาก ScheduleBloc เพื่อสร้าง slotTypeMap
+                  final scheduleState = ReadContext(
+                    context,
+                  ).read<ScheduleBloc>().state;
+                  final slotTypeMap = scheduleState is ScheduleLoaded
+                      ? _buildSlotTypeMap(
+                          scheduleState.scheduleResponse.schedules,
+                        )
+                      : <String, TimeSlotType>{};
+
                   return TableGridWidget(
                     response: state.response,
+                    slotTypeMap: slotTypeMap,
                     onTimeSlotChanged: (time) {
                       Modular.get<TableBloc>().add(ChangeTimeSlot(time));
                     },
@@ -271,7 +323,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
               builder: (context, state) {
                 if (state is ScheduleLoading) {
                   return const SizedBox(
-                    height: 300,
+                    height: 400,
                     child: Center(child: CircularProgressIndicator()),
                   );
                 }
@@ -284,105 +336,6 @@ class _MeetingWidgetState extends State<MeetingWidget> {
                     schedulesWithStatus,
                   );
                   final nextSchedule = _getNextSchedule(schedulesWithStatus);
-
-                  return Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // ========== Current Meeting ==========
-                        if (currentSchedule != null) ...[
-                          Text(
-                            'CURRENT MEETING',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: color.AppColors.textSecondary,
-                            ),
-                          ),
-                          SizedBox(height: space.s),
-                          GestureDetector(
-                            onTap: () =>
-                                _onScheduleTap(currentSchedule.schedule),
-                            child: ScheduleEventCard(
-                              schedule: currentSchedule.schedule,
-                              // type: EventCardType.meeting,
-                              type: ScheduleCardHelper.resolveCardType(
-                                currentSchedule.schedule,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: space.m),
-                        ],
-
-                        // ========== Next Meeting ==========
-                        if (nextSchedule != null) ...[
-                          Text(
-                            'NEXT MEETING',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: color.AppColors.textSecondary,
-                            ),
-                          ),
-                          SizedBox(height: space.s),
-                          GestureDetector(
-                            onTap: () => _onScheduleTap(nextSchedule.schedule),
-                            child: ScheduleEventCard(
-                              schedule: nextSchedule.schedule,
-                              type: ScheduleCardHelper.resolveCardType(
-                                nextSchedule.schedule,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: space.m),
-                        ],
-
-                        // ========== Today's Schedule ==========
-                        Text(
-                          'TODAY\'S SCHEDULE',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: color.AppColors.textSecondary,
-                          ),
-                        ),
-                        SizedBox(height: space.s),
-
-                        // if (schedulesWithStatus.isEmpty)
-                        //   Center(
-                        //     child: Padding(
-                        //       padding: const EdgeInsets.all(32),
-                        //       child: Text(
-                        //         'No schedules for this date',
-                        //         style: TextStyle(
-                        //           color: color.AppColors.textSecondary,
-                        //         ),
-                        //       ),
-                        //     ),
-                        //   )
-                        // else
-                        //   ...schedulesWithStatus.map((s) {
-                        //     final canTap = _canTapSchedule(s.schedule);
-                        //     return GestureDetector(
-                        //       onTap: () => _onScheduleTap(s.schedule),
-                        //       child: Opacity(
-                        //         opacity: canTap ? 1.0 : 0.7,
-                        //         child: Padding(
-                        //           padding: const EdgeInsets.only(bottom: 16),
-                        //           child: ScheduleEventCard(
-                        //             schedule: s.schedule,
-                        //             type: ScheduleCardHelper.resolveCardType(
-                        //               s.schedule,
-                        //             ),
-                        //           ),
-                        //         ),
-                        //       ),
-                        //     );
-                        //   }),
-                      ],
-                    ),
-                  );
                 }
 
                 if (state is ScheduleError) {

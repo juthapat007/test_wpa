@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 import 'package:test_wpa/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:test_wpa/features/chat/presentation/widgets/chat_input_field.dart';
@@ -229,6 +230,8 @@ class _ChatConversationViewState extends State<ChatConversationView> {
                 controller: _messageController,
                 onSend: _sendMessage,
               ),
+
+              SizedBox(height: height.l),
             ],
           );
         }

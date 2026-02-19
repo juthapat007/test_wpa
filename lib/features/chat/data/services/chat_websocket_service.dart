@@ -72,7 +72,7 @@ class ChatWebSocketService {
   /// เชื่อมต่อ ActionCable WebSocket
   Future<void> connect(String token) async {
     _lastToken = token;
-    _reconnectAttempts = 0;
+    _reconnectAttempts = 0; // reset เมื่อ connect ใหม่
     _reconnectTimer?.cancel();
 
     try {
@@ -82,8 +82,7 @@ class ChatWebSocketService {
         _channel = null;
       }
 
-      // final wsUrl = 'wss://wpa-docker.onrender.com/cable?token=$token';
-      final wsUrl = 'ws://192.168.1.30:3000/cable?token=$token';
+      final wsUrl = 'wss://wpa-docker.onrender.com/cable?token=$token';
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
 
       _channel!.stream.listen(
@@ -141,12 +140,10 @@ class ChatWebSocketService {
 
   /// Subscribe ช่องต่างๆ
   Future<void> _subscribeChannels() async {
-    // Subscribe ChatChannel
     _chatChannelIdentifier = jsonEncode({'channel': 'ChatChannel'});
     _sendCommand('subscribe', _chatChannelIdentifier!);
     debugPrint('📡 Subscribed to ChatChannel');
 
-    // Subscribe NotificationChannel
     _notificationChannelIdentifier = jsonEncode({
       'channel': 'NotificationChannel',
     });
@@ -177,18 +174,16 @@ class ChatWebSocketService {
       final data = jsonDecode(rawData.toString());
       final type = data['type'] as String?;
 
-      // 🔥 DEBUG: แสดงทุก message ที่ได้รับ
       print('🔍 [WebSocket Raw Message] Type: $type');
       print('🔍 [WebSocket Raw Data] ${jsonEncode(data)}');
 
-      // ActionCable system messages
       switch (type) {
         case 'welcome':
           debugPrint('Welcome to WebSocket');
           break;
 
         case 'ping':
-          // ping ไม่ต้อง print
+          // ไม่ต้องทำอะไร
           break;
 
         case 'confirm_subscription':
@@ -202,9 +197,11 @@ class ChatWebSocketService {
           break;
 
         default:
-          // ActionCable data messages
+          // ActionCable data messages — payload อยู่ใน data['message']
           if (data['message'] != null && data['message'] is Map) {
-            _handleActionCableDataMessage(data['message']);
+            _handleActionCableDataMessage(
+              Map<String, dynamic>.from(data['message'] as Map),
+            );
           } else if (type != null) {
             debugPrint('Unknown system type: $type');
           }
@@ -219,13 +216,11 @@ class ChatWebSocketService {
   void _handleActionCableDataMessage(Map<String, dynamic> message) {
     final messageType = message['type'] as String?;
 
-    // 🔥 DEBUG: แสดง message type และ content
-    // print('📨 [Data Message] Type: $messageType');
-    // print('📨 [Data Content] ${jsonEncode(message)}');
     log.i('📨 [Data Message] Type: $messageType');
     log.d('📨 [Data Content] ${jsonEncode(message)}');
 
     switch (messageType) {
+      // ─── ข้อความใหม่ ───────────────────────────────────────────────
       case 'new_message':
         final msgData = message['message'];
         if (msgData is Map<String, dynamic>) {
@@ -235,31 +230,34 @@ class ChatWebSocketService {
         }
         break;
 
-      // 🔥 FIX: Backend ส่งทั้ง "message_read" (single) และ "bulk_read" (array)
+      // ─── Read receipts ──────────────────────────────────────────────
       case 'message_read':
-        print('✅ [READ RECEIPT] Received message_read event!');
+        print('✅ [READ RECEIPT] message_read');
         _handleMessageRead(message);
         break;
-      // case 'messages_read':
-      //   print('✅ [READ RECEIPT] Received messages_read event!');
-      //   _handleMessagesRead(message);
-      //   break;
 
-      // case 'bulk_read':
-      //   print('✅ [BULK READ RECEIPT] Received bulk_read event!');
-      //   _handleBulkRead(message);
-      //   break;
+      case 'messages_read':
+        print('✅ [READ RECEIPT] messages_read');
+        _handleMessagesRead(message);
+        break;
 
-      // 🔥 NEW: Handle ทุก possible format ของ read receipt
+      // ✅ FIX: bulk_read — server ส่ง message_ids เป็น array
+      case 'bulk_read':
+        print('✅ [READ RECEIPT] bulk_read');
+        _handleBulkRead(message);
+        break;
+
       case 'read_receipt':
-        print('✅ [READ RECEIPT] Received read_receipt event!');
+        print('✅ [READ RECEIPT] read_receipt');
         _handleReadReceipt(message);
         break;
 
       case 'message_status_update':
-        print('✅ [READ RECEIPT] Received message_status_update event!');
+        print('✅ [READ RECEIPT] message_status_update');
         _handleMessageStatusUpdate(message);
         break;
+
+      // ─── Typing ─────────────────────────────────────────────────────
       case 'typing_start':
         final userId = (message['user_id'] ?? message['userId'] ?? '')
             .toString();
@@ -276,14 +274,7 @@ class ChatWebSocketService {
         }
         break;
 
-      // case 'typing_start':
-      //   debugPrint('User is typing...');
-      //   break;
-
-      // case 'typing_stop':
-      //   debugPrint('User stopped typing');
-      //   break;
-
+      // ─── Edit / Delete ───────────────────────────────────────────────
       case 'message_deleted':
         _handleMessageDeleted(message);
         break;
@@ -292,6 +283,7 @@ class ChatWebSocketService {
         _handleMessageUpdated(message);
         break;
 
+      // ─── Notification ────────────────────────────────────────────────
       case 'new_notification':
         debugPrint('New notification: ${message['notification']}');
         break;
@@ -301,12 +293,14 @@ class ChatWebSocketService {
         break;
 
       default:
-        // บาง ActionCable server ส่ง message โดยไม่มี 'type' wrapper
+        // ไม่มี type wrapper — ลอง detect จาก fields
         if (message.containsKey('sender') && message.containsKey('content')) {
           _handleNewMessage(message);
-        }
-        // 🔥 NEW: ตรวจสอบว่ามี read_at field หรือไม่ (อาจเป็น read receipt)
-        else if (message.containsKey('read_at') ||
+        } else if (message.containsKey('message_ids')) {
+          // ✅ FIX: บาง server อาจส่ง bulk_read โดยไม่มี type
+          print('🔍 [Detected bulk_read without type field]');
+          _handleBulkRead(message);
+        } else if (message.containsKey('read_at') ||
             message.containsKey('is_read')) {
           print('🔍 [Possible Read Receipt] Found read_at or is_read field');
           _handlePossibleReadReceipt(message);
@@ -317,23 +311,116 @@ class ChatWebSocketService {
     }
   }
 
-  /// 🔥 NEW: Handle possible read receipt format
+  // ─── Read Receipt handlers ──────────────────────────────────────────────
+
+  /// ✅ FIX: bulk_read — iterate message_ids array
+  void _handleBulkRead(Map<String, dynamic> data) {
+    try {
+      final messageIds = data['message_ids'];
+      final readAtStr = data['read_at'] as String?;
+      final readAt = readAtStr != null
+          ? DateTime.parse(readAtStr)
+          : DateTime.now();
+
+      if (messageIds is List && messageIds.isNotEmpty) {
+        print('📗 [Bulk Read] ${messageIds.length} messages at $readAt');
+        for (final msgId in messageIds) {
+          final messageId = msgId.toString();
+          print('   → Message $messageId marked as read');
+          _readReceiptController.add(
+            ReadReceiptEvent(messageId: messageId, readAt: readAt),
+          );
+        }
+        debugPrint('✅ Bulk read receipt: ${messageIds.length} messages');
+      } else {
+        print('⚠️ [Bulk Read] Invalid message_ids: ${jsonEncode(messageIds)}');
+      }
+    } catch (e) {
+      debugPrint('❌ Error handling bulk_read: $e');
+      print('❌ [Error Data] ${jsonEncode(data)}');
+    }
+  }
+
+  void _handleMessageRead(Map<String, dynamic> data) {
+    try {
+      final messageId = (data['message_id'] ?? data['id'] ?? '').toString();
+      final readAtStr = data['read_at'] as String?;
+      final readAt = readAtStr != null
+          ? DateTime.parse(readAtStr)
+          : DateTime.now();
+
+      if (messageId.isNotEmpty && messageId != 'null') {
+        print('📗 [Message Read] Message $messageId at $readAt');
+        _readReceiptController.add(
+          ReadReceiptEvent(messageId: messageId, readAt: readAt),
+        );
+      } else {
+        print('⚠️ [Message Read] Empty ID in: ${jsonEncode(data)}');
+      }
+    } catch (e) {
+      debugPrint('❌ Error handling message_read: $e');
+    }
+  }
+
+  void _handleMessagesRead(Map<String, dynamic> data) {
+    try {
+      final messages = data['messages'] ?? data['message_ids'];
+      if (messages is List) {
+        print('📗 [Messages Read] ${messages.length} messages');
+        for (final item in messages) {
+          final messageId = item is Map
+              ? item['id'].toString()
+              : item.toString();
+          final readAtStr = item is Map ? item['read_at'] as String? : null;
+          final readAt = readAtStr != null
+              ? DateTime.parse(readAtStr)
+              : DateTime.now();
+          _readReceiptController.add(
+            ReadReceiptEvent(messageId: messageId, readAt: readAt),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Error handling messages_read: $e');
+    }
+  }
+
+  void _handleReadReceipt(Map<String, dynamic> data) {
+    try {
+      final msgData = data['message'] ?? data['data'] ?? data;
+      _handlePossibleReadReceipt(Map<String, dynamic>.from(msgData as Map));
+    } catch (e) {
+      print('❌ [Error handling read_receipt] $e');
+    }
+  }
+
+  void _handleMessageStatusUpdate(Map<String, dynamic> data) {
+    try {
+      final msgData = data['message'] ?? data['data'] ?? data;
+      final m = Map<String, dynamic>.from(msgData as Map);
+      if (m['status'] == 'read' || m['is_read'] == true) {
+        _handlePossibleReadReceipt(m);
+      }
+    } catch (e) {
+      print('❌ [Error handling message_status_update] $e');
+    }
+  }
+
   void _handlePossibleReadReceipt(Map<String, dynamic> data) {
     try {
       String? messageId;
       DateTime? readAt;
 
-      // Try different field names
       if (data['id'] != null) messageId = data['id'].toString();
       if (data['message_id'] != null) messageId = data['message_id'].toString();
 
       if (data['read_at'] != null) {
-        readAt = DateTime.parse(data['read_at']);
+        readAt = DateTime.parse(data['read_at'] as String);
       } else if (data['is_read'] == true) {
         readAt = DateTime.now();
       }
 
-      if (messageId != null && readAt != null) {
+      if (messageId != null && messageId != 'null' && readAt != null) {
         print('✅ [Parsed Read Receipt] Message $messageId read at $readAt');
         _readReceiptController.add(
           ReadReceiptEvent(messageId: messageId, readAt: readAt),
@@ -346,89 +433,10 @@ class ChatWebSocketService {
     }
   }
 
-  /// 🔥 NEW: Handle read_receipt type
-  void _handleReadReceipt(Map<String, dynamic> data) {
-    try {
-      final msgData = data['message'] ?? data['data'] ?? data;
-      _handlePossibleReadReceipt(msgData);
-    } catch (e) {
-      print('❌ [Error handling read_receipt] $e');
-    }
-  }
+  // ─── Message action handlers ────────────────────────────────────────────
 
-  /// 🔥 NEW: Handle message_status_update type
-  void _handleMessageStatusUpdate(Map<String, dynamic> data) {
-    try {
-      final msgData = data['message'] ?? data['data'] ?? data;
-      if (msgData['status'] == 'read' || msgData['is_read'] == true) {
-        _handlePossibleReadReceipt(msgData);
-      }
-    } catch (e) {
-      print('❌ [Error handling message_status_update] $e');
-    }
-  }
-
-  void _handleMessageRead(Map<String, dynamic> data) {
-    try {
-      final messageId = (data['message_id'] ?? data['id'] ?? '').toString();
-      final readAtStr = data['read_at'] as String?;
-      final readAt = readAtStr != null
-          ? DateTime.parse(readAtStr)
-          : DateTime.now();
-
-      if (messageId.isNotEmpty) {
-        print('📗 [Processing Read Receipt] Message $messageId at $readAt');
-        _readReceiptController.add(
-          ReadReceiptEvent(messageId: messageId, readAt: readAt),
-        );
-        debugPrint('✅ Read receipt received for message $messageId');
-      } else {
-        print(
-          '⚠️ [Read Receipt] Empty message ID in data: ${jsonEncode(data)}',
-        );
-      }
-    } catch (e) {
-      debugPrint('❌ Error handling message_read: $e');
-      print('❌ [Error Data] ${jsonEncode(data)}');
-    }
-  }
-
-  void _handleBulkRead(Map<String, dynamic> data) {
-    try {
-      final messageIds = data['message_ids'];
-      final readAtStr = data['read_at'] as String?;
-      final readAt = readAtStr != null
-          ? DateTime.parse(readAtStr)
-          : DateTime.now();
-
-      if (messageIds is List && messageIds.isNotEmpty) {
-        print(
-          '📗 [Processing Bulk Read Receipt] ${messageIds.length} messages at $readAt',
-        );
-
-        for (final msgId in messageIds) {
-          final messageId = msgId.toString();
-          print('   → Message $messageId marked as read');
-          _readReceiptController.add(
-            ReadReceiptEvent(messageId: messageId, readAt: readAt),
-          );
-        }
-
-        debugPrint('✅ Bulk read receipt: ${messageIds.length} messages');
-      } else {
-        print('⚠️ [Bulk Read] Invalid message_ids: ${jsonEncode(messageIds)}');
-      }
-    } catch (e) {
-      debugPrint('❌ Error handling bulk_read: $e');
-      print('❌ [Error Data] ${jsonEncode(data)}');
-    }
-  }
-
-  /// Handle message_deleted event from WebSocket
   void _handleMessageDeleted(Map<String, dynamic> data) {
     try {
-      // Format: {"type":"message_deleted","message_id":123}
-      // or nested: {"type":"message_deleted","message":{"id":123}}
       final msgData = data['message'];
       String? messageId;
 
@@ -450,10 +458,8 @@ class ChatWebSocketService {
     }
   }
 
-  /// Handle message_updated event from WebSocket
   void _handleMessageUpdated(Map<String, dynamic> data) {
     try {
-      // Format: {"type":"message_updated","message":{"id":123,"content":"new text","edited_at":"..."}}
       final msgData = data['message'] ?? data;
       final messageId =
           (msgData['id'] ?? msgData['message_id'] ?? data['message_id'])
@@ -473,47 +479,14 @@ class ChatWebSocketService {
             editedAt: editedAt,
           ),
         );
-      } else {
-        print(
-          'message_updated: could not extract message ID or content from $data',
-        );
       }
     } catch (e) {
       print('Error handling message_updated: $e');
     }
   }
 
-  /// Handle bulk messages read receipt from WebSocket
-  void _handleMessagesRead(Map<String, dynamic> data) {
-    try {
-      final messages = data['messages'] ?? data['message_ids'];
-      if (messages is List) {
-        print('📗 [Processing Bulk Read Receipt] ${messages.length} messages');
-        for (final item in messages) {
-          final messageId = item is Map
-              ? item['id'].toString()
-              : item.toString();
-          final readAtStr = item is Map ? item['read_at'] as String? : null;
-          final readAt = readAtStr != null
-              ? DateTime.parse(readAtStr)
-              : DateTime.now();
-          _readReceiptController.add(
-            ReadReceiptEvent(messageId: messageId, readAt: readAt),
-          );
-        }
-        debugPrint('Bulk read receipt: ${messages.length} messages');
-      } else {
-        print(
-          '⚠️ [Bulk Read Receipt] messages is not a List: ${messages.runtimeType}',
-        );
-      }
-    } catch (e) {
-      debugPrint('Error handling messages_read: $e');
-      print('❌ [Error Data] ${jsonEncode(data)}');
-    }
-  }
+  // ─── New message ─────────────────────────────────────────────────────────
 
-  /// จัดการข้อความใหม่
   void _handleNewMessage(Map<String, dynamic> messageData) {
     try {
       String senderId;
@@ -569,7 +542,9 @@ class ChatWebSocketService {
     }
   }
 
-  /// ส่งข้อความผ่าน ActionCable
+  // ─── Send actions ────────────────────────────────────────────────────────
+
+  /// ส่งข้อความผ่าน ActionCable (WebSocket fallback)
   Future<void> sendMessage(ChatMessage message) async {
     if (!_isConnected || _channel == null || _chatChannelIdentifier == null) {
       debugPrint('❌ Cannot send message: Not connected');
@@ -595,9 +570,8 @@ class ChatWebSocketService {
     if (!_isConnected || _chatChannelIdentifier == null) return;
 
     final data = {
-      'action': 'typing_start',
+      'action': isTyping ? 'typing_start' : 'typing_stop',
       'recipient_id': int.parse(recipientId),
-      'typing_start': isTyping,
     };
 
     _sendCommand('message', _chatChannelIdentifier!, data: data);
@@ -623,10 +597,10 @@ class ChatWebSocketService {
     debugPrint('🚪 Left chat room');
   }
 
-  /// ปิดการเชื่อมต่อ
+  /// ปิดการเชื่อมต่อ (intentional — ไม่ reconnect)
   Future<void> disconnect() async {
     _reconnectTimer?.cancel();
-    _reconnectAttempts = _maxReconnectAttempts;
+    _reconnectAttempts = _maxReconnectAttempts; // หยุด auto-reconnect
 
     if (_channel != null) {
       await _channel!.sink.close();

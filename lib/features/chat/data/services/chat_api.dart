@@ -45,22 +45,45 @@ class ChatApi {
   }
 
   /// ส่งข้อความ (ผ่าน REST API)
+  // Future<Response> sendMessage({
+  //   required int chatRoomId,
+  //   required String content,
+  //   // String? tempId,
+  // }) async {
+  //   try {
+  //     final response = await dio.post(
+  //       '/messages',
+  //       data: {
+  //         'message': {'content': content, 'chat_room_id': chatRoomId},
+  //       },
+  //       // data: {
+  //       //   'recipient_id': int.parse(recipientId),
+  //       //   'content': content,
+  //       //   if (tempId != null) 'tempId': tempId,
+  //       // },
+  //     );
+  //     debugPrint('✅ Message sent: ${response.data}');
+  //     return response;
+  //   } catch (e) {
+  //     debugPrint('❌ Error sending message: $e');
+  //     rethrow;
+  //   }
+  // }
   Future<Response> sendMessage({
     required int chatRoomId,
     required String content,
-    // String? tempId,
+    required String recipientId, // ✅ เพิ่ม field นี้
   }) async {
     try {
       final response = await dio.post(
         '/messages',
         data: {
-          'message': {'content': content, 'chat_room_id': chatRoomId},
+          'message': {
+            'content': content,
+            'chat_room_id': chatRoomId,
+            'recipient_id': int.parse(recipientId), // ✅ ส่งไปด้วย
+          },
         },
-        // data: {
-        //   'recipient_id': int.parse(recipientId),
-        //   'content': content,
-        //   if (tempId != null) 'tempId': tempId,
-        // },
       );
       debugPrint('✅ Message sent: ${response.data}');
       return response;

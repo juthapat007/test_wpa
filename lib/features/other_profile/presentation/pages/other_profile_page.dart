@@ -32,8 +32,11 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.chevron_left,
-              color: Color(0xFF4A90D9), size: 32),
+          icon: const Icon(
+            Icons.chevron_left,
+            color: Color(0xFF4A90D9),
+            size: 32,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
@@ -54,15 +57,21 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           BlocListener<ProfileDetailBloc, ProfileDetailState>(
             listener: (context, state) {
               if (state is FriendRequestSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.green,
-                ));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
               } else if (state is FriendRequestFailed) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.red,
-                ));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
               }
             },
           ),
@@ -71,10 +80,12 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
               if (state is ChatRoomSelected) {
                 Modular.to.pushNamed('/chat/room');
               } else if (state is ChatError) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.red,
-                ));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.red,
+                  ),
+                );
               }
             },
           ),
@@ -90,13 +101,15 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
               return _buildErrorView(context, state.message);
             }
             if (state is ProfileDetailLoaded || state is FriendRequestSending) {
-              final profile =
-                  state is ProfileDetailLoaded ? state.profile : null;
+              final profile = state is ProfileDetailLoaded
+                  ? state.profile
+                  : null;
               if (profile == null) {
                 return const Center(child: CircularProgressIndicator());
               }
-              final schedules =
-                  state is ProfileDetailLoaded ? state.schedules : null;
+              final schedules = state is ProfileDetailLoaded
+                  ? state.schedules
+                  : null;
 
               return SingleChildScrollView(
                 child: Column(
@@ -118,7 +131,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     );
   }
 
-  // ─── Profile Card ─────────────────────────────────────────────────────────
   Widget _buildProfileCard(ProfileDetail profile, BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -127,9 +139,10 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 4)),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -141,7 +154,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                 _buildAvatar(profile),
                 const SizedBox(width: 16),
                 Expanded(child: _buildProfileInfo(profile)),
-                // ── ปุ่ม ··· แสดง unfriend เมื่อ connected ──────────────
                 if (profile.connectionStatus == ConnectionStatus.connected)
                   _buildMoreMenu(profile, context),
               ],
@@ -163,7 +175,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       onSelected: (value) {
         if (value == 'unfriend') {
-          _showUnfriendConfirmDialog(context, profile);
+          _showUnfriendDialog(context, profile);
         }
       },
       itemBuilder: (_) => [
@@ -171,13 +183,18 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           value: 'unfriend',
           child: Row(
             children: [
-              Icon(Icons.person_remove_outlined,
-                  color: Color(0xFFE05454), size: 18),
+              Icon(
+                Icons.person_remove_outlined,
+                color: Color(0xFFE05454),
+                size: 18,
+              ),
               SizedBox(width: 10),
               Text(
                 'Unfriend',
                 style: TextStyle(
-                    color: Color(0xFFE05454), fontWeight: FontWeight.w500),
+                  color: Color(0xFFE05454),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
@@ -186,36 +203,73 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     );
   }
 
-  void _showUnfriendConfirmDialog(
-      BuildContext context, ProfileDetail profile) {
+  void _showUnfriendDialog(BuildContext context, ProfileDetail profile) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Unfriend',
-            style: TextStyle(fontWeight: FontWeight.w700)),
-        content: Text(
-            'Remove ${profile.name} from your connections?'),
+        title: const Text(
+          'Unfriend',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        content: Text('Remove ${profile.name} from your connections?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Cancel',
-                style: TextStyle(color: Colors.grey[600])),
+            child: Text('Cancel', style: TextStyle(color: Colors.grey[600])),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFE05454),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             onPressed: () {
               Navigator.of(ctx).pop();
-              ReadContext(context)
-                  .read<ProfileDetailBloc>()
-                  .add(UnfriendRequest(profile.id));
+              ReadContext(
+                context,
+              ).read<ProfileDetailBloc>().add(UnfriendRequest(profile.id));
             },
             child: const Text('Unfriend'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCancelRequestDialog(BuildContext context, ProfileDetail profile) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Cancel Request',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        content: Text('Cancel your friend request to ${profile.name}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text('Keep', style: TextStyle(color: Colors.grey[600])),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF9800),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              // ✅ ส่ง delegate id (target_id) ไม่ใช่ request id
+              ReadContext(
+                context,
+              ).read<ProfileDetailBloc>().add(CancelFriendRequest(profile.id));
+            },
+            child: const Text('Yes, Cancel'),
           ),
         ],
       ),
@@ -226,21 +280,26 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(profile.name,
-            style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1A2340))),
+        Text(
+          profile.name,
+          style: const TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1A2340),
+          ),
+        ),
         if (profile.title != null && profile.title!.isNotEmpty) ...[
           const SizedBox(height: 2),
-          Text(profile.title!,
-              style: const TextStyle(
-                  fontSize: 13, color: Color(0xFF8A94A6))),
+          Text(
+            profile.title!,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF8A94A6)),
+          ),
         ],
         const SizedBox(height: 2),
-        Text(profile.companyName,
-            style: const TextStyle(
-                fontSize: 13, color: Color(0xFF8A94A6))),
+        Text(
+          profile.companyName,
+          style: const TextStyle(fontSize: 13, color: Color(0xFF8A94A6)),
+        ),
       ],
     );
   }
@@ -251,9 +310,10 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2)),
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: CircleAvatar(
@@ -264,24 +324,22 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         backgroundColor: const Color(0xFF4A90D9).withOpacity(0.15),
         child: profile.avatarUrl.isEmpty
             ? Text(
-                profile.name.isNotEmpty
-                    ? profile.name[0].toUpperCase()
-                    : '?',
+                profile.name.isNotEmpty ? profile.name[0].toUpperCase() : '?',
                 style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF4A90D9)),
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF4A90D9),
+                ),
               )
             : null,
       ),
     );
   }
 
-  // ─── Action Buttons ───────────────────────────────────────────────────────
   Widget _buildActionButtons(ProfileDetail profile, BuildContext context) {
-    final isSending = WatchContext(context)
-        .watch<ProfileDetailBloc>()
-        .state is FriendRequestSending;
+    final isSending =
+        WatchContext(context).watch<ProfileDetailBloc>().state
+            is FriendRequestSending;
 
     return Row(
       children: [
@@ -293,9 +351,9 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
             backgroundColor: const Color(0xFF4A90D9),
             textColor: Colors.white,
             onPressed: () {
-              ReadContext(context)
-                  .read<ChatBloc>()
-                  .add(CreateChatRoom(profile.id.toString(), profile.name));
+              ReadContext(context).read<ChatBloc>().add(
+                CreateChatRoom(profile.id.toString(), profile.name),
+              );
             },
           ),
         ),
@@ -318,18 +376,22 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           isLoading: isSending,
           onPressed: isSending
               ? null
-              : () => ReadContext(context)
-                    .read<ProfileDetailBloc>()
-                    .add(SendFriendRequest(profile.id)),
+              : () => ReadContext(
+                  context,
+                ).read<ProfileDetailBloc>().add(SendFriendRequest(profile.id)),
         );
 
-      // ─── เราส่ง request ไปแล้ว รอฝั่งนั้น confirm ────────────────────
+      // ─── เราส่ง request ออกไปแล้ว → กดยกเลิกได้ ──────────────────────
+      // ✅ เปลี่ยนจาก "Pending..." disabled เป็นปุ่มกดได้เพื่อ cancel
       case ConnectionStatus.requestedByMe:
         return AppButton(
-          text: 'Pending...',
-          backgroundColor: const Color(0xFF8A94A6),
+          text: isSending ? 'Cancelling...' : 'Requested ✕',
+          backgroundColor: const Color(0xFFFF9800),
           textColor: Colors.white,
-          onPressed: null,
+          isLoading: isSending,
+          onPressed: isSending
+              ? null
+              : () => _showCancelRequestDialog(context, profile),
         );
 
       // ─── ฝั่งนั้น add มาหาเรา → Accept / Decline ─────────────────────
@@ -353,9 +415,9 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                 isLoading: isSending,
                 onPressed: isSending
                     ? null
-                    : () => ReadContext(context)
-                          .read<ProfileDetailBloc>()
-                          .add(AcceptFriendRequest(requestId)),
+                    : () => ReadContext(context).read<ProfileDetailBloc>().add(
+                        AcceptFriendRequest(requestId),
+                      ),
               ),
             ),
             const SizedBox(width: 6),
@@ -367,15 +429,15 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                 isLoading: isSending,
                 onPressed: isSending
                     ? null
-                    : () => ReadContext(context)
-                          .read<ProfileDetailBloc>()
-                          .add(RejectFriendRequest(requestId)),
+                    : () => ReadContext(context).read<ProfileDetailBloc>().add(
+                        RejectFriendRequest(requestId),
+                      ),
               ),
             ),
           ],
         );
 
-      // ─── เป็นเพื่อนกันแล้ว — ปุ่ม Unfriend อยู่ที่เมนู ··· ──────────
+      // ─── เป็นเพื่อนกันแล้ว — Unfriend อยู่ที่ปุ่ม ··· ─────────────────
       case ConnectionStatus.connected:
         return AppButton(
           text: 'Connected ✓',
@@ -396,9 +458,10 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 4)),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -406,11 +469,14 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         children: [
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text('Event Plan',
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A2340))),
+            child: Text(
+              'Event Plan',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1A2340),
+              ),
+            ),
           ),
           ...grouped.entries.map((e) => _buildDateGroup(e.key, e.value)),
           const SizedBox(height: 16),
@@ -434,23 +500,28 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Text(dateLabel,
-              style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF8A94A6))),
+          child: Text(
+            dateLabel,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF8A94A6),
+            ),
+          ),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
             children: items
-                .map((s) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: ScheduleEventCard(
-                        schedule: s,
-                        type: ScheduleCardHelper.resolveCardType(s),
-                      ),
-                    ))
+                .map(
+                  (s) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: ScheduleEventCard(
+                      schedule: s,
+                      type: ScheduleCardHelper.resolveCardType(s),
+                    ),
+                  ),
+                )
                 .toList(),
           ),
         ),
@@ -468,9 +539,9 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           Text(message, style: const TextStyle(color: Colors.redAccent)),
           const SizedBox(height: 24),
           ElevatedButton(
-            onPressed: () => ReadContext(context)
-                .read<ProfileDetailBloc>()
-                .add(LoadProfileDetail(widget.delegateId)),
+            onPressed: () => ReadContext(context).read<ProfileDetailBloc>().add(
+              LoadProfileDetail(widget.delegateId),
+            ),
             child: const Text('ลองใหม่'),
           ),
         ],

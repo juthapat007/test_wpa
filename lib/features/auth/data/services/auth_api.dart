@@ -24,8 +24,6 @@ class AuthApi {
   }
 
   /// PATCH /api/v1/device_token
-  /// ส่ง FCM token หลัง login สำเร็จ
-  /// body: { "device": { "device_token": "xxx" } }
   Future<void> registerDeviceToken(String token) async {
     try {
       await dio.patch(
@@ -39,7 +37,6 @@ class AuthApi {
       );
       debugPrint('✅ Device token registered');
     } catch (e) {
-      // ไม่ throw — ถ้าส่งไม่ได้แค่ไม่ได้รับ push ไม่ให้ login พัง
       debugPrint('⚠️ Failed to register device token: $e');
     }
   }
@@ -73,14 +70,19 @@ class AuthApi {
     }
   }
 
-  /// PUT /change_password
+  /// PATCH /api/v1/change_password
   Future<void> changePassword({
-    required String oldPassword,
+    required String currentPassword,
     required String newPassword,
+    required String newPasswordConfirmation,
   }) async {
-    await dio.put(
+    await dio.patch(
       '/change_password',
-      data: {'old_password': oldPassword, 'new_password': newPassword},
+      data: {
+        'current_password': currentPassword,
+        'new_password': newPassword,
+        'new_password_confirmation': newPasswordConfirmation,
+      },
     );
   }
 }

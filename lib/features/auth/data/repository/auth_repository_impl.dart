@@ -83,23 +83,24 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> registerDeviceToken(String token) async {
-    await authApi.registerDeviceToken(token);
-  }
-
-  @override
   Future<void> changePassword({
-    required String oldPassword,
+    required String currentPassword,
     required String newPassword,
+    required String newPasswordConfirmation,
   }) async {
     try {
       await authApi.changePassword(
-        oldPassword: oldPassword,
+        currentPassword: currentPassword,
         newPassword: newPassword,
+        newPasswordConfirmation: newPasswordConfirmation,
       );
     } catch (e) {
-      // ดึง error message จาก API response ถ้ามี
       throw Exception('Failed to change password: $e');
     }
+  }
+
+  @override
+  Future<void> registerDeviceToken(String token) async {
+    await authApi.registerDeviceToken(token);
   }
 }

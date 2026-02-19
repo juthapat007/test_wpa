@@ -21,24 +21,24 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
   }) : super(ProfileDetailInitial()) {
     on<LoadProfileDetail>(_onLoadProfileDetail);
     on<SendFriendRequest>(_onSendFriendRequest);
+    on<CancelFriendRequest>(_onCancelFriendRequest); // ✅ เพิ่มใหม่
     on<AcceptFriendRequest>(_onAcceptFriendRequest);
     on<RejectFriendRequest>(_onRejectFriendRequest);
     on<UnfriendRequest>(_onUnfriend);
     on<LoadScheduleOthers>(_onLoadScheduleOthers);
   }
 
-  // ─── Load Profile ────────────────────────────────────────────────────────
+  // ─── Load Profile ─────────────────────────────────────────────────────────
   Future<void> _onLoadProfileDetail(
     LoadProfileDetail event,
     Emitter<ProfileDetailState> emit,
   ) async {
     emit(ProfileDetailLoading());
     try {
-      var profile =
-          await profileDetailRepository.getProfileDetail(event.delegateId);
+      var profile = await profileDetailRepository.getProfileDetail(
+        event.delegateId,
+      );
 
-      // backend ยังไม่ส่ง connection_request_id มา
-      // ถ้า status = requestedToMe ให้ดึง request id จาก my_received
       if (profile.connectionStatus == ConnectionStatus.requestedToMe &&
           profile.connectionRequestId == null) {
         profile = await _enrichWithRequestId(profile);
@@ -51,26 +51,16 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
     }
   }
 
-  /// ดึง request id จาก my_received แล้ว attach กลับเข้า profile
   Future<ProfileDetail> _enrichWithRequestId(ProfileDetail profile) async {
     try {
       final requests = await connectionRepository.getReceivedRequests();
-      // requester.id (map เป็น senderId) == delegate ที่เรากำลังดู
-      final match =
-          requests.where((r) => r.senderId == profile.id).firstOrNull;
+      final match = requests.where((r) => r.senderId == profile.id).firstOrNull;
       if (match != null) {
-        return ProfileDetail(
-          id: profile.id,
-          name: profile.name,
-          title: profile.title,
-          email: profile.email,
-          companyName: profile.companyName,
-          avatarUrl: profile.avatarUrl,
-          countryCode: profile.countryCode,
-          isConnected: profile.isConnected,
+        return _copyProfile(
+          profile,
+          isConnected: false,
           connectionStatus: profile.connectionStatus,
-          teamId: profile.teamId,
-          connectionRequestId: match.id, // ✅ ได้ request id แล้ว
+          connectionRequestId: match.id,
         );
       }
     } catch (e) {
@@ -79,7 +69,7 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
     return profile;
   }
 
-  // ─── Send Friend Request (none → requestedByMe) ──────────────────────────
+  // ─── Send Request (none → requestedByMe) ─────────────────────────────────
   Future<void> _onSendFriendRequest(
     SendFriendRequest event,
     Emitter<ProfileDetailState> emit,
@@ -91,24 +81,67 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
     try {
       await connectionRepository.sendRequest(event.delegateId);
 
-      final updatedProfile = _copyProfile(
-        currentState.profile,
-        isConnected: false,
-        connectionStatus: ConnectionStatus.requestedByMe,
-        connectionRequestId: null,
+      emit(
+        ProfileDetailLoaded(
+          _copyProfile(
+            currentState.profile,
+            isConnected: false,
+            connectionStatus: ConnectionStatus.requestedByMe,
+            connectionRequestId: null,
+          ),
+          schedules: currentState.schedules,
+        ),
       );
-
-      emit(ProfileDetailLoaded(updatedProfile,
-          schedules: currentState.schedules));
       emit(FriendRequestSuccess('Friend request sent!'));
     } catch (e) {
-      emit(ProfileDetailLoaded(currentState.profile,
-          schedules: currentState.schedules));
+      emit(
+        ProfileDetailLoaded(
+          currentState.profile,
+          schedules: currentState.schedules,
+        ),
+      );
       emit(FriendRequestFailed('Failed to send friend request'));
     }
   }
 
-  // ─── Accept (requestedToMe → connected) ─────────────────────────────────
+  // ─── Cancel Request (requestedByMe → none) ───────────────────────────────
+  // DELETE /api/v1/requests/:target_id/cancel
+  Future<void> _onCancelFriendRequest(
+    CancelFriendRequest event,
+    Emitter<ProfileDetailState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! ProfileDetailLoaded) return;
+
+    emit(FriendRequestSending());
+    try {
+      await connectionRepository.cancelRequest(event.targetId);
+
+      // ✅ กลับ none → Add Friend ปรากฏอีกครั้ง
+      emit(
+        ProfileDetailLoaded(
+          _copyProfile(
+            currentState.profile,
+            isConnected: false,
+            connectionStatus: ConnectionStatus.none,
+            connectionRequestId: null,
+          ),
+          schedules: currentState.schedules,
+        ),
+      );
+      emit(FriendRequestSuccess('Request cancelled'));
+    } catch (e) {
+      emit(
+        ProfileDetailLoaded(
+          currentState.profile,
+          schedules: currentState.schedules,
+        ),
+      );
+      emit(FriendRequestFailed('Failed to cancel request'));
+    }
+  }
+
+  // ─── Accept (requestedToMe → connected) ──────────────────────────────────
   Future<void> _onAcceptFriendRequest(
     AcceptFriendRequest event,
     Emitter<ProfileDetailState> emit,
@@ -120,24 +153,31 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
     try {
       await connectionRepository.acceptRequest(event.requestId);
 
-      final updatedProfile = _copyProfile(
-        currentState.profile,
-        isConnected: true,
-        connectionStatus: ConnectionStatus.connected,
-        connectionRequestId: null,
+      emit(
+        ProfileDetailLoaded(
+          _copyProfile(
+            currentState.profile,
+            isConnected: true,
+            connectionStatus: ConnectionStatus.connected,
+            connectionRequestId: null,
+          ),
+          schedules: currentState.schedules,
+        ),
       );
-
-      emit(ProfileDetailLoaded(updatedProfile,
-          schedules: currentState.schedules));
       emit(FriendRequestSuccess('You are now connected!'));
     } catch (e) {
-      emit(ProfileDetailLoaded(currentState.profile,
-          schedules: currentState.schedules));
+      emit(
+        ProfileDetailLoaded(
+          currentState.profile,
+          schedules: currentState.schedules,
+        ),
+      );
       emit(FriendRequestFailed('Failed to accept request'));
     }
   }
 
   // ─── Reject (requestedToMe → none) ───────────────────────────────────────
+  // ✅ หลัง reject ทั้งสองฝ่าย status = none → add กันได้ใหม่
   Future<void> _onRejectFriendRequest(
     RejectFriendRequest event,
     Emitter<ProfileDetailState> emit,
@@ -149,20 +189,26 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
     try {
       await connectionRepository.rejectRequest(event.requestId);
 
-      // ✅ status กลับ none → คนนั้น add มาใหม่ได้
-      final updatedProfile = _copyProfile(
-        currentState.profile,
-        isConnected: false,
-        connectionStatus: ConnectionStatus.none,
-        connectionRequestId: null,
+      emit(
+        ProfileDetailLoaded(
+          _copyProfile(
+            currentState.profile,
+            isConnected: false,
+            connectionStatus:
+                ConnectionStatus.none, // ✅ none เลย ไม่ใช่ rejected
+            connectionRequestId: null,
+          ),
+          schedules: currentState.schedules,
+        ),
       );
-
-      emit(ProfileDetailLoaded(updatedProfile,
-          schedules: currentState.schedules));
       emit(FriendRequestSuccess('Request declined'));
     } catch (e) {
-      emit(ProfileDetailLoaded(currentState.profile,
-          schedules: currentState.schedules));
+      emit(
+        ProfileDetailLoaded(
+          currentState.profile,
+          schedules: currentState.schedules,
+        ),
+      );
       emit(FriendRequestFailed('Failed to decline request'));
     }
   }
@@ -179,20 +225,25 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
     try {
       await connectionRepository.unfriend(event.delegateId);
 
-      // ✅ status กลับ none → add กันใหม่ได้
-      final updatedProfile = _copyProfile(
-        currentState.profile,
-        isConnected: false,
-        connectionStatus: ConnectionStatus.none,
-        connectionRequestId: null,
+      emit(
+        ProfileDetailLoaded(
+          _copyProfile(
+            currentState.profile,
+            isConnected: false,
+            connectionStatus: ConnectionStatus.none,
+            connectionRequestId: null,
+          ),
+          schedules: currentState.schedules,
+        ),
       );
-
-      emit(ProfileDetailLoaded(updatedProfile,
-          schedules: currentState.schedules));
       emit(FriendRequestSuccess('Unfriended successfully'));
     } catch (e) {
-      emit(ProfileDetailLoaded(currentState.profile,
-          schedules: currentState.schedules));
+      emit(
+        ProfileDetailLoaded(
+          currentState.profile,
+          schedules: currentState.schedules,
+        ),
+      );
       emit(FriendRequestFailed('Failed to unfriend'));
     }
   }
@@ -204,8 +255,8 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
   ) async {
     final currentState = state;
     try {
-      final List<Schedule> schedules =
-          await scheduleOthersRepository.getScheduleOthers(event.delegateId);
+      final List<Schedule> schedules = await scheduleOthersRepository
+          .getScheduleOthers(event.delegateId);
       if (currentState is ProfileDetailLoaded) {
         emit(ProfileDetailLoaded(currentState.profile, schedules: schedules));
       }
@@ -217,7 +268,6 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
     }
   }
 
-  // ─── Helper: copy profile with updated fields ────────────────────────────
   ProfileDetail _copyProfile(
     ProfileDetail p, {
     required bool isConnected,

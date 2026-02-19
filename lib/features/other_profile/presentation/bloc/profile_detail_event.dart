@@ -5,37 +5,45 @@ import 'package:flutter/foundation.dart';
 @immutable
 sealed class ProfileDetailEvent {}
 
-/// โหลด profile
 class LoadProfileDetail extends ProfileDetailEvent {
   final int delegateId;
   LoadProfileDetail(this.delegateId);
 }
 
-/// ส่ง friend request ใหม่ → POST /requests  (status = none)
+/// ส่งคำขอเพื่อน → POST /api/v1/requests
 class SendFriendRequest extends ProfileDetailEvent {
   final int delegateId;
   SendFriendRequest(this.delegateId);
 }
 
-/// Accept → PATCH /requests/:id/accept  (status = requestedToMe)
+/// ✅ ยกเลิกคำขอที่เราส่งออกไป → DELETE /api/v1/requests/:target_id/cancel
+/// status: requestedByMe → none
+class CancelFriendRequest extends ProfileDetailEvent {
+  final int targetId; // คือ delegate id ที่เราส่ง request ไป
+  CancelFriendRequest(this.targetId);
+}
+
+/// ยอมรับคำขอ → PATCH /api/v1/requests/:id/accept
+/// status: requestedToMe → connected
 class AcceptFriendRequest extends ProfileDetailEvent {
   final int requestId;
   AcceptFriendRequest(this.requestId);
 }
 
-/// Reject → PATCH /requests/:id/reject  (status = requestedToMe → none)
+/// ปฏิเสธคำขอ → PATCH /api/v1/requests/:id/reject
+/// status: requestedToMe → none (ทั้งสองฝ่าย add กันได้ใหม่)
 class RejectFriendRequest extends ProfileDetailEvent {
   final int requestId;
   RejectFriendRequest(this.requestId);
 }
 
-/// Unfriend → DELETE /connections/:delegateId  (status = connected → none)
+/// ยกเลิกการเป็นเพื่อน → DELETE /api/v1/connections/:delegateId
+/// status: connected → none
 class UnfriendRequest extends ProfileDetailEvent {
   final int delegateId;
   UnfriendRequest(this.delegateId);
 }
 
-/// โหลด schedule ของ delegate คนอื่น
 class LoadScheduleOthers extends ProfileDetailEvent {
   final int delegateId;
   LoadScheduleOthers(this.delegateId);

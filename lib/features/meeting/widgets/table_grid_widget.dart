@@ -7,17 +7,20 @@ import 'package:test_wpa/core/utils/date_time_helper.dart';
 import 'package:test_wpa/features/meeting/domain/entities/table_view_entities.dart';
 import 'package:test_wpa/features/meeting/widgets/table_detail_sheet.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
+import 'package:test_wpa/features/schedules/presentation/widgets/time_slot_chip.dart';
 
 class TableGridWidget extends StatefulWidget {
   final TableViewResponse response;
   final Schedule? currentSchedule;
   final ValueChanged<String>? onTimeSlotChanged;
+  final Map<String, TimeSlotType> slotTypeMap;
 
   const TableGridWidget({
     super.key,
     required this.response,
     this.currentSchedule,
     this.onTimeSlotChanged,
+    this.slotTypeMap = const {},
   });
 
   @override
@@ -38,7 +41,6 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   @override
   Widget build(BuildContext context) {
     final selectedDate = DateTimeHelper.parseSafeDate(widget.response.date);
-    final hasNoTable = widget.response.myTable.isEmpty;
 
     // Split regular tables and booths
     final regularTables = widget.response.tables
@@ -48,6 +50,9 @@ class _TableGridWidgetState extends State<TableGridWidget> {
     final booths = widget.response.tables
         .where((t) => t.tableNumber.contains('Booth'))
         .toList();
+
+    final hasNoAssignment = widget.response.myTable.isEmpty;
+    final hasNoTables = widget.response.tables.isEmpty;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -59,10 +64,12 @@ class _TableGridWidgetState extends State<TableGridWidget> {
           _buildTimeSlotHeader(),
           const SizedBox(height: 12),
 
-          // -- Table Grid (constrained height + pinch-to-zoom) --
-          if (hasNoTable)
+          // ถ้าไม่มีข้อมูลโต๊ะเลย แสดง no table section
+          if (hasNoTables)
             _buildNoTableSection(selectedDate, widget.response.time)
           else ...[
+            // ถ้ามีโต๊ะแต่ไม่มี assignment ของตัวเอง แสดง banner เล็กๆ
+            if (hasNoAssignment) _buildNoAssignmentBanner(),
             _buildZoomableGrid(regularTables),
             const SizedBox(height: 12),
             _buildLegend(),
@@ -117,7 +124,11 @@ class _TableGridWidgetState extends State<TableGridWidget> {
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(8),
-                onTap: () => _showTimeSlotPopup(timesToday, currentTime),
+                onTap: () => _showTimeSlotPopup(
+                  timesToday,
+                  currentTime,
+                  widget.slotTypeMap,
+                ),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
@@ -155,95 +166,121 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   }
 
   // ========================================
+  // No Assignment Banner (มีโต๊ะแต่ไม่ใช่ของฉัน)
+  // ========================================
+  Widget _buildNoAssignmentBanner() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.orange[50],
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.orange[200]!),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, size: 16, color: Colors.orange[700]),
+          const SizedBox(width: 8),
+          Text(
+            'No table assigned for this time slot',
+            style: TextStyle(fontSize: 13, color: Colors.orange[800]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ========================================
   // Time Slot Popup
   // ========================================
-  void _showTimeSlotPopup(List<String> timesToday, String currentTime) {
+  void _showTimeSlotPopup(
+    List<String> timesToday,
+    String currentTime,
+    Map<String, TimeSlotType> slotTypeMap,
+  ) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Handle
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Select Time Slot',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Choose a time to view table assignments',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: color.AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: timesToday.map((time) {
-                    final isSelected = time == currentTime;
-                    return Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(10),
-                        onTap: () {
-                          Navigator.of(ctx).pop();
-                          widget.onTimeSlotChanged?.call(time);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? color.AppColors.primary
-                                : Colors.grey[100],
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: isSelected
-                                  ? color.AppColors.primary
-                                  : color.AppColors.border,
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 50), // ← ยก sheet ขึ้น 50px
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            child: Container(
+              color: Colors.white,
+              child: DraggableScrollableSheet(
+                initialChildSize: 0.5,
+                maxChildSize: 0.9,
+                minChildSize: 0.3,
+                expand: false,
+                builder: (_, scrollController) {
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Center(
+                              child: Container(
+                                width: 40,
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            time,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.w500,
-                              color: isSelected
-                                  ? Colors.white
-                                  : color.AppColors.textPrimary,
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Select Time Slot',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Choose a time to view table assignments',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: color.AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          controller: scrollController,
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: timesToday.map((time) {
+                              final isSelected = time == currentTime;
+                              final slotType =
+                                  slotTypeMap[time] ?? TimeSlotType.unknown;
+
+                              return TimeSlotChip(
+                                time: time,
+                                isSelected: isSelected,
+                                type: slotType,
+                                onTap: () {
+                                  Navigator.of(ctx).pop();
+                                  widget.onTimeSlotChanged?.call(time);
+                                },
+                              );
+                            }).toList(),
                           ),
                         ),
                       ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 16),
-              ],
+                    ],
+                  );
+                },
+              ),
             ),
           ),
         );
@@ -252,7 +289,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   }
 
   // ========================================
-  // Zoomable Grid - แก้ไขใหม่เพื่อรองรับ responsive
+  // Zoomable Grid
   // ========================================
   Widget _buildZoomableGrid(List<TableInfo> regularTables) {
     final tableMap = {
@@ -262,19 +299,17 @@ class _TableGridWidgetState extends State<TableGridWidget> {
     final rows = layout?.rows ?? _calculateDefaultRows(regularTables.length, 6);
     final columns = layout?.columns ?? 6;
 
-    // คำนวณขนาด cell ที่เหมาะสม
-    final cellSize = 60.0;
-    final spacing = 6.0;
-    final padding = 24.0;
+    const cellSize = 60.0;
+    const spacing = 6.0;
+    const padding = 24.0;
 
-    // คำนวณขนาดทั้งหมดของ grid
     final gridWidth =
         (columns * cellSize) + ((columns - 1) * spacing) + (padding * 2);
     final gridHeight =
         (rows * cellSize) + ((rows - 1) * spacing) + (padding * 2);
 
     return Container(
-      height: 400, // Fixed height สำหรับ container
+      height: 400,
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
@@ -288,8 +323,9 @@ class _TableGridWidgetState extends State<TableGridWidget> {
               transformationController: _transformController,
               minScale: 0.5,
               maxScale: 4.0,
-              boundaryMargin: EdgeInsets.all(gridWidth > 600 ? 100 : 40),
-              constrained: false, // สำคัญ! ให้ child กำหนดขนาดเองได้
+              // boundaryMargin: EdgeInsets.all(gridWidth > 600 ? 100 : 40),
+              boundaryMargin: EdgeInsets.all(40 / 100), // เพิ่มจาก 40/100
+              constrained: false,
               child: Center(
                 child: Container(
                   width: gridWidth,
@@ -335,7 +371,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                 ),
               ),
             ),
-            // Zoom hint overlay (bottom-right)
+            // Zoom hint
             Positioned(
               bottom: 8,
               right: 8,
@@ -358,7 +394,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                 ),
               ),
             ),
-            // Reset zoom button (top-right)
+            // Reset zoom button
             Positioned(
               top: 8,
               right: 8,
@@ -398,7 +434,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   }
 
   // ========================================
-  // No Table Section
+  // No Table Section (ไม่มีข้อมูลโต๊ะเลย)
   // ========================================
   Widget _buildNoTableSection(DateTime date, String time) {
     final dateText = DateTimeHelper.formatFullDate(date);
@@ -419,7 +455,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
               Icon(Icons.event_busy, size: 56, color: Colors.grey[400]),
               SizedBox(height: space.m),
               Text(
-                'No Table Assigned',
+                'No Table Data',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
@@ -428,7 +464,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
               ),
               SizedBox(height: space.s),
               Text(
-                'You don\'t have a table assignment for',
+                'No table information available for',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -691,7 +727,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
           TableDetailSheet(table: table, isMyTable: isMyTable),
     );
   }
-}
+} // ← ปิด _TableGridWidgetState
 
 // ========================================
 // Helper Class: Table Cell Colors

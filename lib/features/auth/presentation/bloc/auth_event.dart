@@ -31,10 +31,12 @@ class AuthResetPassword extends AuthEvent {
 }
 
 class AuthChangePassword extends AuthEvent {
-  final String oldPassword;
+  final String currentPassword;
   final String newPassword;
+  final String newPasswordConfirmation;
   AuthChangePassword({
-    required this.oldPassword,
+    required this.currentPassword,
     required this.newPassword,
+    required this.newPasswordConfirmation,
   });
 }

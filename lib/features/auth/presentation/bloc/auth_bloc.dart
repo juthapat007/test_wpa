@@ -32,16 +32,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         password: event.password,
       );
       await DioClient().init();
-
-      // ส่ง device token หลัง login ค่อยกลับมาเปิด
-      // try {
-      //   final fcmToken = await FirebaseMessaging.instance.getToken();
-      //   if (fcmToken != null) {
-      //     await authRepository.registerDeviceToken(fcmToken);
-      //   }
-      // } catch (e) {
-      //   debugPrint('⚠️ FCM token failed: $e');
-      // }
       emit(
         AuthAuthenticated(
           avatarUrl: result.user?.avatarUrl,
@@ -72,7 +62,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthForgotPassword event,
     Emitter<AuthState> emit,
   ) async {
-    print('📧 Forgot password: ${event.email}');
     emit(AuthLoading());
     try {
       await authRepository.forgotPassword(email: event.email);
@@ -88,7 +77,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthResetPassword event,
     Emitter<AuthState> emit,
   ) async {
-    print('🔑 Resetting password...');
     emit(AuthLoading());
     try {
       await authRepository.resetPassword(
@@ -111,10 +99,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthLoading());
     try {
       await authRepository.changePassword(
-        oldPassword: event.oldPassword,
+        currentPassword: event.currentPassword,
         newPassword: event.newPassword,
+        newPasswordConfirmation: event.newPasswordConfirmation,
       );
-      await authRepository.logout(); //ล้าง token
+      // await authRepository.logout(); // ล้าง token ออกจาก storage
       emit(ChangePasswordSuccess());
     } catch (e) {
       emit(ChangePasswordError(e.toString()));

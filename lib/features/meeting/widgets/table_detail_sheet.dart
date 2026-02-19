@@ -13,7 +13,6 @@ class TableDetailSheet extends StatelessWidget {
     required this.table,
     required this.isMyTable,
   });
-
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
@@ -22,19 +21,29 @@ class TableDetailSheet extends StatelessWidget {
       minChildSize: 0.4,
       expand: false,
       builder: (context, scrollController) {
-        return SingleChildScrollView(
-          controller: scrollController,
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHandle(),
-              const SizedBox(height: 20),
-              _buildTableHeader(),
-              const SizedBox(height: 24),
-              _buildDelegatesList(),
-            ],
-          ),
+        return Column(
+          // ลบ mainAxisSize: MainAxisSize.min ออก (หรือเปลี่ยนเป็น max)
+          children: [
+            // Handle bar อยู่นอก scroll
+            const SizedBox(height: 12),
+            _buildHandle(),
+            const SizedBox(height: 16),
+            // ส่วนที่ scroll ได้
+            Expanded(
+              child: SingleChildScrollView(
+                controller: scrollController,
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildTableHeader(),
+                    const SizedBox(height: 24),
+                    _buildDelegatesList(),
+                  ],
+                ),
+              ),
+            ),
+          ],
         );
       },
     );

@@ -17,106 +17,64 @@ class ChangePasswordPage extends StatefulWidget {
 }
 
 class _ChangePasswordPageState extends State<ChangePasswordPage> {
-  final _oldPasswordCtrl = TextEditingController();
+  final _currentPasswordCtrl = TextEditingController();
   final _newPasswordCtrl = TextEditingController();
+  final _confirmPasswordCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
-    _oldPasswordCtrl.dispose();
+    _currentPasswordCtrl.dispose();
     _newPasswordCtrl.dispose();
+    _confirmPasswordCtrl.dispose();
     super.dispose();
   }
 
   void _handleChange() {
-    if (_formKey.currentState!.validate()) {
-      // ✅ แจ้งเตือนก่อนว่าจะถูก logout
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          icon: const Icon(
-            Icons.info_outline,
-            color: AppColors.warning,
-            size: 40,
-          ),
-          title: const Text(
-            'Confirm Password Change',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: const Text(
-            'After changing your password,\nyou will be logged out automatically\nand need to login again.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.textSecondary, height: 1.5),
-          ),
-          actions: [
-            Row(
-              children: [
-                Expanded(
-                  child: TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: TextButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        side: const BorderSide(color: AppColors.border),
-                      ),
-                    ),
-                    child: const Text(
-                      'Cancel',
-                      style: TextStyle(color: AppColors.textSecondary),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: space.s),
-                Expanded(
-                  child: AppButton(
-                    text: 'Confirm',
-                    onPressed: () {
-                      Navigator.pop(context);
-                      FocusScope.of(context).unfocus();
-                      BlocProvider.of<AuthBloc>(context).add(
-                        AuthChangePassword(
-                          oldPassword: _oldPasswordCtrl.text,
-                          newPassword: _newPasswordCtrl.text,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                // Expanded(
+    if (!_formKey.currentState!.validate()) return;
 
-                // child: TextButton(
-                //   onPressed: () {
-                //     Navigator.pop(context);
-                //     FocusScope.of(context).unfocus();
-                //     BlocProvider.of<AuthBloc>(context).add(
-                //       AuthChangePassword(
-                //         oldPassword: _oldPasswordCtrl.text,
-                //         newPassword: _newPasswordCtrl.text,
-                //       ),
-                //     );
-                //   },
-                //   style: TextButton.styleFrom(
-                //     backgroundColor: AppColors.primary,
-                //     shape: RoundedRectangleBorder(
-                //       borderRadius: BorderRadius.circular(8),
-                //     ),
-                //   ),
-                //   child: const Text(
-                //     'Confirm',
-                //     style: TextStyle(color: Colors.white),
-                //   ),
-                // ),
-                // ),
-              ],
-            ),
-          ],
-        ),
-      );
-    }
+    // ✅ capture bloc ก่อนเปิด dialog เพราะ dialog context ไม่มี AuthBloc
+    final bloc = BlocProvider.of<AuthBloc>(context);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        // ✅ เปลี่ยนชื่อเป็น dialogContext
+        title: const Text('Confirm'),
+        content: const Text('Are you sure you want to change your password?'),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: AppButton(
+                  text: 'Cancel',
+                  onPressed: () => Navigator.pop(dialogContext),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: AppButton(
+                  text: 'Confirm',
+                  textColor: AppColors.textOnPrimary,
+                  backgroundColor: AppColors.primary,
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
+                    bloc.add(
+                      AuthChangePassword(
+                        // ✅ ใช้ captured bloc
+                        currentPassword: _currentPasswordCtrl.text,
+                        newPassword: _newPasswordCtrl.text,
+                        newPasswordConfirmation: _confirmPasswordCtrl.text,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -124,14 +82,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is ChangePasswordSuccess) {
-          // ✅ แสดง dialog สำเร็จ แล้ว navigate ไป login
           showDialog(
             context: context,
             barrierDismissible: false,
             builder: (context) => AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
               icon: const Icon(
                 Icons.check_circle_outline,
                 color: AppColors.success,
@@ -143,18 +97,22 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               content: const Text(
-                'Your password has been changed.\nPlease login with your new password.',
+                'Your password has been changed successfully.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textSecondary, height: 1.5),
+                style: TextStyle(color: AppColors.textSecondary),
               ),
               actions: [
                 SizedBox(
                   width: double.infinity,
                   child: AppButton(
-                    text: 'Login Again',
+                    text: 'OK',
+                    textColor: AppColors.textOnPrimary,
+                    backgroundColor: AppColors.primary,
                     onPressed: () {
                       Navigator.pop(context); // ปิด dialog
-                      Modular.to.navigate('/'); // ไปหน้า login
+                      Navigator.of(
+                        context,
+                      ).pop(); // ออกจาก change_password_page
                     },
                   ),
                 ),
@@ -191,7 +149,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                     children: [
                       const SizedBox(height: space.l),
 
-                      // Icon + Title
                       Center(
                         child: Container(
                           padding: const EdgeInsets.all(space.l),
@@ -234,9 +191,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
                       const SizedBox(height: space.xl),
 
-                      // Old Password
+                      // Current Password
                       AppTextFormField(
-                        controller: _oldPasswordCtrl,
+                        controller: _currentPasswordCtrl,
                         label: 'Current Password',
                         icon: Icons.lock_outlined,
                         obscureText: true,
@@ -259,8 +216,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                         icon: Icons.lock_outlined,
                         obscureText: true,
                         enabled: !isLoading,
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: () => _handleChange(),
+                        textInputAction: TextInputAction.next,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter a new password';
@@ -268,50 +224,36 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                           if (value.length < 8) {
                             return 'Password must be at least 8 characters';
                           }
-                          if (value == _oldPasswordCtrl.text) {
-                            return 'New password must be different';
+                          if (value == _currentPasswordCtrl.text) {
+                            return 'New password must be different from current';
                           }
                           return null;
                         },
                       ),
 
-                      const SizedBox(height: space.xl),
+                      const SizedBox(height: space.m),
 
-                      // ⚠️ Warning banner
-                      Container(
-                        padding: const EdgeInsets.all(space.m),
-                        decoration: BoxDecoration(
-                          color: AppColors.warning.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppColors.warning.withOpacity(0.3),
-                          ),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(
-                              Icons.warning_amber_rounded,
-                              color: AppColors.warning,
-                              size: 20,
-                            ),
-                            SizedBox(width: space.s),
-                            Expanded(
-                              child: Text(
-                                'You will be automatically logged out after changing your password.',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.warning,
-                                  height: 1.4,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                      // Confirm New Password
+                      AppTextFormField(
+                        controller: _confirmPasswordCtrl,
+                        label: 'Confirm New Password',
+                        icon: Icons.lock_outlined,
+                        obscureText: true,
+                        enabled: !isLoading,
+                        textInputAction: TextInputAction.done,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please confirm your new password';
+                          }
+                          if (value != _newPasswordCtrl.text) {
+                            return 'Passwords do not match';
+                          }
+                          return null;
+                        },
                       ),
 
                       const SizedBox(height: space.l),
 
-                      // Submit Button
                       isLoading
                           ? const Center(
                               child: CircularProgressIndicator(

@@ -13,7 +13,15 @@ class ConnectionApi {
     return response.data as List<dynamic>;
   }
 
-  /// POST /api/v1/requests — ส่ง friend request
+  /// GET /api/v1/connections — รายชื่อเพื่อนทั้งหมด
+  /// ⚠️ ถ้า backend ยังไม่มี endpoint นี้ → response จะเป็น 404
+  ///    ให้แจ้งทีม backend เพิ่ม GET /api/v1/connections
+  Future<List<dynamic>> getFriends() async {
+    final response = await dio.get('/connections');
+    return response.data as List<dynamic>;
+  }
+
+  /// POST /api/v1/requests
   Future<Response> sendConnectionRequest(int targetId) async {
     try {
       final response = await dio.post(
@@ -22,26 +30,40 @@ class ConnectionApi {
       );
       return response;
     } catch (e) {
-      print('❌ ConnectionApi.sendConnectionRequest error: $e');
+      print('❌ ConnectionApi.sendRequest error: $e');
       rethrow;
     }
   }
 
-  /// PATCH /api/v1/requests/:id/accept — ยอมรับคำขอ
-  Future<Map<String, dynamic>> acceptRequest(int id) async {
-    final response = await dio.patch('/requests/$id/accept');
-    return response.data as Map<String, dynamic>;
+  /// PATCH /api/v1/requests/:id/accept
+  Future<Response> acceptRequest(int requestId) async {
+    final response = await dio.patch('/requests/$requestId/accept');
+    return response;
   }
 
-  /// PATCH /api/v1/requests/:id/reject — ปฏิเสธคำขอ (status กลับเป็น none)
-  Future<Map<String, dynamic>> rejectRequest(int id) async {
-    final response = await dio.patch('/requests/$id/reject');
-    return response.data as Map<String, dynamic>;
+  /// PATCH /api/v1/requests/:id/reject
+  Future<Response> rejectRequest(int requestId) async {
+    final response = await dio.patch('/requests/$requestId/reject');
+    return response;
   }
 
-  /// DELETE /api/v1/connections/:delegateId — ยกเลิกเพื่อน (unfriend)
+  /// DELETE /api/v1/requests/:target_id/cancel
+  /// ใช้ target_id = delegate id ที่เราส่ง request ไป (ไม่ใช่ request id)
+  Future<void> cancelRequest(int targetId) async {
+    try {
+      await dio.delete('/requests/$targetId/cancel');
+    } catch (e) {
+      print('❌ ConnectionApi.cancelRequest error: $e');
+      rethrow;
+    }
+  }
+
+  /// DELETE /api/v1/connections/:delegate_id
+  /// ⚠️ backend ต้องมี endpoint นี้ — ถ้ายังไม่มีจะได้ 404
+  ///    path นี้ต่างจาก /networking/unfriend/ ที่เคยใช้
   Future<void> unfriend(int delegateId) async {
     try {
+      // await dio.delete('/connections/$delegateId');
       await dio.delete('/networking/unfriend/$delegateId');
     } catch (e) {
       print('❌ ConnectionApi.unfriend error: $e');
