@@ -21,36 +21,20 @@ class ChatRoomCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Stack(
-        children: [
-          // Layer 1: InkWell ทั้งใบ → เปิด chat
-          Positioned.fill(
-            child: InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(12),
-            ),
+      child: InkWell(
+        onTap: onTap, // กดธรรมดา → เปิด chat
+        onLongPress: onProfileTap, // กดค้าง → ไป profile
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              _buildAvatar(), // ไม่ต้องห่ออะไร
+              const SizedBox(width: 12),
+              Expanded(child: _buildContent()),
+            ],
           ),
-
-          // Layer 2: content row (ไม่มี onTap)
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                // Avatar — กดแยก ไป profile
-                // GestureDetector(onTap: onProfileTap, child: _buildAvatar()),
-                MouseRegion(
-                  child: GestureDetector(
-                    onTap: onProfileTap,
-                    behavior: HitTestBehavior.opaque,
-                    child: _buildAvatar(),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(child: _buildContent()),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

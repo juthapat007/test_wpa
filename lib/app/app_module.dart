@@ -287,16 +287,15 @@ class AppModule extends Module {
       ),
     );
 
-    /// ===== other Profile (FIXED) =====
+    // เพิ่มใน routes() ต่อจาก /other_profile เดิม
     r.child(
-      '/other_profile',
+      '/other-profile/:id',
       child: (_) {
-        final args = r.args.data as Map<String, dynamic>?;
-        final delegateId = args?['delegate_id'] as int?;
+        final delegateId = int.tryParse(r.args.params['id'] ?? '');
 
         if (delegateId == null) {
           return const Scaffold(
-            body: Center(child: Text('Error: Delegate ID not found')),
+            body: Center(child: Text('Error: Invalid delegate ID')),
           );
         }
 

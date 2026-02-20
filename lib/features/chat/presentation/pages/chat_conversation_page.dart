@@ -48,7 +48,10 @@ class ChatConversationPage extends StatelessWidget {
             onTap: () {
               final participantId = int.tryParse(room.participantId);
               if (participantId != null) {
-                Modular.to.pushNamed('/other-profile/$participantId');
+                Modular.to.pushNamed(
+                  '/other-profile/$participantId',
+                  arguments: participantId, // ✅ ส่ง arguments ไปด้วย
+                );
               }
             },
             child: Row(

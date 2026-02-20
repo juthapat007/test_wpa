@@ -42,12 +42,6 @@ class ChatRoomListView extends StatelessWidget {
             },
             child: Column(
               children: [
-                // Connection status
-                // ConnectionStatusIndicator(
-                //   isConnected: state.isWebSocketConnected,
-                // ),
-
-                // Chat rooms list
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(vertical: 8),

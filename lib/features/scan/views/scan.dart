@@ -146,7 +146,6 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
     } catch (e, stackTrace) {
       print('❌ Error parsing QR code: $e');
       print('📍 Stack trace: $stackTrace');
-
       // แสดง error message ที่ละเอียดกว่า
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
