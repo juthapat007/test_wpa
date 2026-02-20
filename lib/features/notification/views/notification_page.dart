@@ -462,13 +462,13 @@ class _NotificationTile extends StatelessWidget {
   }
 
   Widget _buildLeading() {
-    final sender = item.notifiable?.sender;
-    if (sender != null &&
-        sender.avatarUrl != null &&
-        sender.avatarUrl!.isNotEmpty) {
+    final requester = item.notifiable?.requester;
+    if (requester != null &&
+        requester.avatarUrl != null &&
+        requester.avatarUrl!.isNotEmpty) {
       return CircleAvatar(
         radius: 22,
-        backgroundImage: NetworkImage(sender.avatarUrl!),
+        backgroundImage: NetworkImage(requester.avatarUrl!),
         onBackgroundImageError: (_, __) {},
       );
     }
@@ -482,14 +482,13 @@ class _NotificationTile extends StatelessWidget {
   }
 
   String _getTitle() {
-    final sender = item.notifiable?.sender;
+    final requester = item.notifiable?.requester;
     switch (item.type) {
-      case 'new_message':
-        return sender?.name ?? 'New Message';
-      case 'new_connection':
-        return sender?.name ?? 'New Connection';
-      case 'schedule_reminder':
-        return 'Schedule Reminder';
+      case 'connection_request':
+        return requester?.name ?? 'Someone';
+      case 'connection_accepted':
+        final target = item.notifiable?.target;
+        return target?.name ?? 'Someone';
       default:
         return item.typeLabel;
     }
@@ -497,13 +496,13 @@ class _NotificationTile extends StatelessWidget {
 
   String _getBody() {
     switch (item.type) {
-      case 'new_message':
-        final content = item.notifiable?.content ?? '';
-        return content.isNotEmpty ? content : 'Sent you a message';
-      case 'new_connection':
-        return 'Wants to connect with you';
-      case 'schedule_reminder':
-        return item.notifiable?.content ?? 'You have an upcoming schedule';
+      case 'connection_request':
+        final status = item.notifiable?.status;
+        if (status == 'accepted') return 'Accepted your friend request';
+        if (status == 'rejected') return 'Declined your friend request';
+        return 'Sent you a friend request';
+      case 'connection_accepted':
+        return 'Accepted your friend request ✓';
       default:
         return item.notifiable?.content ?? '';
     }

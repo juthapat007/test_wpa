@@ -20,7 +20,7 @@ import 'package:test_wpa/features/notification/data/services/connection_api.dart
 import 'package:test_wpa/features/notification/domain/repositories/connection_repository.dart';
 import 'package:test_wpa/features/notification/presentation/bloc/connection_bloc.dart';
 import 'package:test_wpa/features/auth/views/change_password_page.dart';
-
+import 'package:test_wpa/features/auth/views/reset_password_page.dart';
 // Profile
 import 'package:test_wpa/features/profile/data/repository/profile_repository_impl.dart';
 import 'package:test_wpa/features/profile/data/service/profile_api.dart';
@@ -343,5 +343,12 @@ class AppModule extends Module {
         child: ChangePasswordPage(),
       ),
     );
+    r.child(
+  '/reset_password',
+  child: (_) => BlocProvider<AuthBloc>(
+    create: (_) => Modular.get<AuthBloc>(),
+    child: ResetPasswordPage(token: r.args.data as String),
+  ),
+);
   }
 }

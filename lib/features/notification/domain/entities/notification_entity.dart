@@ -32,14 +32,19 @@ class NotificationItem {
 class NotificationNotifiable {
   final String type; // "message", "connection", "schedule"
   final int id;
-  final NotificationSender? sender;
+  final String? status; // ✅ เพิ่ม
+  final NotificationSender? requester; // ✅ เปลี่ยนจาก sender
+  final NotificationSender? target; // ✅ เพิ่ม
+
   final String? content;
 
   NotificationNotifiable({
     required this.type,
     required this.id,
-    this.sender,
     this.content,
+    this.status,
+    this.requester,
+    this.target,
   });
 }
 

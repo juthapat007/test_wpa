@@ -67,12 +67,7 @@ class NotificationNotifiableModel {
   }
 
   NotificationNotifiable toEntity() {
-    return NotificationNotifiable(
-      type: type,
-      id: id,
-      sender: sender?.toEntity(),
-      content: content,
-    );
+    return NotificationNotifiable(type: type, id: id, content: content);
   }
 }
 

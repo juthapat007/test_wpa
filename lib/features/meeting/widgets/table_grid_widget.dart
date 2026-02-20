@@ -41,18 +41,23 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   @override
   Widget build(BuildContext context) {
     final selectedDate = DateTimeHelper.parseSafeDate(widget.response.date);
-
-    // Split regular tables and booths
     final regularTables = widget.response.tables
         .where((t) => !t.tableNumber.contains('Booth'))
         .toList();
-
     final booths = widget.response.tables
         .where((t) => t.tableNumber.contains('Booth'))
         .toList();
-
     final hasNoAssignment = widget.response.myTable.isEmpty;
     final hasNoTables = widget.response.tables.isEmpty;
+
+    // ✅ trigger popup หลัง build เสร็จ ถ้าไม่มีโต๊ะ
+    if (hasNoTables) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _showNoTableDialog(context, selectedDate, widget.response.time);
+        }
+      });
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -60,16 +65,14 @@ class _TableGridWidgetState extends State<TableGridWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // -- Time Slot Header --
           _buildTimeSlotHeader(),
           const SizedBox(height: 12),
 
-          // ถ้าไม่มีข้อมูลโต๊ะเลย แสดง no table section
-          if (hasNoTables)
-            _buildNoTableSection(selectedDate, widget.response.time)
-          else ...[
-            // ถ้ามีโต๊ะแต่ไม่มี assignment ของตัวเอง แสดง banner เล็กๆ
+          // ✅ มีโต๊ะ → แสดงปกติ, ไม่มีโต๊ะ → ไม่ render อะไร popup จะขึ้นเอง
+          if (!hasNoTables) ...[
+            if (!hasNoAssignment) _buildMyTableBanner(),
             if (hasNoAssignment) _buildNoAssignmentBanner(),
+            const SizedBox(height: 12),
             _buildZoomableGrid(regularTables),
             const SizedBox(height: 12),
             _buildLegend(),
@@ -89,7 +92,109 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   }
 
   // ========================================
-  // Time Slot Header with popup selector
+  // My Table Banner
+  // ========================================
+  Widget _buildMyTableBanner() {
+    final myTable = widget.response.myTable;
+    final currentTime = widget.response.time;
+    final timesToday = widget.response.timesToday;
+    final currentIndex = timesToday.indexOf(currentTime);
+    final nextTime = (currentIndex >= 0 && currentIndex + 1 < timesToday.length)
+        ? timesToday[currentIndex + 1]
+        : null;
+    final timeRange = nextTime != null
+        ? '$currentTime – $nextTime'
+        : currentTime;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [color.AppColors.primary, color.AppColors.primaryDark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: color.AppColors.primary.withOpacity(0.35),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.table_restaurant,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Your Table Now',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Table $myTable',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 34,
+                    fontWeight: FontWeight.bold,
+                    height: 1.1,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.schedule, color: Colors.white60, size: 13),
+                    const SizedBox(width: 4),
+                    Text(
+                      timeRange,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Text(
+            myTable,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.15),
+              fontSize: 64,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ========================================
+  // Time Slot Header
   // ========================================
   Widget _buildTimeSlotHeader() {
     final currentTime = widget.response.time;
@@ -97,6 +202,13 @@ class _TableGridWidgetState extends State<TableGridWidget> {
     final dateText = DateTimeHelper.formatFullDate(
       DateTimeHelper.parseSafeDate(widget.response.date),
     );
+    final currentIndex = timesToday.indexOf(currentTime);
+    final nextTime = (currentIndex >= 0 && currentIndex + 1 < timesToday.length)
+        ? timesToday[currentIndex + 1]
+        : null;
+    final timeDisplay = nextTime != null
+        ? '$currentTime – $nextTime'
+        : currentTime;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -111,7 +223,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '$dateText  |  $currentTime',
+              '$dateText  |  $timeDisplay',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -166,11 +278,11 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   }
 
   // ========================================
-  // No Assignment Banner (มีโต๊ะแต่ไม่ใช่ของฉัน)
+  // No Assignment Banner
   // ========================================
   Widget _buildNoAssignmentBanner() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 4),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.orange[50],
@@ -204,7 +316,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         return Padding(
-          padding: const EdgeInsets.only(bottom: 50), // ← ยก sheet ขึ้น 50px
+          padding: const EdgeInsets.only(bottom: 50),
           child: ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             child: Container(
@@ -259,13 +371,19 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                           child: Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children: timesToday.map((time) {
+                            children: List.generate(timesToday.length, (index) {
+                              final time = timesToday[index];
                               final isSelected = time == currentTime;
                               final slotType =
                                   slotTypeMap[time] ?? TimeSlotType.unknown;
-
+                              final nextTime = index + 1 < timesToday.length
+                                  ? timesToday[index + 1]
+                                  : null;
+                              final label = nextTime != null
+                                  ? '$time – $nextTime'
+                                  : time;
                               return TimeSlotChip(
-                                time: time,
+                                time: label,
                                 isSelected: isSelected,
                                 type: slotType,
                                 onTap: () {
@@ -273,7 +391,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                                   widget.onTimeSlotChanged?.call(time);
                                 },
                               );
-                            }).toList(),
+                            }),
                           ),
                         ),
                       ),
@@ -298,11 +416,9 @@ class _TableGridWidgetState extends State<TableGridWidget> {
     final layout = widget.response.layout;
     final rows = layout?.rows ?? _calculateDefaultRows(regularTables.length, 6);
     final columns = layout?.columns ?? 6;
-
     const cellSize = 60.0;
     const spacing = 6.0;
     const padding = 24.0;
-
     final gridWidth =
         (columns * cellSize) + ((columns - 1) * spacing) + (padding * 2);
     final gridHeight =
@@ -323,8 +439,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
               transformationController: _transformController,
               minScale: 0.5,
               maxScale: 4.0,
-              // boundaryMargin: EdgeInsets.all(gridWidth > 600 ? 100 : 40),
-              boundaryMargin: EdgeInsets.all(40 / 100), // เพิ่มจาก 40/100
+              boundaryMargin: EdgeInsets.all(40 / 100),
               constrained: false,
               child: Center(
                 child: Container(
@@ -346,7 +461,6 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                             final tableNumber =
                                 (rowIndex * columns + colIndex + 1).toString();
                             final table = tableMap[tableNumber];
-
                             return Padding(
                               padding: EdgeInsets.only(
                                 right: colIndex < columns - 1 ? spacing : 0,
@@ -371,7 +485,6 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                 ),
               ),
             ),
-            // Zoom hint
             Positioned(
               bottom: 8,
               right: 8,
@@ -394,16 +507,13 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                 ),
               ),
             ),
-            // Reset zoom button
             Positioned(
               top: 8,
               right: 8,
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: () {
-                    _transformController.value = Matrix4.identity();
-                  },
+                  onTap: () => _transformController.value = Matrix4.identity(),
                   borderRadius: BorderRadius.circular(20),
                   child: Container(
                     padding: const EdgeInsets.all(8),
@@ -433,99 +543,9 @@ class _TableGridWidgetState extends State<TableGridWidget> {
     );
   }
 
-  // ========================================
-  // No Table Section (ไม่มีข้อมูลโต๊ะเลย)
-  // ========================================
-  Widget _buildNoTableSection(DateTime date, String time) {
-    final dateText = DateTimeHelper.formatFullDate(date);
+  int _calculateDefaultRows(int tableCount, int columns) =>
+      (tableCount / columns).ceil();
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.only(top: 20),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.AppColors.border),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.event_busy, size: 56, color: Colors.grey[400]),
-              SizedBox(height: space.m),
-              Text(
-                'No Table Data',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                  color: color.AppColors.textPrimary,
-                ),
-              ),
-              SizedBox(height: space.s),
-              Text(
-                'No table information available for',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: color.AppColors.textSecondary,
-                ),
-              ),
-              Text(
-                '$dateText at $time',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: color.AppColors.textPrimary,
-                ),
-              ),
-              SizedBox(height: space.m),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: color.AppColors.background,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 14,
-                      color: color.AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Try selecting another time slot',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: color.AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ========================================
-  // Helper: Calculate Default Rows
-  // ========================================
-  int _calculateDefaultRows(int tableCount, int columns) {
-    return (tableCount / columns).ceil();
-  }
-
-  // ========================================
-  // Table Cell
-  // ========================================
   Widget _buildTableCell(TableInfo table, bool isMyTable) {
     final isSelected = selectedTableNumber == table.tableNumber;
     final isOccupied = table.isOccupied;
@@ -533,9 +553,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
 
     return GestureDetector(
       onTap: () {
-        setState(() {
-          selectedTableNumber = table.tableNumber;
-        });
+        setState(() => selectedTableNumber = table.tableNumber);
         _showTableDetails(table, isMyTable);
       },
       child: Container(
@@ -580,9 +598,6 @@ class _TableGridWidgetState extends State<TableGridWidget> {
     );
   }
 
-  // ========================================
-  // Empty Cell
-  // ========================================
   Widget _buildEmptyCell(String tableNumber) {
     return Container(
       decoration: BoxDecoration(
@@ -603,38 +618,29 @@ class _TableGridWidgetState extends State<TableGridWidget> {
     );
   }
 
-  // ========================================
-  // Helper: Get Table Cell Colors
-  // ========================================
   _TableCellColors _getTableCellColors(
     bool isMyTable,
     bool isSelected,
     bool isOccupied,
   ) {
-    if (isMyTable) {
+    if (isMyTable)
       return _TableCellColors(
         background: color.AppColors.primary,
         border: color.AppColors.primaryDark,
         text: Colors.white,
       );
-    }
-
-    if (isSelected) {
+    if (isSelected)
       return _TableCellColors(
         background: Colors.orange,
         border: Colors.orange[700]!,
         text: Colors.white,
       );
-    }
-
-    if (isOccupied) {
+    if (isOccupied)
       return _TableCellColors(
         background: Colors.green[50]!,
         border: Colors.green,
         text: Colors.green[900]!,
       );
-    }
-
     return _TableCellColors(
       background: Colors.white,
       border: Colors.grey[300]!,
@@ -642,9 +648,6 @@ class _TableGridWidgetState extends State<TableGridWidget> {
     );
   }
 
-  // ========================================
-  // Booth Card
-  // ========================================
   Widget _buildBoothCard(TableInfo booth) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -674,9 +677,6 @@ class _TableGridWidgetState extends State<TableGridWidget> {
     );
   }
 
-  // ========================================
-  // Legend
-  // ========================================
   Widget _buildLegend() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -713,9 +713,6 @@ class _TableGridWidgetState extends State<TableGridWidget> {
     );
   }
 
-  // ========================================
-  // Show Table Details
-  // ========================================
   void _showTableDetails(TableInfo table, bool isMyTable) {
     showModalBottomSheet(
       context: context,
@@ -727,11 +724,166 @@ class _TableGridWidgetState extends State<TableGridWidget> {
           TableDetailSheet(table: table, isMyTable: isMyTable),
     );
   }
-} // ← ปิด _TableGridWidgetState
 
-// ========================================
-// Helper Class: Table Cell Colors
-// ========================================
+  // ========================================
+  // ✅ No Table Dialog — popup ลอยตรงกลาง
+  // ========================================
+  void _showNoTableDialog(BuildContext context, DateTime date, String time) {
+    final dateText = DateTimeHelper.formatFullDate(date);
+    final timesToday = widget.response.timesToday;
+    final currentIndex = timesToday.indexOf(time);
+    final nextSlot = (currentIndex >= 0 && currentIndex + 1 < timesToday.length)
+        ? timesToday[currentIndex + 1]
+        : null;
+    final nextNextSlot =
+        (currentIndex >= 0 && currentIndex + 2 < timesToday.length)
+        ? timesToday[currentIndex + 2]
+        : null;
+    final nextTimeRange = (nextSlot != null && nextNextSlot != null)
+        ? '$nextSlot – $nextNextSlot'
+        : nextSlot;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.event_busy,
+                  size: 48,
+                  color: Colors.grey[400],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'No Table Assigned',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "You don't have a table assignment for",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: color.AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '$dateText at $time',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (nextTimeRange != null) ...[
+                const Divider(),
+                const SizedBox(height: 12),
+                Text(
+                  'Next slot',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: color.AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    widget.onTimeSlotChanged?.call(nextSlot!);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: color.AppColors.primary.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: color.AppColors.primary.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.arrow_forward,
+                          size: 16,
+                          color: color.AppColors.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          nextTimeRange,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: color.AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ] else ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: color.AppColors.background,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: 14,
+                        color: color.AppColors.textSecondary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Try selecting another time slot',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: color.AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('OK'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _TableCellColors {
   final Color background;
   final Color border;
