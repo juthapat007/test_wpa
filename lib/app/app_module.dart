@@ -287,11 +287,35 @@ class AppModule extends Module {
       ),
     );
 
-    // เพิ่มใน routes() ต่อจาก /other_profile เดิม
     r.child(
-      '/other-profile/:id',
+      '/other_profile/:id',
       child: (_) {
         final delegateId = int.tryParse(r.args.params['id'] ?? '');
+
+        if (delegateId == null) {
+          return const Scaffold(
+            body: Center(child: Text('Error: Invalid delegate ID')),
+          );
+        }
+
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider(
+              create: (_) =>
+                  Modular.get<ProfileDetailBloc>()
+                    ..add(LoadProfileDetail(delegateId)),
+            ),
+            BlocProvider.value(value: Modular.get<ChatBloc>()),
+          ],
+          child: OtherProfilePage(delegateId: delegateId),
+        );
+      },
+    );
+    r.child(
+      '/other_profile',
+      child: (_) {
+        final args = r.args.data as Map<String, dynamic>?;
+        final delegateId = args?['delegate_id'] as int?;
 
         if (delegateId == null) {
           return const Scaffold(

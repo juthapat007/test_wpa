@@ -25,9 +25,9 @@ class _NotificationPageState extends State<NotificationPage>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
 
-    ReadContext(context)
-        .read<NotificationBloc>()
-        .add(LoadNotifications(type: 'system'));
+    ReadContext(
+      context,
+    ).read<NotificationBloc>().add(LoadNotifications(type: 'system'));
     ReadContext(context).read<ConnectionBloc>().add(LoadConnectionRequests());
   }
 
@@ -39,13 +39,8 @@ class _NotificationPageState extends State<NotificationPage>
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      title: 'Notifications',
-      currentIndex: -1,
-      showAvatar: false,
-      backgroundColor: color.AppColors.background,
-      actions: [_buildMarkAllReadButton()],
-      body: Column(
+    return Container(
+      child: Column(
         children: [
           _buildTabBar(),
           Expanded(
@@ -71,29 +66,32 @@ class _NotificationPageState extends State<NotificationPage>
         border: Border(bottom: BorderSide(color: Colors.grey[200]!, width: 1)),
       ),
       child: TabBar(
+        isScrollable: true,
         controller: _tabController,
         labelColor: const Color(0xFF1A3A6B),
         unselectedLabelColor: Colors.grey[400],
         indicatorColor: const Color(0xFF1A3A6B),
         indicatorWeight: 2.5,
-        labelStyle:
-            const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-        unselectedLabelStyle:
-            const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+        labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
         onTap: (index) {
           if (index == 0) {
-            ReadContext(context)
-                .read<NotificationBloc>()
-                .add(LoadNotifications(type: 'system'));
+            ReadContext(
+              context,
+            ).read<NotificationBloc>().add(LoadNotifications(type: 'system'));
           } else if (index == 2) {
-            ReadContext(context)
-                .read<ConnectionBloc>()
-                .add(LoadConnectionRequests());
+            ReadContext(
+              context,
+            ).read<ConnectionBloc>().add(LoadConnectionRequests());
           }
         },
         tabs: [
           const Tab(text: 'EVENT PLAN'),
           const Tab(text: 'ATTENDANCE STATUS'),
+
           Tab(
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -134,14 +132,15 @@ class _NotificationPageState extends State<NotificationPage>
     return BlocBuilder<NotificationBloc, NotificationState>(
       builder: (context, state) {
         if (_tabController.index != 0) return const SizedBox.shrink();
-        final hasUnread = state is NotificationLoaded &&
+        final hasUnread =
+            state is NotificationLoaded &&
             state.notifications.any((n) => n.isUnread);
         if (!hasUnread) return const SizedBox.shrink();
         return TextButton(
           onPressed: () {
             ReadContext(context).read<NotificationBloc>().add(
-                  MarkAllNotificationsRead(type: 'system'),
-                );
+              MarkAllNotificationsRead(type: 'system'),
+            );
           },
           child: Text(
             'Read All',
@@ -174,9 +173,9 @@ class _NotificationPageState extends State<NotificationPage>
           }
           return RefreshIndicator(
             onRefresh: () async {
-              ReadContext(context)
-                  .read<NotificationBloc>()
-                  .add(LoadNotifications(type: 'system'));
+              ReadContext(
+                context,
+              ).read<NotificationBloc>().add(LoadNotifications(type: 'system'));
             },
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -189,9 +188,9 @@ class _NotificationPageState extends State<NotificationPage>
                   item: item,
                   onTap: () {
                     if (item.isUnread) {
-                      ReadContext(context)
-                          .read<NotificationBloc>()
-                          .add(MarkNotificationRead(item.id));
+                      ReadContext(context).read<NotificationBloc>().add(
+                        MarkNotificationRead(item.id),
+                      );
                     }
                   },
                 );
@@ -202,9 +201,9 @@ class _NotificationPageState extends State<NotificationPage>
         if (state is NotificationError) {
           return _buildErrorState(
             message: state.message,
-            onRetry: () => ReadContext(context)
-                .read<NotificationBloc>()
-                .add(LoadNotifications(type: 'system')),
+            onRetry: () => ReadContext(
+              context,
+            ).read<NotificationBloc>().add(LoadNotifications(type: 'system')),
           );
         }
         return const SizedBox.shrink();
@@ -250,8 +249,9 @@ class _NotificationPageState extends State<NotificationPage>
         }
 
         if (state is ConnectionRequestLoaded) {
-          final pendingRequests =
-              state.requests.where((r) => r.isPending).toList();
+          final pendingRequests = state.requests
+              .where((r) => r.isPending)
+              .toList();
 
           if (pendingRequests.isEmpty) {
             return _buildEmptyState(
@@ -263,13 +263,12 @@ class _NotificationPageState extends State<NotificationPage>
 
           return RefreshIndicator(
             onRefresh: () async {
-              ReadContext(context)
-                  .read<ConnectionBloc>()
-                  .add(LoadConnectionRequests());
+              ReadContext(
+                context,
+              ).read<ConnectionBloc>().add(LoadConnectionRequests());
             },
             child: ListView.separated(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               itemCount: pendingRequests.length,
               separatorBuilder: (_, __) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
@@ -278,13 +277,13 @@ class _NotificationPageState extends State<NotificationPage>
                   request: request,
                   onConfirm: () {
                     ReadContext(context).read<ConnectionBloc>().add(
-                          AcceptConnectionRequest(request.id),
-                        );
+                      AcceptConnectionRequest(request.id),
+                    );
                   },
                   onNotNow: () {
                     ReadContext(context).read<ConnectionBloc>().add(
-                          RejectConnectionRequest(request.id),
-                        );
+                      RejectConnectionRequest(request.id),
+                    );
                   },
                 );
               },
@@ -295,9 +294,9 @@ class _NotificationPageState extends State<NotificationPage>
         if (state is ConnectionRequestError) {
           return _buildErrorState(
             message: state.message,
-            onRetry: () => ReadContext(context)
-                .read<ConnectionBloc>()
-                .add(LoadConnectionRequests()),
+            onRetry: () => ReadContext(
+              context,
+            ).read<ConnectionBloc>().add(LoadConnectionRequests()),
           );
         }
 
@@ -450,8 +449,7 @@ class _NotificationTile extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       _formatTime(item.createdAt),
-                      style:
-                          TextStyle(fontSize: 12, color: Colors.grey[400]),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[400]),
                     ),
                   ],
                 ),
@@ -602,10 +600,7 @@ class _FriendRequestCard extends StatelessWidget {
                     _buildSubtitle(sender),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[500],
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.grey[500]),
                   ),
               ],
             ),
@@ -617,17 +612,9 @@ class _FriendRequestCard extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _ActionButton(
-                label: 'Not Now',
-                onTap: onNotNow,
-                isFilled: false,
-              ),
+              _ActionButton(label: 'Not Now', onTap: onNotNow, isFilled: false),
               const SizedBox(width: 8),
-              _ActionButton(
-                label: 'Confirm',
-                onTap: onConfirm,
-                isFilled: true,
-              ),
+              _ActionButton(label: 'Confirm', onTap: onConfirm, isFilled: true),
             ],
           ),
         ],

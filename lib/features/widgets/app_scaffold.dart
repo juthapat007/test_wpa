@@ -179,7 +179,7 @@ class AppScaffold extends StatelessWidget {
             clipBehavior: Clip.none,
             children: [
               IconButton(
-                onPressed: () => Modular.to.navigate('/notification'),
+                onPressed: () => Modular.to.pushNamed('/notification'),
                 icon: const Icon(
                   Icons.notifications_outlined,
                   color: color.AppColors.textSecondary,

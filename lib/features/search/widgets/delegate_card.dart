@@ -22,6 +22,10 @@ class DelegateCard extends StatelessWidget {
             arguments: {'delegate_id': delegate.id},
           );
         },
+        // delegate_card.dart
+        // onTap: () {
+        //   Modular.to.pushNamed('/other-profile/${delegate.id}');
+        // },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(14),

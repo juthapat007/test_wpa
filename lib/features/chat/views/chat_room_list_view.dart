@@ -60,7 +60,7 @@ class ChatRoomListView extends StatelessWidget {
                           // ✅ แค่ navigate ไป profile อย่างเดียว ไม่ต้อง SelectChatRoom
                           final id = int.tryParse(room.participantId);
                           if (id != null) {
-                            Modular.to.pushNamed('/other-profile/$id');
+                            Modular.to.pushNamed('/other_profile/$id');
                           }
                         },
                       );

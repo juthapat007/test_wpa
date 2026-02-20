@@ -132,7 +132,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         backgroundColor: AppColors.background,
         appBar: AppBar(
           title: const Text('Change Password'),
-          backgroundColor: AppColors.surface,
+          backgroundColor: AppColors.border,
           elevation: 0,
         ),
         body: BlocBuilder<AuthBloc, AuthState>(
