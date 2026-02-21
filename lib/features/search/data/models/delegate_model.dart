@@ -42,7 +42,7 @@ class DelegateModel {
       isConnected: json['is_connected'] ?? false,
       teamId: json['team_id'],
       firstLogin: json['first_login'],
-      connectionStatus: json['connection_status'] ?? 'none', // ✅
+      connectionStatus: json['connection_status'] ?? 'none', 
     );
   }
 
@@ -58,7 +58,7 @@ class DelegateModel {
       isConnected: isConnected,
       teamId: teamId ?? 0,
       firstLogin: firstLogin ?? false,
-      connectionStatus: connectionStatus, // ✅
+      connectionStatus: connectionStatus, 
     );
   }
 

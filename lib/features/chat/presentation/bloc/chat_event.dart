@@ -3,7 +3,8 @@ part of 'chat_bloc.dart';
 @immutable
 sealed class ChatEvent {}
 
-// WebSocket Events
+// ─── WebSocket ────────────────────────────────────────────────────────────────
+
 class ConnectWebSocket extends ChatEvent {}
 
 class DisconnectWebSocket extends ChatEvent {}
@@ -18,11 +19,12 @@ class WebSocketConnectionChanged extends ChatEvent {
   WebSocketConnectionChanged(this.isConnected);
 }
 
-// Chat Room Events
+// ─── Chat Rooms ───────────────────────────────────────────────────────────────
+
 class LoadChatRooms extends ChatEvent {}
 
-/// Resets internal chat room state and reloads from the server.
-/// Use this when re-entering the chat tab to get accurate unread counts.
+/// Reset internal state แล้วโหลดใหม่จาก server
+/// ใช้เมื่อ re-enter chat tab เพื่อให้ unread count ถูกต้อง
 class ResetAndLoadChatRooms extends ChatEvent {}
 
 class SelectChatRoom extends ChatEvent {
@@ -38,19 +40,18 @@ class CreateChatRoom extends ChatEvent {
   CreateChatRoom(this.participantId, this.participantName);
 }
 
-// Message Events
+// ─── Messages ─────────────────────────────────────────────────────────────────
+
 class LoadChatHistory extends ChatEvent {
   final String roomId;
   final int? limit;
   LoadChatHistory(this.roomId, {this.limit});
 }
 
-// ✨ Event สำหรับโหลดข้อความเก่าเพิ่ม (infinite scroll)
 class LoadMoreMessages extends ChatEvent {
   final String roomId;
   final int page;
   final int limit;
-
   LoadMoreMessages({required this.roomId, required this.page, this.limit = 50});
 }
 
@@ -71,20 +72,20 @@ class MarkAsRead extends ChatEvent {
   MarkAsRead(this.roomId);
 }
 
-/// Handles incoming read receipt from WebSocket (the other user read our message).
+/// Read receipt จาก WebSocket — อีกฝ่ายอ่านข้อความของเราแล้ว
 class MessageReadReceived extends ChatEvent {
   final String messageId;
   final DateTime readAt;
   MessageReadReceived({required this.messageId, required this.readAt});
 }
 
-/// Handles real-time message deletion from WebSocket.
+/// Real-time message deletion จาก WebSocket
 class WebSocketMessageDeleted extends ChatEvent {
   final String messageId;
   WebSocketMessageDeleted({required this.messageId});
 }
 
-/// Handles real-time message edit from WebSocket.
+/// Real-time message edit จาก WebSocket
 class WebSocketMessageUpdated extends ChatEvent {
   final String messageId;
   final String content;
@@ -96,36 +97,36 @@ class WebSocketMessageUpdated extends ChatEvent {
   });
 }
 
-// ============ 🆕 NEW: Typing Indicator Events ============
+// ─── Typing ───────────────────────────────────────────────────────────────────
 
-/// Received from WebSocket: other started typing
+/// อีกฝ่ายเริ่มพิมพ์
 class TypingStarted extends ChatEvent {
   final String userId;
   TypingStarted(this.userId);
 }
 
-/// Received from WebSocket: other stopped typing
+/// อีกฝ่ายหยุดพิมพ์
 class TypingStopped extends ChatEvent {
   final String userId;
   TypingStopped(this.userId);
 }
 
-/// Send typing indicator to WebSocket
+/// ส่ง typing indicator ไปยัง WebSocket
 class SendTypingIndicator extends ChatEvent {
   final String recipientId;
   final bool isTyping;
   SendTypingIndicator({required this.recipientId, required this.isTyping});
 }
 
-// ============ 🆕 NEW: User Message Actions ============
+// ─── User Actions ─────────────────────────────────────────────────────────────
 
-/// Delete a message (local user action)
+/// ลบข้อความ (action จาก user ฝั่งเรา)
 class DeleteMessageLocal extends ChatEvent {
   final String messageId;
   DeleteMessageLocal(this.messageId);
 }
 
-/// Edit a message (local user action)
+/// แก้ไขข้อความ (action จาก user ฝั่งเรา)
 class UpdateMessageLocal extends ChatEvent {
   final String messageId;
   final String newContent;

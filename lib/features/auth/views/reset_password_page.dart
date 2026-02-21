@@ -1,5 +1,3 @@
-// lib/features/auth/views/reset_password_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_modular/flutter_modular.dart';
@@ -60,11 +58,13 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 color: AppColors.success,
                 size: 48,
               ),
+
               title: const Text(
                 'Password Reset!',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
+
               content: const Text(
                 'Your password has been reset successfully.\nPlease login with your new password.',
                 textAlign: TextAlign.center,
@@ -116,7 +116,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                       SizedBox(height: space.xl),
+                      SizedBox(height: space.xl),
 
                       // Icon
                       Container(
@@ -132,19 +132,24 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         ),
                       ),
 
-                       SizedBox(height: space.l),
+                      SizedBox(height: space.l),
 
                       // Title
-                      const Text(
-                        'Create a secure password',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
+                      AppBar(
+                        title: const Text('Create a secure password'),
+                        backgroundColor: AppColors.background,
+                        elevation: 0,
                       ),
 
-                       SizedBox(height: space.xs),
+                      // const Text(
+                      //   'Create a secure password',
+                      //   style: TextStyle(
+                      //     fontSize: 22,
+                      //     fontWeight: FontWeight.bold,
+                      //     color: AppColors.textPrimary,
+                      //   ),
+                      // ),
+                      SizedBox(height: space.xs),
 
                       const Text(
                         'Please enter a strong password',
@@ -154,7 +159,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         ),
                       ),
 
-                       SizedBox(height: space.xl),
+                      SizedBox(height: space.xl),
 
                       // New Password
                       AppTextFormField(
@@ -175,29 +180,29 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         },
                       ),
 
-                       SizedBox(height: space.m),
+                      SizedBox(height: space.m),
 
                       // Confirm Password
-                   AppTextFormField(
-  controller: _confirmPasswordCtrl,
-  label: 'Confirm new password',
-  icon: Icons.lock_outlined,
-  obscureText: true,
-  enabled: !isLoading,
-  textInputAction: TextInputAction.done,
-  // ลบบรรทัด onSubmitted ออก
-  validator: (value) {
-    if (value == null || value.isEmpty) {
-      return 'Please confirm your password';
-    }
-    if (value != _newPasswordCtrl.text) {
-      return 'Passwords do not match';
-    }
-    return null;
-  },
-),
+                      AppTextFormField(
+                        controller: _confirmPasswordCtrl,
+                        label: 'Confirm new password',
+                        icon: Icons.lock_outlined,
+                        obscureText: true,
+                        enabled: !isLoading,
+                        textInputAction: TextInputAction.done,
+                        // ลบบรรทัด onSubmitted ออก
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please confirm your password';
+                          }
+                          if (value != _newPasswordCtrl.text) {
+                            return 'Passwords do not match';
+                          }
+                          return null;
+                        },
+                      ),
 
-                       SizedBox(height: space.l),
+                      SizedBox(height: space.l),
 
                       // Reset Button
                       isLoading
@@ -210,6 +215,12 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                               backgroundColor: AppColors.primary,
                               onPressed: _handleReset,
                             ),
+                      const Spacer(),
+                      AppButton(
+                        text: 'Back to login',
+                        backgroundColor: AppColors.background,
+                        onPressed: () => Modular.to.navigate('/'),
+                      ),
                     ],
                   ),
                 ),

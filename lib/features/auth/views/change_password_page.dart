@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 import 'package:test_wpa/features/auth/presentation/bloc/auth_bloc.dart';
@@ -36,6 +35,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     // ✅ capture bloc ก่อนเปิด dialog เพราะ dialog context ไม่มี AuthBloc
     final bloc = BlocProvider.of<AuthBloc>(context);
 
+    // showDialog เอาไว้แสดง pop_up
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -51,7 +51,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   onPressed: () => Navigator.pop(dialogContext),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: space.xs),
               Expanded(
                 child: AppButton(
                   text: 'Confirm',
@@ -61,7 +61,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                     Navigator.pop(dialogContext);
                     bloc.add(
                       AuthChangePassword(
-                        // ✅ ใช้ captured bloc
+                        //  ใช้ captured bloc
                         currentPassword: _currentPasswordCtrl.text,
                         newPassword: _newPasswordCtrl.text,
                         newPasswordConfirmation: _confirmPasswordCtrl.text,
@@ -177,18 +177,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                         ),
                       ),
 
-                      const SizedBox(height: space.xs),
-
-                      const Center(
-                        child: Text(
-                          'You will be logged out after changing',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-
                       const SizedBox(height: space.xl),
 
                       // Current Password
@@ -252,7 +240,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                         },
                       ),
 
-                      const SizedBox(height: space.l),
+                       SizedBox(height: space.l),
 
                       isLoading
                           ? const Center(

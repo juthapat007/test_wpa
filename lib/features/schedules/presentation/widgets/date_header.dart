@@ -1,49 +1,61 @@
+// lib/features/widgets/date_header.dart
+
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:test_wpa/core/theme/app_colors.dart';
+import 'package:test_wpa/core/theme/app_colors.dart' as color;
+import 'package:test_wpa/core/utils/date_time_helper.dart';
 
-class DateHeader extends StatelessWidget {
-  final DateTime selectedDate;
-  final VoidCallback onCalendarTap;
+class DateHeader extends StatefulWidget {
+  const DateHeader({super.key});
 
-  const DateHeader({
-    super.key,
-    required this.selectedDate,
-    required this.onCalendarTap,
-  });
+  @override
+  State<DateHeader> createState() => _DateHeaderState();
+}
+
+class _DateHeaderState extends State<DateHeader> {
+  late DateTime _now;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _now = DateTime.now();
+    _timer = Timer.periodic(const Duration(minutes: 1), (_) {
+      setState(() => _now = DateTime.now());
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate = DateFormat('d MMMM yyyy').format(selectedDate);
+    final dateText = DateTimeHelper.formatFullDate(_now);
+    final timeText = DateTimeHelper.formatTime12(_now);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
         children: [
           Text(
-            formattedDate,
+            dateText,
             style: TextStyle(
-              fontFamily: 'Playfair Display',
               fontSize: 16,
-              color: AppColors.primary,
-              backgroundColor: AppColors.background,
+              fontWeight: FontWeight.w600,
+              color: color.AppColors.textPrimary,
             ),
           ),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(10),
-              onTap: onCalendarTap,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: const Icon(
-                  Icons.today,
-                  color: AppColors.primary,
-                  size: 30,
-                ),
-              ),
+          const SizedBox(width: 10),
+          Text(
+            timeText,
+            style: TextStyle(
+              fontSize: 13,
+              color: color.AppColors.textSecondary,
             ),
           ),
         ],

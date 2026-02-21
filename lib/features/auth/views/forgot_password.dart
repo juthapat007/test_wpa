@@ -36,8 +36,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     ReadContext(context).read<AuthBloc>().add(AuthForgotPassword(email: email));
   }
 
-  
-
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthBloc, AuthState>(
@@ -72,15 +70,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     SizedBox(height: space.l),
-                    const Text(
-                      'Forgot password?',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
+                    AppBar(
+                      title: const Text('Forgot password?'),
+                      backgroundColor: AppColors.background,
+                      elevation: 0,
                     ),
-                    SizedBox(height: space.xs),
+
                     const Text(
                       'Please enter your email to send the password reset link',
                       style: TextStyle(
@@ -88,7 +83,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         color: AppColors.textSecondary,
                       ),
                     ),
-                    SizedBox(height: space.xl),
+                    SizedBox(height: space.l),
                     AppTextFormField(
                       controller: emailController,
                       label: 'Email',

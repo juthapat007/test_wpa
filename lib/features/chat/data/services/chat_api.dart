@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
+import 'package:logger/logger.dart';
+import 'package:test_wpa/core/constants/print_logger.dart';
 
 class ChatApi {
   final Dio dio;
@@ -10,69 +11,45 @@ class ChatApi {
   Future<Response> getChatRooms() async {
     try {
       final response = await dio.get('/messages/rooms');
-      debugPrint('📋 Chat rooms loaded: ${response.data}');
+      log.d('Chat rooms loaded: ${response.data}');
       return response;
     } catch (e) {
-      debugPrint('❌ Error loading chat rooms: $e');
+      log.e('Error loading chat rooms', error: e);
       rethrow;
     }
   }
 
-  /// ดึงประวัติข้อความกับคนใดคนหนึ่ง
-  /// partnerId = ID ของคู่สนทนา
-  /// page = หน้าที่ต้องการ (default = 1 คือหน้าล่าสุด)
-  /// perPage = จำนวนข้อความต่อหน้า
+  /// ดึงประวัติข้อความกับคนใดคนหนึ่ง(กันลืม)
+  /// [partnerId] = ID ของคู่สนทนา
+  /// [page] = หน้าที่ต้องการ (default = 1 คือหน้าล่าสุด)
+  /// [perPage] = จำนวนข้อความต่อหน้า
   Future<Response> getChatHistory({
     required String partnerId,
     int? page,
     int? perPage,
   }) async {
     try {
-      final queryParams = <String, dynamic>{};
-      if (page != null) queryParams['page'] = page;
-      if (perPage != null) queryParams['per_page'] = perPage;
+      final queryParams = <String, dynamic>{
+        if (page != null) 'page': page,
+        if (perPage != null) 'per_page': perPage,
+      };
 
       final response = await dio.get(
         '/messages/conversation/$partnerId',
         queryParameters: queryParams.isNotEmpty ? queryParams : null,
       );
-      debugPrint('Chat history loaded for partner $partnerId');
+      log.d('Chat history loaded for partner $partnerId');
       return response;
     } catch (e) {
-      debugPrint('Error loading chat history: $e');
+      log.e('Error loading chat history for partner $partnerId', error: e);
       rethrow;
     }
   }
 
-  /// ส่งข้อความ (ผ่าน REST API)
-  // Future<Response> sendMessage({
-  //   required int chatRoomId,
-  //   required String content,
-  //   // String? tempId,
-  // }) async {
-  //   try {
-  //     final response = await dio.post(
-  //       '/messages',
-  //       data: {
-  //         'message': {'content': content, 'chat_room_id': chatRoomId},
-  //       },
-  //       // data: {
-  //       //   'recipient_id': int.parse(recipientId),
-  //       //   'content': content,
-  //       //   if (tempId != null) 'tempId': tempId,
-  //       // },
-  //     );
-  //     debugPrint('✅ Message sent: ${response.data}');
-  //     return response;
-  //   } catch (e) {
-  //     debugPrint('❌ Error sending message: $e');
-  //     rethrow;
-  //   }
-  // }
   Future<Response> sendMessage({
     required int chatRoomId,
     required String content,
-    required String recipientId, // ✅ เพิ่ม field นี้
+    required String recipientId,
   }) async {
     try {
       final response = await dio.post(
@@ -81,14 +58,14 @@ class ChatApi {
           'message': {
             'content': content,
             'chat_room_id': chatRoomId,
-            'recipient_id': int.parse(recipientId), // ✅ ส่งไปด้วย
+            'recipient_id': int.parse(recipientId),
           },
         },
       );
-      debugPrint('✅ Message sent: ${response.data}');
+      log.i('Message sent: ${response.data}');
       return response;
     } catch (e) {
-      debugPrint('❌ Error sending message: $e');
+      log.e('Error sending message', error: e);
       rethrow;
     }
   }
@@ -100,23 +77,22 @@ class ChatApi {
         '/messages/read_all',
         data: {'sender_id': int.parse(senderId)},
       );
-      debugPrint('Messages marked as read');
+      log.d('All messages from $senderId marked as read');
       return response;
     } catch (e) {
-      debugPrint('Error marking all as read: $e');
+      log.e('Error marking all as read', error: e);
       rethrow;
     }
   }
 
   /// Mark a single message as read
-  /// Endpoint: PATCH /api/v1/messages/{id}/mark_as_read
   Future<Response> markMessageAsRead(String messageId) async {
     try {
       final response = await dio.patch('/messages/$messageId/mark_as_read');
-      debugPrint('Message $messageId marked as read');
+      log.d('Message $messageId marked as read');
       return response;
     } catch (e) {
-      debugPrint('Error marking message $messageId as read: $e');
+      log.e('Error marking message $messageId as read', error: e);
       rethrow;
     }
   }
@@ -133,10 +109,10 @@ class ChatApi {
           'message': {'content': content},
         },
       );
-      debugPrint('✅ Message updated');
+      log.i('Message $messageId updated');
       return response;
     } catch (e) {
-      debugPrint('❌ Error updating message: $e');
+      log.e('Error updating message $messageId', error: e);
       rethrow;
     }
   }
@@ -145,10 +121,10 @@ class ChatApi {
   Future<Response> deleteMessage(String messageId) async {
     try {
       final response = await dio.delete('/messages/$messageId');
-      debugPrint('✅ Message deleted');
+      log.i('Message $messageId deleted');
       return response;
     } catch (e) {
-      debugPrint('❌ Error deleting message: $e');
+      log.e('Error deleting message $messageId', error: e);
       rethrow;
     }
   }
@@ -157,26 +133,26 @@ class ChatApi {
   Future<Response> deleteConversation(String partnerId) async {
     try {
       final response = await dio.delete('/messages/conversation/$partnerId');
-      debugPrint('✅ Conversation deleted');
+      log.i('Conversation with $partnerId deleted');
       return response;
     } catch (e) {
-      debugPrint('❌ Error deleting conversation: $e');
+      log.e('Error deleting conversation with $partnerId', error: e);
       rethrow;
     }
   }
 
-  // /// สร้างห้องแชทใหม่
+  /// สร้างห้องแชทใหม่
   Future<Response> createChatRoom({required String title}) async {
     try {
       final body = {
         'chat_room': {'title': title, 'room_kind': 'group'},
       };
-      debugPrint('📤 createChatRoom body: $body');
+      log.d('createChatRoom body: $body');
       final response = await dio.post('/chat_rooms', data: body);
-      debugPrint('✅ Chat room created: ${response.data}');
+      log.i('Chat room created: ${response.data}');
       return response;
     } catch (e) {
-      debugPrint('❌ Error creating chat room: $e');
+      log.e('Error creating chat room', error: e);
       rethrow;
     }
   }

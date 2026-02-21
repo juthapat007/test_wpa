@@ -25,10 +25,10 @@ class DeepLinkService {
       final token = uri.queryParameters['token'];
 
       if (token != null && token.isNotEmpty) {
-        print('✅ Reset token found: $token');
+        print('Reset token found: $token');
         Modular.to.navigate('/reset_password', arguments: token);
       } else {
-        print('❌ Token not found in deep link');
+        print('Token not found in deep link');
       }
     }
   }

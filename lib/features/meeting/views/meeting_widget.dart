@@ -10,6 +10,7 @@ import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_state.dart';
+import 'package:test_wpa/features/schedules/presentation/widgets/date_header.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_event_card.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 import 'package:test_wpa/features/schedules/utils/schedule_card_helper.dart';
@@ -50,6 +51,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
             slotType = TimeSlotType.meeting;
         }
       }
+      ;
 
       // ใส่ทั้ง format เผื่อ backend ส่งต่างกัน
       map[timeKey] = slotType; // "9:00 AM"
@@ -133,9 +135,9 @@ class _MeetingWidgetState extends State<MeetingWidget> {
       }
 
       if (targetSchedule != null) {
-        timeToUse = DateTimeHelper.formatApiTime12(targetSchedule.startAt);
+        timeToUse = DateTimeHelper.formatTime12(targetSchedule.startAt);
       } else {
-        timeToUse = DateTimeHelper.formatApiTime12(DateTime.now());
+        timeToUse = DateTimeHelper.formatTime12(DateTime.now());
       }
     } else {
       // Schedule not loaded yet, use defaults
@@ -241,6 +243,9 @@ class _MeetingWidgetState extends State<MeetingWidget> {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            // ========== Date Header ==========
+            const DateHeader(),
+
             // ========== Date Tab Bar ==========
             BlocBuilder<ScheduleBloc, ScheduleState>(
               buildWhen: (prev, curr) => curr is ScheduleLoaded,

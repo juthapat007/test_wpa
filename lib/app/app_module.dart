@@ -64,7 +64,6 @@ import 'package:test_wpa/features/chat/data/services/chat_api.dart';
 import 'package:test_wpa/features/chat/data/services/chat_websocket_service.dart';
 import 'package:test_wpa/features/chat/domain/repositories/chat_repository.dart';
 import 'package:test_wpa/features/chat/presentation/bloc/chat_bloc.dart';
-import 'package:test_wpa/features/chat/presentation/widgets/chat_room_list_widget.dart';
 import 'package:test_wpa/features/chat/presentation/pages/chat_conversation_page.dart';
 
 // Notification
@@ -344,11 +343,11 @@ class AppModule extends Module {
       ),
     );
     r.child(
-  '/reset_password',
-  child: (_) => BlocProvider<AuthBloc>(
-    create: (_) => Modular.get<AuthBloc>(),
-    child: ResetPasswordPage(token: r.args.data as String),
-  ),
-);
+      '/reset_password',
+      child: (_) => BlocProvider<AuthBloc>(
+        create: (_) => Modular.get<AuthBloc>(),
+        child: ResetPasswordPage(token: r.args.data as String),
+      ),
+    );
   }
 }

@@ -37,26 +37,17 @@ class TimelineRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 55,
-          child: Column(
+          height: 120,
+          width: 50,
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 10),
               Text(
                 _formatTime(timeToDisplay),
                 style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                   color: Colors.grey,
-                  height: 1,
-                ),
-              ),
-              Text(
-                _formatPeriod(timeToDisplay),
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: color.AppColors.textSecondary,
                   height: 1,
                 ),
               ),

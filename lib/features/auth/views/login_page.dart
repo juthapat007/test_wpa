@@ -110,13 +110,19 @@ class _LoginPageState extends State<LoginPage> {
                       },
                     ),
                     SizedBox(height: space.xl),
-                    SizedBox(width: double.infinity, height: 48),
-                    AppButton(
-                      text: 'Login',
-                      textColor: AppColors.textOnPrimary,
-                      backgroundColor: AppColors.primary,
-                      onPressed: _handleLogin,
-                    ),
+                    isLoading
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.primary,
+                            ),
+                          )
+                        : AppButton(
+                            text: 'Login',
+                            textColor: AppColors.textOnPrimary,
+                            backgroundColor: AppColors.primary,
+                            onPressed: _handleLogin,
+                          ),
+
                     SizedBox(height: space.m),
                     AppButton(
                       text: 'Forgot Password',

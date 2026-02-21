@@ -9,7 +9,7 @@ class AuthInterceptor extends Interceptor {
     RequestInterceptorHandler handler,
   ) async {
     if (options.path.contains('/login')) {
-      print('Skip auth for login');
+      // print('Skip auth for login');
       return handler.next(options);
     }
 
@@ -18,7 +18,6 @@ class AuthInterceptor extends Interceptor {
 
     if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
-      // print('Token attached: Bearer ${token.substring(0, 20)}...');
     } else {
       print('No token found');
     }

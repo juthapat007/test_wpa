@@ -1,5 +1,3 @@
-// lib/features/meeting/widgets/table_grid_widget.dart
-
 import 'package:flutter/material.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
@@ -50,11 +48,15 @@ class _TableGridWidgetState extends State<TableGridWidget> {
     final hasNoAssignment = widget.response.myTable.isEmpty;
     final hasNoTables = widget.response.tables.isEmpty;
 
-    // ✅ trigger popup หลัง build เสร็จ ถ้าไม่มีโต๊ะ
+    // แสดง dialog เมื่อไม่มีข้อมูลโต๊ะ
     if (hasNoTables) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          _showNoTableDialog(context, selectedDate, widget.response.time);
+          _showNoTableDialog(
+            context,
+            DateTimeHelper.parseSafeDate(widget.response.date),
+            widget.response.time,
+          );
         }
       });
     }
@@ -67,8 +69,6 @@ class _TableGridWidgetState extends State<TableGridWidget> {
         children: [
           _buildTimeSlotHeader(),
           const SizedBox(height: 12),
-
-          // ✅ มีโต๊ะ → แสดงปกติ, ไม่มีโต๊ะ → ไม่ render อะไร popup จะขึ้นเอง
           if (!hasNoTables) ...[
             if (!hasNoAssignment) _buildMyTableBanner(),
             if (hasNoAssignment) _buildNoAssignmentBanner(),
@@ -103,8 +103,22 @@ class _TableGridWidgetState extends State<TableGridWidget> {
         ? timesToday[currentIndex + 1]
         : null;
     final timeRange = nextTime != null
-        ? '$currentTime – $nextTime'
-        : currentTime;
+        ? DateTimeHelper.formatTimeRange12(
+            DateTimeHelper.parseFlexibleDateTime(
+              currentTime,
+              widget.response.date,
+            ),
+            DateTimeHelper.parseFlexibleDateTime(
+              nextTime,
+              widget.response.date,
+            ),
+          )
+        : DateTimeHelper.formatTime12(
+            DateTimeHelper.parseFlexibleDateTime(
+              currentTime,
+              widget.response.date,
+            ),
+          );
 
     return Container(
       width: double.infinity,
@@ -180,14 +194,6 @@ class _TableGridWidgetState extends State<TableGridWidget> {
               ],
             ),
           ),
-          Text(
-            myTable,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.15),
-              fontSize: 64,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
         ],
       ),
     );
@@ -199,16 +205,27 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   Widget _buildTimeSlotHeader() {
     final currentTime = widget.response.time;
     final timesToday = widget.response.timesToday;
-    final dateText = DateTimeHelper.formatFullDate(
-      DateTimeHelper.parseSafeDate(widget.response.date),
-    );
+    final date = widget.response.date;
     final currentIndex = timesToday.indexOf(currentTime);
     final nextTime = (currentIndex >= 0 && currentIndex + 1 < timesToday.length)
         ? timesToday[currentIndex + 1]
         : null;
-    final timeDisplay = nextTime != null
-        ? '$currentTime – $nextTime'
-        : currentTime;
+
+    // ✅ parse string → DateTime แล้วใช้ formatTimeRange12
+    String timeDisplay;
+    if (nextTime != null) {
+      final startDt = DateTimeHelper.parseFlexibleDateTime(currentTime, date);
+      final endDt = DateTimeHelper.parseFlexibleDateTime(nextTime, date);
+      timeDisplay = DateTimeHelper.formatTimeRange12(startDt, endDt);
+      // → "04:40 AM - 05:00 AM"
+    } else {
+      final dt = DateTimeHelper.parseFlexibleDateTime(currentTime, date);
+      timeDisplay = DateTimeHelper.formatTime12(dt);
+    }
+
+    final dateText = DateTimeHelper.formatFullDate(
+      DateTimeHelper.parseSafeDate(date),
+    );
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -231,6 +248,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
               ),
             ),
           ),
+
           if (timesToday.isNotEmpty)
             Material(
               color: Colors.transparent,
@@ -379,9 +397,25 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                               final nextTime = index + 1 < timesToday.length
                                   ? timesToday[index + 1]
                                   : null;
+                              final date = widget.response.date;
+
                               final label = nextTime != null
-                                  ? '$time – $nextTime'
-                                  : time;
+                                  ? DateTimeHelper.formatTimeRange12(
+                                      DateTimeHelper.parseFlexibleDateTime(
+                                        time,
+                                        date,
+                                      ),
+                                      DateTimeHelper.parseFlexibleDateTime(
+                                        nextTime,
+                                        date,
+                                      ),
+                                    )
+                                  : DateTimeHelper.formatTime12(
+                                      DateTimeHelper.parseFlexibleDateTime(
+                                        time,
+                                        date,
+                                      ),
+                                    );
                               return TimeSlotChip(
                                 time: label,
                                 isSelected: isSelected,
@@ -556,16 +590,20 @@ class _TableGridWidgetState extends State<TableGridWidget> {
         setState(() => selectedTableNumber = table.tableNumber);
         _showTableDetails(table, isMyTable);
       },
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
         decoration: BoxDecoration(
           color: colors.background,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: colors.border, width: 2),
+          border: Border.all(
+            color: colors.border,
+            width: isMyTable || isSelected ? 2 : 1,
+          ),
           boxShadow: isMyTable || isSelected
               ? [
                   BoxShadow(
-                    color: colors.border.withOpacity(0.3),
-                    blurRadius: 8,
+                    color: colors.border.withOpacity(0.4),
+                    blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
                 ]
@@ -582,16 +620,11 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                 color: colors.text,
               ),
             ),
+            const SizedBox(height: 2),
             if (isMyTable)
-              const Padding(
-                padding: EdgeInsets.only(top: 2),
-                child: Icon(Icons.person_pin, size: 14, color: Colors.white),
-              )
+              Icon(Icons.person_pin, size: 14, color: colors.text)
             else if (isOccupied)
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Icon(Icons.person, size: 12, color: Colors.green[900]),
-              ),
+              Icon(Icons.people, size: 12, color: colors.text),
           ],
         ),
       ),
@@ -726,7 +759,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   }
 
   // ========================================
-  // ✅ No Table Dialog — popup ลอยตรงกลาง
+  // ✅ No Table Dialog
   // ========================================
   void _showNoTableDialog(BuildContext context, DateTime date, String time) {
     final dateText = DateTimeHelper.formatFullDate(date);
@@ -740,8 +773,24 @@ class _TableGridWidgetState extends State<TableGridWidget> {
         ? timesToday[currentIndex + 2]
         : null;
     final nextTimeRange = (nextSlot != null && nextNextSlot != null)
-        ? '$nextSlot – $nextNextSlot'
-        : nextSlot;
+        ? DateTimeHelper.formatTimeRange12(
+            DateTimeHelper.parseFlexibleDateTime(
+              nextSlot,
+              widget.response.date,
+            ),
+            DateTimeHelper.parseFlexibleDateTime(
+              nextNextSlot,
+              widget.response.date,
+            ),
+          )
+        : nextSlot != null
+        ? DateTimeHelper.formatTime12(
+            DateTimeHelper.parseFlexibleDateTime(
+              nextSlot,
+              widget.response.date,
+            ),
+          )
+        : null;
 
     showDialog(
       context: context,

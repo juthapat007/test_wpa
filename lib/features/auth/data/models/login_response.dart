@@ -20,7 +20,6 @@ class LoginResponse {
     return LoginResponse(
       accessToken: token,
       refreshToken: json['refreshToken'] ?? '',
-      // 👇 ตรงนี้สำคัญ
       user: json['user'] != null
           ? User.fromJson(json['user'])
           : json['delegate'] != null

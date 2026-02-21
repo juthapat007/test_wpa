@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+// import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:test_wpa/core/constants/setup_Logger.dart';
 import 'package:test_wpa/core/interceptors/auth_interceptor.dart';
 
@@ -9,7 +9,7 @@ class DioClient {
   DioClient._internal();
   //internal
 
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  // final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   final Dio dio = Dio(
     BaseOptions(

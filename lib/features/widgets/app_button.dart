@@ -18,7 +18,7 @@ class AppButton extends StatelessWidget {
     this.backgroundColor,
 
     this.textColor,
-    this.borderRadius = 12,
+    this.borderRadius = 6,
     this.width = double.infinity,
     this.isLoading = false,
   });
@@ -28,7 +28,7 @@ class AppButton extends StatelessWidget {
     final bool isDisabled = onPressed == null || isLoading;
 
     return SizedBox(
-      height: height.m,
+      height: space.xxl,
       width: width,
       child: ElevatedButton(
         onPressed: isDisabled ? null : onPressed,

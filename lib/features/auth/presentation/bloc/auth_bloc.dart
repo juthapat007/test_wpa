@@ -1,5 +1,3 @@
-// lib/features/auth/presentation/bloc/auth_bloc.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:meta/meta.dart';
@@ -32,6 +30,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         password: event.password,
       );
       await DioClient().init();
+      // final fcmToken = await FirebaseMessaging.instance.getToken();
+      // if (fcmToken != null) {
+      //   await authRepository.registerDeviceToken(fcmToken);
+      // }
       emit(
         AuthAuthenticated(
           avatarUrl: result.user?.avatarUrl,
@@ -103,7 +105,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         newPassword: event.newPassword,
         newPasswordConfirmation: event.newPasswordConfirmation,
       );
-      // await authRepository.logout(); // ล้าง token ออกจาก storage
       emit(ChangePasswordSuccess());
     } catch (e) {
       emit(ChangePasswordError(e.toString()));
