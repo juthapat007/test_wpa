@@ -14,6 +14,7 @@ class TableGridWidget extends StatefulWidget {
   final Schedule? currentSchedule;
   final ValueChanged<String>? onTimeSlotChanged;
   final Map<String, TimeSlotType> slotTypeMap;
+  final List<Schedule> schedules;
 
   const TableGridWidget({
     super.key,
@@ -21,6 +22,7 @@ class TableGridWidget extends StatefulWidget {
     this.currentSchedule,
     this.onTimeSlotChanged,
     this.slotTypeMap = const {},
+    this.schedules = const [],
   });
 
   @override
@@ -58,6 +60,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
           TableSlotHeader(
             response: widget.response,
             slotTypeMap: widget.slotTypeMap,
+            schedules: widget.schedules,
             onTimeSlotChanged: widget.onTimeSlotChanged,
           ),
           const SizedBox(height: 12),

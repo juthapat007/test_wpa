@@ -50,7 +50,9 @@ class TimeSlotHelper {
       case TimeSlotType.breakTime:
         return Colors.amber[50]!;
       case TimeSlotType.free:
-        return Colors.blue[50]!;
+        return isSelected
+            ? Colors.blue[700]!
+            : Colors.blue[50]!; // เปลี่ยนตรงนี้
       case TimeSlotType.meeting:
       case TimeSlotType.unknown:
         return Colors.grey[100]!;
@@ -65,7 +67,9 @@ class TimeSlotHelper {
       case TimeSlotType.breakTime:
         return isSelected ? Colors.amber[700]! : Colors.amber[300]!;
       case TimeSlotType.free:
-        return isSelected ? color.AppColors.info : Colors.blue[200]!;
+        return isSelected
+            ? Colors.blue[700]!
+            : Colors.blue[50]!; // เปลี่ยนตรงนี้
       case TimeSlotType.meeting:
       case TimeSlotType.unknown:
         return isSelected ? color.AppColors.primary : color.AppColors.border;

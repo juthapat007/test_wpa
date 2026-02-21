@@ -31,6 +31,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
   Timer? _timer;
   DateTime _currentTime = DateTime.now();
   String _selectedDateStr = '';
+  bool _isChangingDate = false;
   Map<String, TimeSlotType> _buildSlotTypeMap(List<Schedule> schedules) {
     final map = <String, TimeSlotType>{};
     for (final s in schedules) {
@@ -51,18 +52,15 @@ class _MeetingWidgetState extends State<MeetingWidget> {
             slotType = TimeSlotType.meeting;
         }
       }
-      ;
 
-      // ใส่ทั้ง format เผื่อ backend ส่งต่างกัน
-      map[timeKey] = slotType; // "9:00 AM"
-      map[timeKey.replaceAll(' ', '')] = slotType; // "9:00AM"
-      // เพิ่ม leading zero เผื่อ backend ส่ง "09:00 AM"
-      if (timeKey.length < 8) {
-        map['0$timeKey'] = slotType; // "09:00 AM"
-      }
+      // เก็บ key แบบ normalized เพื่อ match ง่าย
+      map[_normalizeTime(timeKey)] = slotType;
     }
     return map;
   }
+
+  // เพิ่ม helper method ใน _MeetingWidgetState
+  String _normalizeTime(String t) => t.replaceAll(' ', '').toLowerCase();
 
   @override
   void initState() {
@@ -159,6 +157,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
   void _onDateSelected(String dateString) {
     setState(() {
       _selectedDateStr = dateString;
+      _isChangingDate = true; //mark ว่ากำลังเปลี่ยนวัน
     });
     ReadContext(
       context,
@@ -236,11 +235,6 @@ class _MeetingWidgetState extends State<MeetingWidget> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'On Leave',
-                    style: TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
-                  const SizedBox(height: 2),
                   Text(
                     schedule.leave ?? 'Leave',
                     style: const TextStyle(
@@ -345,6 +339,12 @@ class _MeetingWidgetState extends State<MeetingWidget> {
                         _selectedDateStr = response.date;
                       });
                     });
+                  } else if (_isChangingDate &&
+                      response.date == _selectedDateStr) {
+                    // ✅ โหลดเสร็จแล้ว และ response ตรงกับที่เลือก
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) setState(() => _isChangingDate = false);
+                    });
                   }
 
                   return DateTabBar(
@@ -352,6 +352,14 @@ class _MeetingWidgetState extends State<MeetingWidget> {
                     selectedDate: _selectedDateStr.isNotEmpty
                         ? _selectedDateStr
                         : response.date,
+                    onDateSelected: _onDateSelected,
+                  );
+                }
+                //DateTabBar ยังแสดงอยู่ด้วย selected date เดิม
+                if (state is ScheduleLoading) {
+                  return DateTabBar(
+                    availableDates: const [],
+                    selectedDate: _selectedDateStr,
                     onDateSelected: _onDateSelected,
                   );
                 }
@@ -388,6 +396,12 @@ class _MeetingWidgetState extends State<MeetingWidget> {
                 // แสดง TableGrid ตามปกติ
                 return BlocBuilder<TableBloc, TableState>(
                   builder: (context, state) {
+                    if (_isChangingDate) {
+                      return const SizedBox(
+                        height: 300,
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
                     if (state is TableLoading) {
                       return const SizedBox(
                         height: 300,
@@ -396,15 +410,44 @@ class _MeetingWidgetState extends State<MeetingWidget> {
                     }
 
                     if (state is TableLoaded) {
+                      if (state.response.date != _selectedDateStr &&
+                          _selectedDateStr.isNotEmpty) {
+                        return const SizedBox(
+                          height: 300,
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
                       final slotTypeMap = scheduleState is ScheduleLoaded
                           ? _buildSlotTypeMap(
                               scheduleState.scheduleResponse.schedules,
                             )
                           : <String, TimeSlotType>{};
-
+                      Schedule? currentScheduleForTable;
+                      if (scheduleState is ScheduleLoaded) {
+                        final schedules =
+                            scheduleState.scheduleResponse.schedules;
+                        final viewTime = state.response.time
+                            .replaceAll(' ', '')
+                            .toLowerCase();
+                        for (final s in schedules) {
+                          final t = DateTimeHelper.formatApiTime12(
+                            s.startAt,
+                          ).replaceAll(' ', '').toLowerCase();
+                          if (t == viewTime) {
+                            currentScheduleForTable = s;
+                            break;
+                          }
+                        }
+                      }
                       return TableGridWidget(
                         response: state.response,
                         slotTypeMap: slotTypeMap,
+                        currentSchedule: currentScheduleForTable,
+                        schedules:
+                            scheduleState
+                                is ScheduleLoaded // ✅ เพิ่ม
+                            ? scheduleState.scheduleResponse.schedules
+                            : [],
                         onTimeSlotChanged: (time) {
                           Modular.get<TableBloc>().add(ChangeTimeSlot(time));
                         },
@@ -427,7 +470,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
             // ========== Schedule Section ==========
             BlocBuilder<ScheduleBloc, ScheduleState>(
               builder: (context, state) {
-                if (state is ScheduleLoading) {
+                if (state is ScheduleLoading || _isChangingDate) {
                   return const SizedBox(
                     height: 400,
                     child: Center(child: CircularProgressIndicator()),

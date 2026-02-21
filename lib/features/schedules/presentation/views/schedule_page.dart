@@ -285,7 +285,9 @@ class _SchedulePageState extends State<SchedulePage> {
                                 child: TimelineRow(
                                   schedule: schedule,
                                   // cardType: EventCardType.meeting,
-                                  cardType: ScheduleCardHelper.resolveCardType(schedule),
+                                  cardType: ScheduleCardHelper.resolveCardType(
+                                    schedule,
+                                  ),
                                   isSelectionMode:
                                       isSelectionMode && isSelectable,
                                   isSelected: isSelected,

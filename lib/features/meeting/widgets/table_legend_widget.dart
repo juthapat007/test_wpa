@@ -11,19 +11,13 @@ class TableLegend extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        const _LegendItem(color: AppColors.primary, label: 'Your Table'),
+        const _LegendItem(color: AppColors.primary, label: 'You'),
         const _LegendItem(
           color: Color(0xFFF0FDF4),
           label: 'Occupied',
           borderColor: AppColors.success,
         ),
         const _LegendItem(color: Colors.white, label: 'Available'),
-        if (showLeave)
-          _LegendItem(
-            color: AppColors.error.withOpacity(0.08),
-            borderColor: AppColors.error,
-            label: 'On Leave',
-          ),
       ],
     );
   }
