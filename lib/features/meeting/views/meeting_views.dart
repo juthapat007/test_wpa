@@ -192,6 +192,92 @@ class _MeetingWidgetState extends State<MeetingWidget> {
     Modular.get<TableBloc>().add(LoadTableView(date: date, time: time));
   }
 
+  Widget _buildLeaveBanner(Schedule schedule) {
+    final timeRange = DateTimeHelper.formatTimeRange12(
+      schedule.startAt,
+      schedule.endAt,
+    );
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFE53935), Color(0xFFB71C1C)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.red.withOpacity(0.3),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.event_busy,
+                color: Colors.white,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'On Leave',
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    schedule.leave ?? 'Leave',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.schedule,
+                        color: Colors.white60,
+                        size: 13,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        timeRange,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   List<ScheduleWithStatus> _getSchedulesWithStatus(List<Schedule> schedules) {
     final result = <ScheduleWithStatus>[];
     Schedule? nextFound;
@@ -274,52 +360,67 @@ class _MeetingWidgetState extends State<MeetingWidget> {
             ),
 
             // ========== Table Grid Section ==========
-            BlocBuilder<TableBloc, TableState>(
-              builder: (context, state) {
-                if (state is TableLoading) {
-                  return const SizedBox(
-                    height: 300,
-                    child: Center(child: CircularProgressIndicator()),
+            BlocBuilder<ScheduleBloc, ScheduleState>(
+              builder: (context, scheduleState) {
+                // ตรวจสอบ schedule ปัจจุบัน/ถัดไป
+                if (scheduleState is ScheduleLoaded) {
+                  final schedulesWithStatus = _getSchedulesWithStatus(
+                    scheduleState.scheduleResponse.schedules,
                   );
+                  final current =
+                      _getCurrentSchedule(schedulesWithStatus)?.schedule ??
+                      _getNextSchedule(schedulesWithStatus)?.schedule;
+
+                  // leave != null → banner แดง ไม่แสดง grid
+                  if (current != null && current.leave != null) {
+                    return _buildLeaveBanner(current);
+                  }
+
+                  // type == event หรือ table_number == null → ซ่อน grid
+                  if (current != null &&
+                      (current.type == 'event' ||
+                          current.tableNumber == null ||
+                          current.tableNumber!.isEmpty)) {
+                    return const SizedBox.shrink();
+                  }
                 }
 
-                // if (state is TableLoaded) {
-                //   return TableGridWidget(
-                //     response: state.response,
-                //     onTimeSlotChanged: (time) {
-                //       Modular.get<TableBloc>().add(ChangeTimeSlot(time));
-                //     },
-                //   );
-                // }
-                // ใน BlocBuilder<TableBloc, TableState>
-                if (state is TableLoaded) {
-                  // ดึง schedules จาก ScheduleBloc เพื่อสร้าง slotTypeMap
-                  final scheduleState = ReadContext(
-                    context,
-                  ).read<ScheduleBloc>().state;
-                  final slotTypeMap = scheduleState is ScheduleLoaded
-                      ? _buildSlotTypeMap(
-                          scheduleState.scheduleResponse.schedules,
-                        )
-                      : <String, TimeSlotType>{};
+                // แสดง TableGrid ตามปกติ
+                return BlocBuilder<TableBloc, TableState>(
+                  builder: (context, state) {
+                    if (state is TableLoading) {
+                      return const SizedBox(
+                        height: 300,
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
 
-                  return TableGridWidget(
-                    response: state.response,
-                    slotTypeMap: slotTypeMap,
-                    onTimeSlotChanged: (time) {
-                      Modular.get<TableBloc>().add(ChangeTimeSlot(time));
-                    },
-                  );
-                }
+                    if (state is TableLoaded) {
+                      final slotTypeMap = scheduleState is ScheduleLoaded
+                          ? _buildSlotTypeMap(
+                              scheduleState.scheduleResponse.schedules,
+                            )
+                          : <String, TimeSlotType>{};
 
-                if (state is TableError) {
-                  return SizedBox(
-                    height: 300,
-                    child: Center(child: Text(state.message)),
-                  );
-                }
+                      return TableGridWidget(
+                        response: state.response,
+                        slotTypeMap: slotTypeMap,
+                        onTimeSlotChanged: (time) {
+                          Modular.get<TableBloc>().add(ChangeTimeSlot(time));
+                        },
+                      );
+                    }
 
-                return const SizedBox.shrink();
+                    if (state is TableError) {
+                      return SizedBox(
+                        height: 300,
+                        child: Center(child: Text(state.message)),
+                      );
+                    }
+
+                    return const SizedBox.shrink();
+                  },
+                );
               },
             ),
 
