@@ -22,45 +22,52 @@ class BottomActionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(
-        left: space.m,
-        right: space.m,
-        top: space.xs, // ✅ ระยะด้านบน
-        bottom: 100, // ✅ ระยะด้านล่าง
-      ),
-
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2), // ✅ เงาด้านบน
-          ),
-        ],
-      ),
+      color: Colors.white, // ✅ ต้องอยู่นอกสุดให้ background เต็มจอ
       child: SafeArea(
-        child: Row(
-          children: [
-            Expanded(
-              child: AppButton(
-                text: cancelText,
-                backgroundColor: color.AppColors.background,
-
-                textColor: color.AppColors.textPrimary,
-                onPressed: isLoading ? null : onCancel,
+        top: false,
+        bottom: false, // ✅ ปิด SafeArea ด้านล่าง
+        child: Container(
+          padding: EdgeInsets.only(
+            left: space.m,
+            right: space.m,
+            top: space.xs,
+            bottom:
+                space_bottom.xl +
+                MediaQuery.of(
+                  context,
+                ).padding.bottom, // ✅ บวก system inset เข้าไปด้วย
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -2),
               ),
-            ),
-            SizedBox(width: space.xs),
-            Expanded(
-              child: AppButton(
-                text: isLoading ? 'Submitting...' : confirmText,
-                backgroundColor: color.AppColors.primary,
-                textColor: color.AppColors.textOnPrimary,
-                onPressed: isLoading ? null : onConfirm,
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: AppButton(
+                  text: cancelText,
+                  backgroundColor: color.AppColors.background,
+                  textColor: color.AppColors.textPrimary,
+                  onPressed: isLoading ? null : onCancel,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(width: space.xs),
+              Expanded(
+                child: AppButton(
+                  text: isLoading ? 'Submitting...' : confirmText,
+                  backgroundColor: color.AppColors.primary,
+                  textColor: color.AppColors.textOnPrimary,
+                  onPressed: isLoading ? null : onConfirm,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

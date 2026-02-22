@@ -6,6 +6,7 @@ import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 import 'package:test_wpa/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:test_wpa/features/widgets/app_button.dart';
+import 'package:test_wpa/features/widgets/app_dialog.dart';
 import 'package:test_wpa/features/widgets/app_text_form_field.dart';
 
 class ChangePasswordPage extends StatefulWidget {
@@ -38,39 +39,32 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     // showDialog เอาไว้แสดง pop_up
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        // ✅ เปลี่ยนชื่อเป็น dialogContext
-        title: const Text('Confirm'),
-        content: const Text('Are you sure you want to change your password?'),
+      builder: (dialogContext) => AppDialog(
+        icon: Icons.lock_outline,
+        iconColor: AppColors.primary,
+        title: 'Confirm',
+        description: 'Are you sure you want to change your password?',
         actions: [
-          Row(
-            children: [
-              Expanded(
-                child: AppButton(
-                  text: 'Cancel',
-                  onPressed: () => Navigator.pop(dialogContext),
+          AppDialogAction(
+            label: 'Cancel',
+            onPressed: () => Navigator.pop(dialogContext),
+            backgroundColor: AppColors.surface,
+            // ไม่ต้องใส่อะไรเพิ่ม → ใช้ default style
+          ),
+          AppDialogAction(
+            label: 'Confirm',
+            isPrimary: true,
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              bloc.add(
+                AuthChangePassword(
+                  currentPassword: _currentPasswordCtrl.text,
+                  newPassword: _newPasswordCtrl.text,
+                  newPasswordConfirmation: _confirmPasswordCtrl.text,
                 ),
-              ),
-              SizedBox(width: space.xs),
-              Expanded(
-                child: AppButton(
-                  text: 'Confirm',
-                  textColor: AppColors.textOnPrimary,
-                  backgroundColor: AppColors.primary,
-                  onPressed: () {
-                    Navigator.pop(dialogContext);
-                    bloc.add(
-                      AuthChangePassword(
-                        //  ใช้ captured bloc
-                        currentPassword: _currentPasswordCtrl.text,
-                        newPassword: _newPasswordCtrl.text,
-                        newPasswordConfirmation: _confirmPasswordCtrl.text,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
+              );
+            },
+            backgroundColor: null,
           ),
         ],
       ),
@@ -85,36 +79,23 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           showDialog(
             context: context,
             barrierDismissible: false,
-            builder: (context) => AlertDialog(
-              icon: const Icon(
-                Icons.check_circle_outline,
-                color: AppColors.success,
-                size: 48,
-              ),
-              title: const Text(
-                'Password Changed!',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              content: const Text(
-                'Your password has been changed successfully.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
+            builder: (dialogContext) => AppDialog(
+              icon: Icons.check_circle_outline,
+              iconColor: AppColors.success,
+              title: 'Password Changed!',
+              description: 'Your password has been changed successfully.',
               actions: [
-                SizedBox(
-                  width: double.infinity,
-                  child: AppButton(
-                    text: 'OK',
-                    textColor: AppColors.textOnPrimary,
-                    backgroundColor: AppColors.primary,
-                    onPressed: () {
-                      Navigator.pop(context); // ปิด dialog
-                      Navigator.of(
-                        context,
-                      ).pop(); // ออกจาก change_password_page
-                    },
-                  ),
+                AppDialogAction(
+                  label: 'OK',
+                  isPrimary: true,
+                  onPressed: () {
+                    Navigator.pop(dialogContext); // ปิด dialog
+                    Navigator.of(
+                      dialogContext,
+                    ).pop(); // ออกจาก change_password_page
+                  },
+                  textColor: AppColors.surface,
+                  backgroundColor: null,
                 ),
               ],
             ),
@@ -240,7 +221,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                         },
                       ),
 
-                       SizedBox(height: space.l),
+                      SizedBox(height: space.l),
 
                       isLoading
                           ? const Center(

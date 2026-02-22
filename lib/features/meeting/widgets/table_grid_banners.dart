@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 import 'package:test_wpa/core/utils/date_time_helper.dart';
 import 'package:test_wpa/features/meeting/domain/entities/table_view_entities.dart';
@@ -31,7 +32,7 @@ class MyTableBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: AppColors.primary)],
+        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.7))],
       ),
       child: Row(
         children: [
@@ -45,41 +46,17 @@ class MyTableBanner extends StatelessWidget {
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: Column(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Your Table',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 2),
                 Text(
-                  'Table ${response.myTable}',
+                  'Position ${response.myTable}',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 34,
+                    fontSize: width.l,
                     fontWeight: FontWeight.bold,
                     height: 1.1,
                   ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.schedule, color: Colors.white60, size: 13),
-                    const SizedBox(width: 4),
-                    Text(
-                      timeRange,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),

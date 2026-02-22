@@ -53,13 +53,14 @@ class TableSlotHeader extends StatelessWidget {
       child: Row(
         children: [
           const Icon(Icons.calendar_today, size: 16, color: AppColors.primary),
-          const SizedBox(width: 8),
+          const SizedBox(width: space.xs),
           Expanded(
             child: Text(
               '$dateText  |  $timeDisplay',
+              // '$timeDisplay',
               style: const TextStyle(
                 fontSize: 13,
-                fontWeight: FontWeight.w600,
+
                 color: AppColors.textPrimary,
               ),
             ),

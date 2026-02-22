@@ -9,7 +9,7 @@ class DateTimeHelper {
 
   /// "Mon, 5 Feb 2026"
   static String formatFullDate(DateTime dateTime) {
-    return DateFormat('EEE, d MMM yyyy').format(dateTime);
+    return DateFormat('d MMM yyyy').format(dateTime);
   }
 
   /// "9:30 AM"  — แสดงเวลาแบบ 12-hour บน UI
@@ -18,16 +18,17 @@ class DateTimeHelper {
   }
 
   /// "04:40 AM - 05:00 AM"
+  /// แปลง time zone
   static String formatTimeRange12(DateTime startAt, DateTime endAt) {
     final fmt = DateFormat('hh:mm a');
     return '${fmt.format(startAt.toLocal())} - ${fmt.format(endAt.toLocal())}';
   }
 
   /// "09:30–10:15"
-  static String formatTimeRange24(DateTime startAt, DateTime endAt) {
-    final fmt = DateFormat('HH:mm');
-    return '${fmt.format(startAt)}–${fmt.format(endAt)}';
-  }
+  // static String formatTimeRange24(DateTime startAt, DateTime endAt) {
+  //   final fmt = DateFormat('HH:mm');
+  //   return '${fmt.format(startAt)}–${fmt.format(endAt)}';
+  // }
 
   /// "Mon, 5 Feb 2026  •  09:30–10:15"
   static String formatDateTimeRange(
@@ -35,7 +36,7 @@ class DateTimeHelper {
     DateTime startAt,
     DateTime endAt,
   ) {
-    return '${formatFullDate(date)}  •  ${formatTimeRange24(startAt, endAt)}';
+    return '${formatFullDate(date)}  •  ${formatTimeRange12(startAt, endAt)}'; //โดนกูแก้
   }
 
   // ========================================
@@ -85,7 +86,6 @@ class DateTimeHelper {
       return DateFormat('dd/MM/yyyy').parse(dateString);
     } catch (_) {}
 
-    print('⚠️ DateTimeHelper: Cannot parse date "$dateString", using now()');
     return DateTime.now();
   }
 

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
+import 'package:test_wpa/core/utils/date_time_helper.dart';
+import 'package:test_wpa/features/meeting/presentation/bloc/table_bloc.dart'
+    hide ChangeDate;
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_state.dart';
@@ -22,22 +26,16 @@ class SchedulePage extends StatefulWidget {
 }
 
 class _SchedulePageState extends State<SchedulePage> {
-  // Timeline offset for the vertical line
   static const double timelineOffset = 42.0;
 
-  // Selection mode state
   bool isSelectionMode = false;
   Set<int> selectedScheduleIds = {};
-
-  // Tracks the currently selected date string from available_dates
   String _selectedDateStr = '';
 
   @override
   void initState() {
     super.initState();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Load without date param -- backend returns default date + available_dates
       ReadContext(context).read<ScheduleBloc>().add(LoadSchedules());
     });
   }
@@ -45,33 +43,26 @@ class _SchedulePageState extends State<SchedulePage> {
   void _onDateSelected(String dateString) {
     setState(() {
       _selectedDateStr = dateString;
-      isSelectionMode = false;
       selectedScheduleIds.clear();
     });
     ReadContext(context).read<ScheduleBloc>().add(ChangeDate(dateString));
   }
 
   void _onRetry() {
-    if (_selectedDateStr.isNotEmpty) {
-      ReadContext(
-        context,
-      ).read<ScheduleBloc>().add(LoadSchedules(date: _selectedDateStr));
-    } else {
-      ReadContext(context).read<ScheduleBloc>().add(LoadSchedules());
-    }
+    ReadContext(context).read<ScheduleBloc>().add(
+      LoadSchedules(
+        date: _selectedDateStr.isNotEmpty ? _selectedDateStr : null,
+      ),
+    );
   }
 
-  // Toggle selection mode
   void _toggleSelectionMode() {
     setState(() {
       isSelectionMode = !isSelectionMode;
-      if (!isSelectionMode) {
-        selectedScheduleIds.clear();
-      }
+      if (!isSelectionMode) selectedScheduleIds.clear();
     });
   }
 
-  // Cancel selection mode
   void _cancelSelectionMode() {
     setState(() {
       isSelectionMode = false;
@@ -79,11 +70,8 @@ class _SchedulePageState extends State<SchedulePage> {
     });
   }
 
-  // Toggle schedule selection
-  //เพิ่มเงื่อนไข: เลือกได้แค่ meeting ที่ไม่มี leave
   void _toggleScheduleSelection(int scheduleId) {
     if (!isSelectionMode) return;
-
     setState(() {
       if (selectedScheduleIds.contains(scheduleId)) {
         selectedScheduleIds.remove(scheduleId);
@@ -110,30 +98,25 @@ class _SchedulePageState extends State<SchedulePage> {
           .where((s) => selectedScheduleIds.contains(s.id))
           .toList();
 
-      // Navigate และรอผลลัพธ์
-      final result = await Navigator.push<bool>(
+      await Navigator.push<bool>(
         context,
         MaterialPageRoute(
-          builder: (context) =>
+          builder: (_) =>
               AttendanceStatus(selectedSchedules: selectedSchedules),
         ),
       );
 
-      // ถ้า submit สำเร็จ (result == true) ให้ reload schedules
-      if (result == true && mounted) {
+      // ✅ เปลี่ยนจาก if (result == true) เป็น if (mounted) เสมอ
+      if (mounted) {
         setState(() {
           isSelectionMode = false;
           selectedScheduleIds.clear();
         });
-
-        // Reload schedules
-        if (_selectedDateStr.isNotEmpty) {
-          ReadContext(
-            context,
-          ).read<ScheduleBloc>().add(LoadSchedules(date: _selectedDateStr));
-        } else {
-          ReadContext(context).read<ScheduleBloc>().add(LoadSchedules());
-        }
+        ReadContext(context).read<ScheduleBloc>().add(
+          LoadSchedules(
+            date: _selectedDateStr.isNotEmpty ? _selectedDateStr : null,
+          ),
+        );
       }
     }
   }
@@ -146,30 +129,23 @@ class _SchedulePageState extends State<SchedulePage> {
         mainAxisAlignment: MainAxisAlignment.end,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // Cancel button (X) - แสดงเฉพาะตอน selection mode
           if (isSelectionMode)
             Padding(
-              padding: const EdgeInsets.only(bottom: 12, right: 20),
+              padding: const EdgeInsets.only(bottom: 12),
               child: FloatingActionButton(
                 heroTag: 'cancel_selection',
                 backgroundColor: color.AppColors.error,
-                mini: true,
-                child: const Icon(Icons.close, color: Colors.white),
                 onPressed: _cancelSelectionMode,
+                child: const Icon(Icons.close, color: Colors.white),
               ),
             ),
-          // Main action button
           Padding(
-            padding: const EdgeInsets.only(bottom: height.xxl, right: height.s),
+            padding: const EdgeInsets.only(bottom: height.xxl),
             child: FloatingActionButton(
               heroTag: 'main_action',
               backgroundColor: isSelectionMode
                   ? color.AppColors.success
                   : color.AppColors.warning,
-              child: Icon(
-                isSelectionMode ? Icons.check_circle : Icons.event_busy,
-                color: Colors.white,
-              ),
               onPressed: () {
                 if (isSelectionMode) {
                   _proceedToAttendanceStatus();
@@ -177,6 +153,10 @@ class _SchedulePageState extends State<SchedulePage> {
                   _toggleSelectionMode();
                 }
               },
+              child: Icon(
+                isSelectionMode ? Icons.check_circle : Icons.event_busy,
+                color: Colors.white,
+              ),
             ),
           ),
         ],
@@ -196,30 +176,29 @@ class _SchedulePageState extends State<SchedulePage> {
               bottom: 0,
               child: Container(width: 1, color: Colors.grey[200]),
             ),
-            // Content
             Column(
               children: [
-                // BlocBuilder to get available_dates for the DateTabBar
+                // ──────────── Date Tab Bar ────────────
                 BlocBuilder<ScheduleBloc, ScheduleState>(
-                  buildWhen: (prev, curr) {
-                    // Only rebuild the date bar when the loaded response changes
-                    if (curr is ScheduleLoaded) return true;
-                    return false;
-                  },
+                  buildWhen: (prev, curr) => curr is ScheduleLoaded,
                   builder: (context, state) {
                     if (state is ScheduleLoaded) {
                       final response = state.scheduleResponse;
 
-                      // Sync _selectedDateStr on first load
+                      // ✅ ครั้งแรก: ใช้ response.date เป็น source of truth
                       if (_selectedDateStr.isEmpty &&
-                          response.date.isNotEmpty) {
+                          response.availableDates.isNotEmpty) {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
-                          setState(() {
-                            _selectedDateStr = response.date;
-                          });
+                          if (mounted) {
+                            setState(() => _selectedDateStr = response.date);
+                            // Preload table state สำหรับ Meeting page ที่ใช้ shared bloc
+                            Modular.get<TableBloc>().add(
+                              LoadTableView(date: response.date),
+                            );
+                          }
                         });
                       }
-                      //ตรงน้ชี้คือการแสดง DateTabBar
+
                       return DateTabBar(
                         availableDates: response.availableDates,
                         selectedDate: _selectedDateStr.isNotEmpty
@@ -228,11 +207,11 @@ class _SchedulePageState extends State<SchedulePage> {
                         onDateSelected: _onDateSelected,
                       );
                     }
-                    // While loading or error, show nothing for the tab bar
                     return const SizedBox(height: 16);
                   },
                 ),
-                // Schedule list
+
+                // ──────────── Schedule List ────────────
                 Expanded(
                   child: BlocBuilder<ScheduleBloc, ScheduleState>(
                     builder: (context, state) {
@@ -245,12 +224,8 @@ class _SchedulePageState extends State<SchedulePage> {
                       }
 
                       if (state is ScheduleLoaded) {
-                        final response = state.scheduleResponse;
-                        final schedules = response.schedules;
-
-                        if (schedules.isEmpty) {
-                          return const EmptyScheduleView();
-                        }
+                        final schedules = state.scheduleResponse.schedules;
+                        if (schedules.isEmpty) return const EmptyScheduleView();
 
                         return ListView.separated(
                           padding: const EdgeInsets.only(
@@ -259,16 +234,13 @@ class _SchedulePageState extends State<SchedulePage> {
                             bottom: height.l,
                           ),
                           itemCount: schedules.length,
-                          separatorBuilder: (context, index) =>
+                          separatorBuilder: (_, __) =>
                               const SizedBox(height: height.m),
                           itemBuilder: (context, index) {
                             final schedule = schedules[index];
                             final isSelected = selectedScheduleIds.contains(
                               schedule.id,
                             );
-
-                            // ✅ เช็คว่า schedule นี้เลือกได้หรือไม่
-                            // เลือกได้ก็ต่อเมื่อ: leave == null และ type == "meeting"
                             final isSelectable =
                                 schedule.leave == null &&
                                 schedule.type == 'meeting';
@@ -278,13 +250,11 @@ class _SchedulePageState extends State<SchedulePage> {
                                   ? () => _toggleScheduleSelection(schedule.id)
                                   : null,
                               child: Opacity(
-                                // ถ้าอยู่ใน selection mode แต่เลือกไม่ได้ ให้โปร่งแสง
                                 opacity: isSelectionMode && !isSelectable
                                     ? 0.4
                                     : 1.0,
                                 child: TimelineRow(
                                   schedule: schedule,
-                                  // cardType: EventCardType.meeting,
                                   cardType: ScheduleCardHelper.resolveCardType(
                                     schedule,
                                   ),

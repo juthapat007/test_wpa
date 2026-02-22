@@ -16,7 +16,6 @@ class AppBottomNavigationBar extends StatelessWidget {
         ? currentIndex
         : 0;
 
-    // ✅ Wrap ด้วย Container เพื่อเพิ่ม BoxShadow แบบ BottomActionBar
     return Container(
       //
       child: BottomNavigationBar(

@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
 import 'package:test_wpa/core/utils/date_time_helper.dart';
 
@@ -50,11 +51,11 @@ class _DateHeaderState extends State<DateHeader> {
               color: color.AppColors.textPrimary,
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: space.s),
           Text(
             timeText,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 14,
               color: color.AppColors.textSecondary,
             ),
           ),

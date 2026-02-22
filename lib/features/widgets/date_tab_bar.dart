@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 
-/// Horizontal scrollable date tab bar
-/// built from available_dates returned by the API.
 class DateTabBar extends StatelessWidget {
-  final List<String> availableDates; // e.g. ["2025-10-12", "2025-10-13", ...]
-  final String selectedDate; // e.g. "2025-10-13"
+  final List<String> availableDates;
+  final String selectedDate;
   final ValueChanged<String> onDateSelected;
 
   const DateTabBar({
@@ -25,8 +23,6 @@ class DateTabBar extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Conference date label
-          _buildConferenceLabel(),
           const SizedBox(height: 12),
           // Date chips
           SingleChildScrollView(

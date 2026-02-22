@@ -118,7 +118,7 @@ class _LoginPageState extends State<LoginPage> {
                           )
                         : AppButton(
                             text: 'Login',
-                            textColor: AppColors.textOnPrimary,
+                            textColor: AppColors.background,
                             backgroundColor: AppColors.primary,
                             onPressed: _handleLogin,
                           ),

@@ -23,7 +23,7 @@ class AppText extends StatelessWidget {
       overflow: overflow,
       textAlign: textAlign,
       style: const TextStyle(
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: FontWeight.w500,
         color: AppColors.primary,
       ),

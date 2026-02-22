@@ -7,6 +7,15 @@ class space {
   static const double xxl = 40;
 }
 
+class width {
+  static const double xs = 12;
+  static const double s = 14;
+  static const double m = 16;
+  static const double l = 18;
+  static const double xl = 20;
+  static const double xxl = 24;
+}
+
 class height {
   static const double xs = 8;
   static const double s = 16;
