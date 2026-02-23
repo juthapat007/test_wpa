@@ -3,13 +3,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_modular/flutter_modular.dart';
-import 'package:intl/intl.dart';
 import 'package:test_wpa/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:test_wpa/features/other_profile/domain/entities/profile_detail.dart';
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_bloc.dart';
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_event.dart';
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_state.dart';
-import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_event_card.dart';
 import 'package:test_wpa/features/schedules/utils/schedule_card_helper.dart';
 import 'package:test_wpa/features/widgets/app_button.dart';
@@ -17,6 +15,7 @@ import 'package:test_wpa/features/widgets/date_tab_bar.dart';
 
 class OtherProfilePage extends StatefulWidget {
   final int delegateId;
+
   const OtherProfilePage({super.key, required this.delegateId});
 
   @override
@@ -24,8 +23,7 @@ class OtherProfilePage extends StatefulWidget {
 }
 
 class _OtherProfilePageState extends State<OtherProfilePage> {
-  /// ✅ วันที่เลือกใน DateTabBar ของ schedule section
-  String _selectedScheduleDate = '';
+  ProfileDetailLoaded? _lastLoaded;
 
   @override
   Widget build(BuildContext context) {
@@ -60,12 +58,33 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         listeners: [
           BlocListener<ProfileDetailBloc, ProfileDetailState>(
             listener: (context, state) {
+              if (state is ProfileDetailLoaded) {
+                _lastLoaded = state; // ✅ update cache ทุกครั้งที่โหลดสำเร็จ
+              }
               if (state is FriendRequestSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.green,
-                    behavior: SnackBarBehavior.floating,
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    content: Row(
+                      children: [
+                        const Icon(
+                          Icons.check_circle,
+                          color: Color(0xFF5DC98A),
+                          size: 28,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(child: Text(state.message)),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        child: const Text('OK'),
+                      ),
+                    ],
                   ),
                 );
               } else if (state is FriendRequestFailed) {
@@ -96,53 +115,32 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         ],
         child: BlocBuilder<ProfileDetailBloc, ProfileDetailState>(
           builder: (context, state) {
-            if (state is ProfileDetailLoading) {
+            if (state is ProfileDetailLoaded) _lastLoaded = state;
+            final loaded = _lastLoaded; // ✅ ใช้ cache เสมอ
+            if (loaded == null)
+              return const Center(child: CircularProgressIndicator());
+            final isSending = state is FriendRequestSending;
+
+            if (state is ProfileDetailLoading && _lastLoaded == null) {
               return const Center(
                 child: CircularProgressIndicator(color: Color(0xFF4A90D9)),
               );
             }
-            if (state is ProfileDetailError) {
+            if (state is ProfileDetailError && _lastLoaded == null) {
               return _buildErrorView(context, state.message);
             }
-            if (state is ProfileDetailLoaded || state is FriendRequestSending) {
-              final profile = state is ProfileDetailLoaded
-                  ? state.profile
-                  : null;
-              if (profile == null) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final schedules = state is ProfileDetailLoaded
-                  ? state.schedules
-                  : null;
 
-              // ✅ กำหนดวันแรกอัตโนมัติเมื่อโหลด schedule ครั้งแรก
-              if (schedules != null &&
-                  schedules.isNotEmpty &&
-                  _selectedScheduleDate.isEmpty) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) {
-                    final firstDate = DateFormat(
-                      'yyyy-MM-dd',
-                    ).format(schedules.first.startAt);
-                    setState(() => _selectedScheduleDate = firstDate);
-                  }
-                });
-              }
-
-              return SingleChildScrollView(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 16),
-                    _buildProfileCard(profile, context),
-                    const SizedBox(height: 16),
-                    if (schedules != null && schedules.isNotEmpty)
-                      _buildEventSection(schedules),
-                    const SizedBox(height: 32),
-                  ],
-                ),
-              );
-            }
-            return const SizedBox.shrink();
+            return SingleChildScrollView(
+              child: Column(
+                children: [
+                  const SizedBox(height: 16),
+                  _buildProfileCard(loaded.profile, context, isSending),
+                  const SizedBox(height: 16),
+                  _buildEventSection(loaded, context),
+                  const SizedBox(height: 32),
+                ],
+              ),
+            );
           },
         ),
       ),
@@ -150,7 +148,11 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   }
 
   // ─── Profile Card ─────────────────────────────────────────────────────────
-  Widget _buildProfileCard(ProfileDetail profile, BuildContext context) {
+  Widget _buildProfileCard(
+    ProfileDetail profile,
+    BuildContext context,
+    bool isSending,
+  ) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -188,38 +190,209 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     );
   }
 
-  Widget _buildMoreMenu(ProfileDetail profile, BuildContext context) {
-    return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_horiz, color: Color(0xFF8A94A6)),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      onSelected: (value) {
-        if (value == 'unfriend') _showUnfriendDialog(context, profile);
-      },
-      itemBuilder: (_) => [
-        const PopupMenuItem(
-          value: 'unfriend',
-          child: Row(
-            children: [
-              Icon(
-                Icons.person_remove_outlined,
-                color: Color(0xFFE05454),
-                size: 18,
+  // ─── Event Section with DateTabBar from API ───────────────────────────────
+  Widget _buildEventSection(ProfileDetailLoaded state, BuildContext context) {
+    final availableDates = state.availableDates;
+
+    // กำลัง load ครั้งแรก (ยังไม่มี dates เลย)
+    if (state.isScheduleLoading && availableDates.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(32),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // ไม่มี schedule เลย
+    if (availableDates.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header ──────────────────────────────────────────────────
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Text(
+              'Event Plan',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1A2340),
               ),
-              SizedBox(width: 10),
-              Text(
-                'Unfriend',
-                style: TextStyle(
-                  color: Color(0xFFE05454),
-                  fontWeight: FontWeight.w500,
+            ),
+          ),
+
+          // ✅ DateTabBar — ใช้ available_dates + date จาก API โดยตรง
+          DateTabBar(
+            availableDates: availableDates,
+            selectedDate: state.selectedDate,
+            onDateSelected: (date) {
+              // ✅ เรียก API ใหม่พร้อม date ที่เลือก
+              ReadContext(context).read<ProfileDetailBloc>().add(
+                LoadScheduleOthers(widget.delegateId, date: date),
+              );
+            },
+          ),
+
+          // ── Schedule list ────────────────────────────────────────────
+          if (state.isScheduleLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (state.schedules == null || state.schedules!.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              child: Center(
+                child: Text(
+                  'No events on this day',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                 ),
               ),
-            ],
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: Column(
+                children: state.schedules!
+                    .map(
+                      (s) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: ScheduleEventCard(
+                          schedule: s,
+                          type: ScheduleCardHelper.resolveCardType(s),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Action Buttons ───────────────────────────────────────────────────────
+  Widget _buildActionButtons(ProfileDetail profile, BuildContext context) {
+    final isSending =
+        WatchContext(context).watch<ProfileDetailBloc>().state
+            is FriendRequestSending;
+
+    return Row(
+      children: [
+        Expanded(child: _buildConnectButton(profile, context, isSending)),
+        const SizedBox(width: 10),
+        Expanded(
+          child: AppButton(
+            text: 'Chat',
+            backgroundColor: const Color(0xFF4A90D9),
+            textColor: Colors.white,
+            onPressed: () {
+              ReadContext(context).read<ChatBloc>().add(
+                CreateChatRoom(profile.id.toString(), profile.name),
+              );
+            },
           ),
         ),
       ],
     );
   }
 
+  Widget _buildConnectButton(
+    ProfileDetail profile,
+    BuildContext context,
+    bool isSending,
+  ) {
+    switch (profile.connectionStatus) {
+      case ConnectionStatus.none:
+        return AppButton(
+          text: 'Add Friend',
+          backgroundColor: const Color(0xFF4A90D9),
+          textColor: Colors.white,
+          isLoading: isSending,
+          onPressed: isSending
+              ? null
+              : () => ReadContext(
+                  context,
+                ).read<ProfileDetailBloc>().add(SendFriendRequest(profile.id)),
+        );
+
+      case ConnectionStatus.requestedByMe:
+        return AppButton(
+          text: isSending ? 'Cancelling...' : 'Requested ',
+          backgroundColor: const Color(0xFFFF9800),
+          textColor: Colors.white,
+          isLoading: isSending,
+          onPressed: isSending
+              ? null
+              : () => _showCancelRequestDialog(context, profile),
+        );
+
+      case ConnectionStatus.requestedToMe:
+        final requestId = profile.connectionRequestId;
+        if (requestId == null) {
+          return AppButton(
+            text: 'Loading...',
+            backgroundColor: Colors.grey[300]!,
+            textColor: Colors.grey,
+            onPressed: null,
+          );
+        }
+        return Row(
+          children: [
+            Expanded(
+              child: AppButton(
+                text: 'Accept',
+                backgroundColor: const Color(0xFF5DC98A),
+                textColor: Colors.white,
+                isLoading: isSending,
+                onPressed: isSending
+                    ? null
+                    : () => ReadContext(context).read<ProfileDetailBloc>().add(
+                        AcceptFriendRequest(requestId),
+                      ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: AppButton(
+                text: 'Decline',
+                backgroundColor: Colors.white,
+                textColor: const Color(0xFFE05454),
+                isLoading: isSending,
+                onPressed: isSending
+                    ? null
+                    : () => ReadContext(context).read<ProfileDetailBloc>().add(
+                        RejectFriendRequest(requestId),
+                      ),
+              ),
+            ),
+          ],
+        );
+
+      case ConnectionStatus.connected:
+        return AppButton(
+          text: 'Connected ✓',
+          backgroundColor: const Color(0xFF5DC98A),
+          textColor: Colors.white,
+          onPressed: null,
+        );
+    }
+  }
+
+  // ─── Dialogs ──────────────────────────────────────────────────────────────
   void _showUnfriendDialog(BuildContext context, ProfileDetail profile) {
     showDialog(
       context: context,
@@ -292,6 +465,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     );
   }
 
+  // ─── Profile UI Helpers ───────────────────────────────────────────────────
   Widget _buildProfileInfo(ProfileDetail profile) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -352,200 +526,35 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     );
   }
 
-  Widget _buildActionButtons(ProfileDetail profile, BuildContext context) {
-    final isSending =
-        WatchContext(context).watch<ProfileDetailBloc>().state
-            is FriendRequestSending;
-
-    return Row(
-      children: [
-        Expanded(child: _buildConnectButton(profile, context, isSending)),
-        const SizedBox(width: 10),
-        Expanded(
-          child: AppButton(
-            text: 'Chat',
-            backgroundColor: const Color(0xFF4A90D9),
-            textColor: Colors.white,
-            onPressed: () {
-              ReadContext(context).read<ChatBloc>().add(
-                CreateChatRoom(profile.id.toString(), profile.name),
-              );
-            },
+  Widget _buildMoreMenu(ProfileDetail profile, BuildContext context) {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_horiz, color: Color(0xFF8A94A6)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      onSelected: (value) {
+        if (value == 'unfriend') _showUnfriendDialog(context, profile);
+      },
+      itemBuilder: (_) => [
+        const PopupMenuItem(
+          value: 'unfriend',
+          child: Row(
+            children: [
+              Icon(
+                Icons.person_remove_outlined,
+                color: Color(0xFFE05454),
+                size: 18,
+              ),
+              SizedBox(width: 10),
+              Text(
+                'Unfriend',
+                style: TextStyle(
+                  color: Color(0xFFE05454),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildConnectButton(
-    ProfileDetail profile,
-    BuildContext context,
-    bool isSending,
-  ) {
-    switch (profile.connectionStatus) {
-      case ConnectionStatus.none:
-        return AppButton(
-          text: 'Add Friend',
-          backgroundColor: const Color(0xFF4A90D9),
-          textColor: Colors.white,
-          isLoading: isSending,
-          onPressed: isSending
-              ? null
-              : () => ReadContext(
-                  context,
-                ).read<ProfileDetailBloc>().add(SendFriendRequest(profile.id)),
-        );
-
-      case ConnectionStatus.requestedByMe:
-        return AppButton(
-          text: isSending ? 'Cancelling...' : 'Requested ✕',
-          backgroundColor: const Color(0xFFFF9800),
-          textColor: Colors.white,
-          isLoading: isSending,
-          onPressed: isSending
-              ? null
-              : () => _showCancelRequestDialog(context, profile),
-        );
-
-      case ConnectionStatus.requestedToMe:
-        final requestId = profile.connectionRequestId;
-        if (requestId == null) {
-          return AppButton(
-            text: 'Loading...',
-            backgroundColor: Colors.grey[300]!,
-            textColor: Colors.grey,
-            onPressed: null,
-          );
-        }
-        return Row(
-          children: [
-            Expanded(
-              child: AppButton(
-                text: 'Accept',
-                backgroundColor: const Color(0xFF5DC98A),
-                textColor: Colors.white,
-                isLoading: isSending,
-                onPressed: isSending
-                    ? null
-                    : () => ReadContext(context).read<ProfileDetailBloc>().add(
-                        AcceptFriendRequest(requestId),
-                      ),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Expanded(
-              child: AppButton(
-                text: 'Decline',
-                backgroundColor: Colors.white,
-                textColor: const Color(0xFFE05454),
-                isLoading: isSending,
-                onPressed: isSending
-                    ? null
-                    : () => ReadContext(context).read<ProfileDetailBloc>().add(
-                        RejectFriendRequest(requestId),
-                      ),
-              ),
-            ),
-          ],
-        );
-
-      case ConnectionStatus.connected:
-        return AppButton(
-          text: 'Connected ✓',
-          backgroundColor: const Color(0xFF5DC98A),
-          textColor: Colors.white,
-          onPressed: null,
-        );
-    }
-  }
-
-  // ─── Event Section with DateTabBar ───────────────────────────────────────
-  Widget _buildEventSection(List<Schedule> schedules) {
-    // ✅ สร้าง availableDates จาก schedules (unique, sorted)
-    final dateFormatter = DateFormat('yyyy-MM-dd');
-    final availableDates =
-        schedules.map((s) => dateFormatter.format(s.startAt)).toSet().toList()
-          ..sort();
-
-    // ✅ เลือกวันแรกถ้ายังไม่ได้เลือก
-    final selectedDate = availableDates.contains(_selectedScheduleDate)
-        ? _selectedScheduleDate
-        : (availableDates.isNotEmpty ? availableDates.first : '');
-
-    // ✅ filter schedules ตามวันที่เลือก
-    final filtered = schedules.where((s) {
-      final d = dateFormatter.format(s.startAt);
-      return d == selectedDate;
-    }).toList();
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Header ────────────────────────────────────────────────────
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 4),
-            child: Text(
-              'Event Plan',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1A2340),
-              ),
-            ),
-          ),
-
-          // ✅ DateTabBar
-          DateTabBar(
-            availableDates: availableDates,
-            selectedDate: selectedDate,
-            onDateSelected: (date) {
-              setState(() => _selectedScheduleDate = date);
-            },
-          ),
-
-          // ── Schedule list for selected date ───────────────────────────
-          if (filtered.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-              child: Center(
-                child: Text(
-                  'No events on this day',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                ),
-              ),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-              child: Column(
-                children: filtered
-                    .map(
-                      (s) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: ScheduleEventCard(
-                          schedule: s,
-                          type: ScheduleCardHelper.resolveCardType(s),
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-        ],
-      ),
     );
   }
 

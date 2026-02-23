@@ -16,35 +16,35 @@ class SendFriendRequest extends ProfileDetailEvent {
   SendFriendRequest(this.delegateId);
 }
 
-/// ✅ ยกเลิกคำขอที่เราส่งออกไป → DELETE /api/v1/requests/:target_id/cancel
-/// status: requestedByMe → none
+/// ยกเลิกคำขอที่เราส่งออกไป → DELETE /api/v1/requests/:target_id/cancel
 class CancelFriendRequest extends ProfileDetailEvent {
-  final int targetId; // คือ delegate id ที่เราส่ง request ไป
+  final int targetId;
   CancelFriendRequest(this.targetId);
 }
 
 /// ยอมรับคำขอ → PATCH /api/v1/requests/:id/accept
-/// status: requestedToMe → connected
 class AcceptFriendRequest extends ProfileDetailEvent {
   final int requestId;
   AcceptFriendRequest(this.requestId);
 }
 
 /// ปฏิเสธคำขอ → PATCH /api/v1/requests/:id/reject
-/// status: requestedToMe → none (ทั้งสองฝ่าย add กันได้ใหม่)
 class RejectFriendRequest extends ProfileDetailEvent {
   final int requestId;
   RejectFriendRequest(this.requestId);
 }
 
 /// ยกเลิกการเป็นเพื่อน → DELETE /api/v1/connections/:delegateId
-/// status: connected → none
 class UnfriendRequest extends ProfileDetailEvent {
   final int delegateId;
   UnfriendRequest(this.delegateId);
 }
 
+/// ✅ date เป็น optional — ถ้าไม่ส่ง backend คืน default (วันแรก)
+///    ส่ง date เมื่อ user กดเปลี่ยน tab ใน DateTabBar
 class LoadScheduleOthers extends ProfileDetailEvent {
   final int delegateId;
-  LoadScheduleOthers(this.delegateId);
+  final String? date; // "2025-10-13"
+
+  LoadScheduleOthers(this.delegateId, {this.date});
 }

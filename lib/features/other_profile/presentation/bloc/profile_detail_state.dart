@@ -2,7 +2,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:test_wpa/features/other_profile/domain/entities/profile_detail.dart';
-import 'package:test_wpa/features/schedules/domain/entities/schedule.dart'; // ✅ Schedule ไม่ใช่ ScheduleItem
+import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 
 @immutable
 sealed class ProfileDetailState {}
@@ -13,9 +13,22 @@ final class ProfileDetailLoading extends ProfileDetailState {}
 
 final class ProfileDetailLoaded extends ProfileDetailState {
   final ProfileDetail profile;
-  final List<Schedule>? schedules; // ✅ เปลี่ยนจาก ScheduleItem → Schedule
+  final List<Schedule>? schedules;
 
-  ProfileDetailLoaded(this.profile, {this.schedules});
+  /// ✅ ข้อมูลจาก API สำหรับ DateTabBar
+  final List<String> availableDates; // ["2025-10-12", ...]
+  final String selectedDate; // วันที่ที่แสดงอยู่ตอนนี้
+
+  /// ✅ กำลังโหลด schedule (แสดง shimmer ใน section นั้น ไม่ต้อง loading ทั้งหน้า)
+  final bool isScheduleLoading;
+
+  ProfileDetailLoaded(
+    this.profile, {
+    this.schedules,
+    this.availableDates = const [],
+    this.selectedDate = '',
+    this.isScheduleLoading = false,
+  });
 }
 
 final class ProfileDetailError extends ProfileDetailState {
@@ -33,16 +46,4 @@ final class FriendRequestSuccess extends ProfileDetailState {
 final class FriendRequestFailed extends ProfileDetailState {
   final String message;
   FriendRequestFailed(this.message);
-}
-
-final class ScheduleOthersLoading extends ProfileDetailState {}
-
-final class ScheduleOthersLoaded extends ProfileDetailState {
-  final List<Schedule> schedules; // ✅ เปลี่ยนจาก ScheduleItem → Schedule
-  ScheduleOthersLoaded(this.schedules);
-}
-
-final class ScheduleOthersError extends ProfileDetailState {
-  final String message;
-  ScheduleOthersError(this.message);
 }

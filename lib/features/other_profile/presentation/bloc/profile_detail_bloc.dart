@@ -6,13 +6,15 @@ import 'package:test_wpa/features/other_profile/domain/entities/profile_detail.d
 import 'package:test_wpa/features/other_profile/domain/repositories/profile_detail_repository.dart';
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_event.dart';
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_state.dart';
-import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/domain/repositories/schedule_others_repository.dart';
 
 class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
   final ProfileDetailRepository profileDetailRepository;
   final ConnectionRepository connectionRepository;
   final ScheduleOthersRepository scheduleOthersRepository;
+
+  /// เก็บ delegateId ไว้ใช้ reload schedule เมื่อเปลี่ยน date
+  int? _delegateId;
 
   ProfileDetailBloc({
     required this.profileDetailRepository,
@@ -21,7 +23,7 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
   }) : super(ProfileDetailInitial()) {
     on<LoadProfileDetail>(_onLoadProfileDetail);
     on<SendFriendRequest>(_onSendFriendRequest);
-    on<CancelFriendRequest>(_onCancelFriendRequest); // ✅ เพิ่มใหม่
+    on<CancelFriendRequest>(_onCancelFriendRequest);
     on<AcceptFriendRequest>(_onAcceptFriendRequest);
     on<RejectFriendRequest>(_onRejectFriendRequest);
     on<UnfriendRequest>(_onUnfriend);
@@ -33,6 +35,7 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
     LoadProfileDetail event,
     Emitter<ProfileDetailState> emit,
   ) async {
+    _delegateId = event.delegateId;
     emit(ProfileDetailLoading());
     try {
       var profile = await profileDetailRepository.getProfileDetail(
@@ -45,6 +48,7 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
       }
 
       emit(ProfileDetailLoaded(profile));
+      // โหลด schedule ทันที (ไม่ส่ง date → backend คืน default)
       add(LoadScheduleOthers(event.delegateId));
     } catch (e) {
       emit(ProfileDetailError('Cannot load profile: $e'));
@@ -69,7 +73,62 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
     return profile;
   }
 
-  // ─── Send Request (none → requestedByMe) ─────────────────────────────────
+  // ─── Load Schedules ───────────────────────────────────────────────────────
+  Future<void> _onLoadScheduleOthers(
+    LoadScheduleOthers event,
+    Emitter<ProfileDetailState> emit,
+  ) async {
+    final currentState = state;
+
+    // ✅ แสดง isScheduleLoading แทนการ emit loading ทั้งหน้า
+    if (currentState is ProfileDetailLoaded) {
+      emit(
+        ProfileDetailLoaded(
+          currentState.profile,
+          schedules: currentState.schedules,
+          availableDates: currentState.availableDates,
+          selectedDate: event.date ?? currentState.selectedDate,
+          isScheduleLoading: true,
+        ),
+      );
+    }
+
+    try {
+      final response = await scheduleOthersRepository.getScheduleOthers(
+        event.delegateId,
+        date: event.date,
+      );
+
+      final baseProfile = currentState is ProfileDetailLoaded
+          ? currentState.profile
+          : await profileDetailRepository.getProfileDetail(event.delegateId);
+
+      emit(
+        ProfileDetailLoaded(
+          baseProfile,
+          schedules: response.schedules,
+          availableDates: response.availableDates,
+          selectedDate: response.selectedDate,
+          isScheduleLoading: false,
+        ),
+      );
+    } catch (e) {
+      print('❌ Load schedule others error: $e');
+      if (currentState is ProfileDetailLoaded) {
+        emit(
+          ProfileDetailLoaded(
+            currentState.profile,
+            schedules: currentState.schedules ?? [],
+            availableDates: currentState.availableDates,
+            selectedDate: currentState.selectedDate,
+            isScheduleLoading: false,
+          ),
+        );
+      }
+    }
+  }
+
+  // ─── Send Request ─────────────────────────────────────────────────────────
   Future<void> _onSendFriendRequest(
     SendFriendRequest event,
     Emitter<ProfileDetailState> emit,
@@ -80,7 +139,6 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
     emit(FriendRequestSending());
     try {
       await connectionRepository.sendRequest(event.delegateId);
-
       emit(
         ProfileDetailLoaded(
           _copyProfile(
@@ -90,6 +148,8 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
             connectionRequestId: null,
           ),
           schedules: currentState.schedules,
+          availableDates: currentState.availableDates,
+          selectedDate: currentState.selectedDate,
         ),
       );
       emit(FriendRequestSuccess('Friend request sent!'));
@@ -98,14 +158,15 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
         ProfileDetailLoaded(
           currentState.profile,
           schedules: currentState.schedules,
+          availableDates: currentState.availableDates,
+          selectedDate: currentState.selectedDate,
         ),
       );
       emit(FriendRequestFailed('Failed to send friend request'));
     }
   }
 
-  // ─── Cancel Request (requestedByMe → none) ───────────────────────────────
-  // DELETE /api/v1/requests/:target_id/cancel
+  // ─── Cancel Request ───────────────────────────────────────────────────────
   Future<void> _onCancelFriendRequest(
     CancelFriendRequest event,
     Emitter<ProfileDetailState> emit,
@@ -116,8 +177,6 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
     emit(FriendRequestSending());
     try {
       await connectionRepository.cancelRequest(event.targetId);
-
-      // ✅ กลับ none → Add Friend ปรากฏอีกครั้ง
       emit(
         ProfileDetailLoaded(
           _copyProfile(
@@ -127,6 +186,8 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
             connectionRequestId: null,
           ),
           schedules: currentState.schedules,
+          availableDates: currentState.availableDates,
+          selectedDate: currentState.selectedDate,
         ),
       );
       emit(FriendRequestSuccess('Request cancelled'));
@@ -135,13 +196,15 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
         ProfileDetailLoaded(
           currentState.profile,
           schedules: currentState.schedules,
+          availableDates: currentState.availableDates,
+          selectedDate: currentState.selectedDate,
         ),
       );
       emit(FriendRequestFailed('Failed to cancel request'));
     }
   }
 
-  // ─── Accept (requestedToMe → connected) ──────────────────────────────────
+  // ─── Accept ───────────────────────────────────────────────────────────────
   Future<void> _onAcceptFriendRequest(
     AcceptFriendRequest event,
     Emitter<ProfileDetailState> emit,
@@ -152,7 +215,6 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
     emit(FriendRequestSending());
     try {
       await connectionRepository.acceptRequest(event.requestId);
-
       emit(
         ProfileDetailLoaded(
           _copyProfile(
@@ -162,6 +224,8 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
             connectionRequestId: null,
           ),
           schedules: currentState.schedules,
+          availableDates: currentState.availableDates,
+          selectedDate: currentState.selectedDate,
         ),
       );
       emit(FriendRequestSuccess('You are now connected!'));
@@ -170,14 +234,15 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
         ProfileDetailLoaded(
           currentState.profile,
           schedules: currentState.schedules,
+          availableDates: currentState.availableDates,
+          selectedDate: currentState.selectedDate,
         ),
       );
       emit(FriendRequestFailed('Failed to accept request'));
     }
   }
 
-  // ─── Reject (requestedToMe → none) ───────────────────────────────────────
-  // ✅ หลัง reject ทั้งสองฝ่าย status = none → add กันได้ใหม่
+  // ─── Reject ───────────────────────────────────────────────────────────────
   Future<void> _onRejectFriendRequest(
     RejectFriendRequest event,
     Emitter<ProfileDetailState> emit,
@@ -188,17 +253,17 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
     emit(FriendRequestSending());
     try {
       await connectionRepository.rejectRequest(event.requestId);
-
       emit(
         ProfileDetailLoaded(
           _copyProfile(
             currentState.profile,
             isConnected: false,
-            connectionStatus:
-                ConnectionStatus.none, // ✅ none เลย ไม่ใช่ rejected
+            connectionStatus: ConnectionStatus.none,
             connectionRequestId: null,
           ),
           schedules: currentState.schedules,
+          availableDates: currentState.availableDates,
+          selectedDate: currentState.selectedDate,
         ),
       );
       emit(FriendRequestSuccess('Request declined'));
@@ -207,13 +272,15 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
         ProfileDetailLoaded(
           currentState.profile,
           schedules: currentState.schedules,
+          availableDates: currentState.availableDates,
+          selectedDate: currentState.selectedDate,
         ),
       );
       emit(FriendRequestFailed('Failed to decline request'));
     }
   }
 
-  // ─── Unfriend (connected → none) ─────────────────────────────────────────
+  // ─── Unfriend ─────────────────────────────────────────────────────────────
   Future<void> _onUnfriend(
     UnfriendRequest event,
     Emitter<ProfileDetailState> emit,
@@ -224,7 +291,6 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
     emit(FriendRequestSending());
     try {
       await connectionRepository.unfriend(event.delegateId);
-
       emit(
         ProfileDetailLoaded(
           _copyProfile(
@@ -234,6 +300,8 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
             connectionRequestId: null,
           ),
           schedules: currentState.schedules,
+          availableDates: currentState.availableDates,
+          selectedDate: currentState.selectedDate,
         ),
       );
       emit(FriendRequestSuccess('Unfriended successfully'));
@@ -242,32 +310,15 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
         ProfileDetailLoaded(
           currentState.profile,
           schedules: currentState.schedules,
+          availableDates: currentState.availableDates,
+          selectedDate: currentState.selectedDate,
         ),
       );
       emit(FriendRequestFailed('Failed to unfriend'));
     }
   }
 
-  // ─── Load Schedules ───────────────────────────────────────────────────────
-  Future<void> _onLoadScheduleOthers(
-    LoadScheduleOthers event,
-    Emitter<ProfileDetailState> emit,
-  ) async {
-    final currentState = state;
-    try {
-      final List<Schedule> schedules = await scheduleOthersRepository
-          .getScheduleOthers(event.delegateId);
-      if (currentState is ProfileDetailLoaded) {
-        emit(ProfileDetailLoaded(currentState.profile, schedules: schedules));
-      }
-    } catch (e) {
-      print('❌ Load schedule others error: $e');
-      if (currentState is ProfileDetailLoaded) {
-        emit(ProfileDetailLoaded(currentState.profile, schedules: []));
-      }
-    }
-  }
-
+  // ─── Helper ───────────────────────────────────────────────────────────────
   ProfileDetail _copyProfile(
     ProfileDetail p, {
     required bool isConnected,
