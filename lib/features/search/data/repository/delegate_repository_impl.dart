@@ -13,20 +13,34 @@ class DelegateRepositoryImpl implements DelegateRepository {
     String? keyword,
     int page = 1,
     int perPage = 50,
-  }) 
-  async {
-    try {
-      final json = await api.searchDelegates(
-        keyword: keyword,
-        page: page,
-        perPage: perPage,
-      );
-
-      final model = DelegateSearchResponseModel.fromJson(json);
-      return model.toEntity();
-    } catch (e) {
-      print('❌ DelegateRepositoryImpl error: $e');
-      throw Exception('Failed to search delegates: $e');
-    }
+    bool friendsOnly = false, // ✅ เพิ่ม
+  }) async {
+    final json = await api.searchDelegates(
+      keyword: keyword,
+      page: page,
+      perPage: perPage,
+      friendsOnly: friendsOnly, // ✅ ส่งต่อ
+    );
+    return DelegateSearchResponseModel.fromJson(json).toEntity();
   }
+  // Future<DelegateSearchResponse> searchDelegates({
+  //   String? keyword,
+  //   int page = 1,
+  //   int perPage = 50,
+  // })
+  // async {
+  //   try {
+  //     final json = await api.searchDelegates(
+  //       keyword: keyword,
+  //       page: page,
+  //       perPage: perPage,
+  //     );
+
+  //     final model = DelegateSearchResponseModel.fromJson(json);
+  //     return model.toEntity();
+  //   } catch (e) {
+  //     print('❌ DelegateRepositoryImpl error: $e');
+  //     throw Exception('Failed to search delegates: $e');
+  //   }
+  // }
 }

@@ -5,5 +5,6 @@ abstract class DelegateRepository {
     String? keyword,
     int page = 1,
     int perPage = 50,
+    bool friendsOnly = false,
   });
 }
