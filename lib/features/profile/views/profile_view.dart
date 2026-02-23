@@ -7,12 +7,13 @@ import 'package:test_wpa/features/profile/data/models/show_edit_profile.dart';
 import 'package:test_wpa/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:test_wpa/features/profile/presentation/bloc/profile_event.dart';
 import 'package:test_wpa/features/profile/presentation/bloc/profile_state.dart';
+import 'package:test_wpa/features/widgets/app_button.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/profile_info_card.dart';
 import '../widgets/profile_toggle_card.dart';
 import '../widgets/profile_section_header.dart';
-import '../widgets/logout_dialog.dart';
+import 'logout_dialog.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
 class ProfileView extends StatelessWidget {
@@ -175,51 +176,48 @@ class ProfileView extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               // ========== Notifications Section ==========
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: ProfileSectionHeader(title: 'NOTIFICATIONS'),
-              ),
+              // const Padding(
+              //   padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+              //   child: ProfileSectionHeader(title: 'NOTIFICATIONS'),
+              // ),
 
-              Container(
-                color: Colors.white,
-                child: Column(
-                  children: [
-                    ProfileToggleCard(
-                      label: 'Push Notifications',
-                      value: profile.pushNotifications,
-                      showBorder: true,
-                      onChanged: (val) => ReadContext(
-                        context,
-                      ).read<ProfileBloc>().add(TogglePushNotification(val)),
-                    ),
-                    ProfileToggleCard(
-                      label: 'Email Notifications',
-                      value: profile.emailNotifications,
-                      showBorder: false,
-                      onChanged: (val) => ReadContext(
-                        context,
-                      ).read<ProfileBloc>().add(ToggleEmailNotification(val)),
-                    ),
-                  ],
-                ),
-              ),
-
+              // Container(
+              //   color: Colors.white,
+              //   child: Column(
+              //     children: [
+              //       ProfileToggleCard(
+              //         label: 'Push Notifications',
+              //         value: profile.pushNotifications,
+              //         showBorder: true,
+              //         onChanged: (val) => ReadContext(
+              //           context,
+              //         ).read<ProfileBloc>().add(TogglePushNotification(val)),
+              //       ),
+              //       ProfileToggleCard(
+              //         label: 'Email Notifications',
+              //         value: profile.emailNotifications,
+              //         showBorder: false,
+              //         onChanged: (val) => ReadContext(
+              //           context,
+              //         ).read<ProfileBloc>().add(ToggleEmailNotification(val)),
+              //       ),
+              //     ],
+              //   ),
+              // ),
               SizedBox(height: space.m),
 
               // ========== Log Out Button ==========
-              Center(
-                child: TextButton(
-                  onPressed: () => showLogoutDialog(context),
-                  child: const Text(
-                    'Log Out',
-                    style: TextStyle(
-                      color: Colors.red,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Center(
+                  child: AppButton(
+                    onPressed: () => showLogoutDialog(context),
+                    text: 'Log Out',
+                    textColor: color.AppColors.surface,
+                    backgroundColor: color.AppColors.error,
                   ),
                 ),
               ),

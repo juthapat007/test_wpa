@@ -16,9 +16,11 @@ import 'package:test_wpa/features/schedules/presentation/bloc/schedules_state.da
 import 'package:test_wpa/features/schedules/presentation/widgets/date_header.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/time_slot_chip.dart';
+import 'package:test_wpa/features/schedules/utils/schedule_card_helper.dart';
 import 'package:test_wpa/features/widgets/app_dialog.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
 import 'package:test_wpa/features/widgets/date_tab_bar.dart';
+import 'package:test_wpa/features/schedules/presentation/widgets/schedule_event_card.dart';
 
 class MeetingWidget extends StatefulWidget {
   const MeetingWidget({super.key});
@@ -138,6 +140,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
 
   // ─── Initial date / dialog ────────────────────────────────────────────────
   // วันเริ่มต้นซิงค์
+
   void _syncInitialDate(String responseDate) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -191,6 +194,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
             const DateHeader(),
             _buildDateTabBar(),
             _buildTableGridSection(),
+            _buildScheduleSection(), // ✅ หายไป ต้องเพิ่มกลับ
           ],
         ),
       ),
@@ -323,7 +327,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
           final toShow = [if (current != null) current, if (next != null) next];
           if (toShow.isEmpty) return const SizedBox.shrink();
 
-          // return _buildCompactScheduleList(toShow, hasCurrent: current != null);
+          return _buildCompactScheduleList(toShow, hasCurrent: current != null);
         }
 
         if (state is ScheduleError) return _buildScheduleError(state.message);
@@ -484,6 +488,38 @@ class _MeetingWidgetState extends State<MeetingWidget> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompactScheduleList(
+    List<ScheduleWithStatus> toShow, {
+    required bool hasCurrent,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        children: [
+          ...toShow.map((s) => _buildScheduleCard(s)),
+          if (!_showFullList)
+            TextButton(
+              onPressed: () => setState(() => _showFullList = true),
+              child: const Text('See all'),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScheduleCard(ScheduleWithStatus s) {
+    return GestureDetector(
+      onTap: () => _onScheduleTap(s.schedule),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: ScheduleEventCard(
+          schedule: s.schedule,
+          type: ScheduleCardHelper.resolveCardType(s.schedule),
         ),
       ),
     );

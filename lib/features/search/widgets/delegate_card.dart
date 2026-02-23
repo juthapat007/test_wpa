@@ -1,5 +1,3 @@
-// lib/features/search/widgets/delegate_card.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/features/search/domain/entities/delegate.dart';

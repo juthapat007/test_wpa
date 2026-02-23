@@ -26,7 +26,7 @@ class SchedulePage extends StatefulWidget {
 }
 
 class _SchedulePageState extends State<SchedulePage> {
-  static const double timelineOffset = 42.0;
+  static const double timelineOffset = 38.0;
 
   bool isSelectionMode = false;
   Set<int> selectedScheduleIds = {};
@@ -185,7 +185,6 @@ class _SchedulePageState extends State<SchedulePage> {
                     if (state is ScheduleLoaded) {
                       final response = state.scheduleResponse;
 
-                      // ✅ ครั้งแรก: ใช้ response.date เป็น source of truth
                       if (_selectedDateStr.isEmpty &&
                           response.availableDates.isNotEmpty) {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -235,7 +234,7 @@ class _SchedulePageState extends State<SchedulePage> {
                           ),
                           itemCount: schedules.length,
                           separatorBuilder: (_, __) =>
-                              const SizedBox(height: height.m),
+                              const SizedBox(height: space.s),
                           itemBuilder: (context, index) {
                             final schedule = schedules[index];
                             final isSelected = selectedScheduleIds.contains(

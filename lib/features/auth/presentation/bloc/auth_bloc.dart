@@ -30,6 +30,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         password: event.password,
       );
       await DioClient().init();
+      //คอยเก็บ token
       // final fcmToken = await FirebaseMessaging.instance.getToken();
       // if (fcmToken != null) {
       //   await authRepository.registerDeviceToken(fcmToken);

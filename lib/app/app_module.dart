@@ -98,7 +98,11 @@ class AppModule extends Module {
     i.addLazySingleton<AuthRepository>(
       () => AuthRepositoryImpl(Modular.get<AuthApi>()),
     );
-    i.add<AuthBloc>(
+    // i.add<AuthBloc>(
+    //   () => AuthBloc(authRepository: Modular.get<AuthRepository>()),
+    // );
+    // ✅ addLazySingleton = instance เดิมทุกที่
+    i.addLazySingleton<AuthBloc>(
       () => AuthBloc(authRepository: Modular.get<AuthRepository>()),
     );
 
@@ -215,14 +219,21 @@ class AppModule extends Module {
   @override
   void routes(r) {
     /// ===== Public =====
+    // r.child(
+    //   '/',
+    //   child: (_) => BlocProvider<AuthBloc>(
+    //     create: (_) => Modular.get<AuthBloc>(),
+    //     child: const LoginPage(),
+    //   ),
+    // );
     r.child(
       '/',
-      child: (_) => BlocProvider<AuthBloc>(
-        create: (_) => Modular.get<AuthBloc>(),
+      child: (_) => BlocProvider.value(
+        // ✅ .value จะไม่ dispose bloc
+        value: Modular.get<AuthBloc>(),
         child: const LoginPage(),
       ),
     );
-
     r.child('/forgot_password', child: (_) => const ForgotPasswordPage());
 
     /// ===== Protected =====

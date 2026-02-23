@@ -50,9 +50,10 @@ class AppScaffold extends StatelessWidget {
                       padding: const EdgeInsets.only(left: 8),
                       child: BlocBuilder<AuthBloc, AuthState>(
                         buildWhen: (previous, current) {
+                          // ✅ rebuild ถ้า avatarUrl เปลี่ยน
                           if (previous is AuthAuthenticated &&
                               current is AuthAuthenticated) {
-                            return false;
+                            return previous.avatarUrl != current.avatarUrl;
                           }
                           return true;
                         },
@@ -62,7 +63,10 @@ class AppScaffold extends StatelessWidget {
                           if (state is AuthAuthenticated) {
                             avatarUrl = state.avatarUrl;
                           }
-
+                          print('=== AUTH STATE: $state');
+                          if (state is AuthAuthenticated) {
+                            print('=== avatarUrl: ${state.avatarUrl}');
+                          }
                           return AppAvatar(
                             imageUrl: avatarUrl,
                             onTap: () {
@@ -96,9 +100,10 @@ class AppScaffold extends StatelessWidget {
               if (showAvatar)
                 BlocBuilder<AuthBloc, AuthState>(
                   buildWhen: (previous, current) {
+                    // ✅ rebuild ถ้า avatarUrl เปลี่ยน
                     if (previous is AuthAuthenticated &&
                         current is AuthAuthenticated) {
-                      return false;
+                      return previous.avatarUrl != current.avatarUrl;
                     }
                     return true;
                   },
@@ -107,6 +112,10 @@ class AppScaffold extends StatelessWidget {
 
                     if (state is AuthAuthenticated) {
                       avatarUrl = state.avatarUrl;
+                    }
+                    print('=== AUTH STATE: $state');
+                    if (state is AuthAuthenticated) {
+                      print('=== avatarUrl: ${state.avatarUrl}');
                     }
 
                     return GestureDetector(

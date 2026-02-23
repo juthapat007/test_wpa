@@ -18,7 +18,7 @@ class DelegateApi {
       }
 
       final response = await dio.get(
-        '/delegates/search',
+        '/delegates',
         queryParameters: queryParams,
       );
 

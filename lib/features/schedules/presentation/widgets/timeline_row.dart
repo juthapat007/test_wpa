@@ -37,7 +37,7 @@ class TimelineRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          height: 120,
+          height: 90,
           width: 50,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
