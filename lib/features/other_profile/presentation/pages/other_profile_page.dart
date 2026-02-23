@@ -13,6 +13,7 @@ import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_event_card.dart';
 import 'package:test_wpa/features/schedules/utils/schedule_card_helper.dart';
 import 'package:test_wpa/features/widgets/app_button.dart';
+import 'package:test_wpa/features/widgets/date_tab_bar.dart';
 
 class OtherProfilePage extends StatefulWidget {
   final int delegateId;
@@ -23,6 +24,9 @@ class OtherProfilePage extends StatefulWidget {
 }
 
 class _OtherProfilePageState extends State<OtherProfilePage> {
+  /// ✅ วันที่เลือกใน DateTabBar ของ schedule section
+  String _selectedScheduleDate = '';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -111,6 +115,20 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                   ? state.schedules
                   : null;
 
+              // ✅ กำหนดวันแรกอัตโนมัติเมื่อโหลด schedule ครั้งแรก
+              if (schedules != null &&
+                  schedules.isNotEmpty &&
+                  _selectedScheduleDate.isEmpty) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    final firstDate = DateFormat(
+                      'yyyy-MM-dd',
+                    ).format(schedules.first.startAt);
+                    setState(() => _selectedScheduleDate = firstDate);
+                  }
+                });
+              }
+
               return SingleChildScrollView(
                 child: Column(
                   children: [
@@ -131,6 +149,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     );
   }
 
+  // ─── Profile Card ─────────────────────────────────────────────────────────
   Widget _buildProfileCard(ProfileDetail profile, BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -174,9 +193,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       icon: const Icon(Icons.more_horiz, color: Color(0xFF8A94A6)),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       onSelected: (value) {
-        if (value == 'unfriend') {
-          _showUnfriendDialog(context, profile);
-        }
+        if (value == 'unfriend') _showUnfriendDialog(context, profile);
       },
       itemBuilder: (_) => [
         const PopupMenuItem(
@@ -264,7 +281,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
             ),
             onPressed: () {
               Navigator.of(ctx).pop();
-              // ✅ ส่ง delegate id (target_id) ไม่ใช่ request id
               ReadContext(
                 context,
               ).read<ProfileDetailBloc>().add(CancelFriendRequest(profile.id));
@@ -367,7 +383,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     bool isSending,
   ) {
     switch (profile.connectionStatus) {
-      // ─── ยังไม่รู้จักกัน ──────────────────────────────────────────────
       case ConnectionStatus.none:
         return AppButton(
           text: 'Add Friend',
@@ -381,8 +396,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                 ).read<ProfileDetailBloc>().add(SendFriendRequest(profile.id)),
         );
 
-      // ─── เราส่ง request ออกไปแล้ว → กดยกเลิกได้ ──────────────────────
-      // ✅ เปลี่ยนจาก "Pending..." disabled เป็นปุ่มกดได้เพื่อ cancel
       case ConnectionStatus.requestedByMe:
         return AppButton(
           text: isSending ? 'Cancelling...' : 'Requested ✕',
@@ -394,7 +407,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
               : () => _showCancelRequestDialog(context, profile),
         );
 
-      // ─── ฝั่งนั้น add มาหาเรา → Accept / Decline ─────────────────────
       case ConnectionStatus.requestedToMe:
         final requestId = profile.connectionRequestId;
         if (requestId == null) {
@@ -437,7 +449,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           ],
         );
 
-      // ─── เป็นเพื่อนกันแล้ว — Unfriend อยู่ที่ปุ่ม ··· ─────────────────
       case ConnectionStatus.connected:
         return AppButton(
           text: 'Connected ✓',
@@ -448,9 +459,25 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     }
   }
 
-  // ─── Event Section ────────────────────────────────────────────────────────
+  // ─── Event Section with DateTabBar ───────────────────────────────────────
   Widget _buildEventSection(List<Schedule> schedules) {
-    final grouped = _groupByDate(schedules);
+    // ✅ สร้าง availableDates จาก schedules (unique, sorted)
+    final dateFormatter = DateFormat('yyyy-MM-dd');
+    final availableDates =
+        schedules.map((s) => dateFormatter.format(s.startAt)).toSet().toList()
+          ..sort();
+
+    // ✅ เลือกวันแรกถ้ายังไม่ได้เลือก
+    final selectedDate = availableDates.contains(_selectedScheduleDate)
+        ? _selectedScheduleDate
+        : (availableDates.isNotEmpty ? availableDates.first : '');
+
+    // ✅ filter schedules ตามวันที่เลือก
+    final filtered = schedules.where((s) {
+      final d = dateFormatter.format(s.startAt);
+      return d == selectedDate;
+    }).toList();
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -467,8 +494,9 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Header ────────────────────────────────────────────────────
           const Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 4),
             child: Text(
               'Event Plan',
               style: TextStyle(
@@ -478,54 +506,46 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
               ),
             ),
           ),
-          ...grouped.entries.map((e) => _buildDateGroup(e.key, e.value)),
-          const SizedBox(height: 16),
+
+          // ✅ DateTabBar
+          DateTabBar(
+            availableDates: availableDates,
+            selectedDate: selectedDate,
+            onDateSelected: (date) {
+              setState(() => _selectedScheduleDate = date);
+            },
+          ),
+
+          // ── Schedule list for selected date ───────────────────────────
+          if (filtered.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              child: Center(
+                child: Text(
+                  'No events on this day',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                ),
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+              child: Column(
+                children: filtered
+                    .map(
+                      (s) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: ScheduleEventCard(
+                          schedule: s,
+                          type: ScheduleCardHelper.resolveCardType(s),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
         ],
       ),
-    );
-  }
-
-  Map<String, List<Schedule>> _groupByDate(List<Schedule> schedules) {
-    final formatter = DateFormat('d MMMM yyyy');
-    final grouped = <String, List<Schedule>>{};
-    for (final s in schedules) {
-      grouped.putIfAbsent(formatter.format(s.startAt), () => []).add(s);
-    }
-    return grouped;
-  }
-
-  Widget _buildDateGroup(String dateLabel, List<Schedule> items) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Text(
-            dateLabel,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF8A94A6),
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: items
-                .map(
-                  (s) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: ScheduleEventCard(
-                      schedule: s,
-                      type: ScheduleCardHelper.resolveCardType(s),
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
-        ),
-      ],
     );
   }
 

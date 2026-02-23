@@ -17,6 +17,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     on<SearchDelegates>(_onSearchDelegates);
     on<LoadMoreDelegates>(_onLoadMore);
     on<ResetSearch>(_onReset);
+    on<RefreshDelegates>(_onRefresh); // ✅ ใหม่
   }
 
   Future<void> _onSearchDelegates(
@@ -26,12 +27,13 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     emit(SearchLoading());
     try {
       _currentKeyword = event.keyword;
-      _currentPage = event.page;
+      _currentPage = 1;
 
       final response = await delegateRepository.searchDelegates(
         keyword: event.keyword,
-        page: event.page,
+        page: 1,
         perPage: event.perPage,
+        friendsOnly: event.friendsOnly,
       );
 
       _allDelegates = response.delegates;
@@ -42,14 +44,35 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
+  /// ✅ Reload ด้วย keyword เดิม หน้า 1 — ใช้หลังกลับจาก OtherProfilePage
+  Future<void> _onRefresh(
+    RefreshDelegates event,
+    Emitter<SearchState> emit,
+  ) async {
+    final currentState = state;
+    // แสดง loading เฉพาะถ้าไม่มีข้อมูลเดิม
+    if (currentState is! SearchLoaded) emit(SearchLoading());
+
+    try {
+      _currentPage = 1;
+      final response = await delegateRepository.searchDelegates(
+        keyword: _currentKeyword,
+        page: 1,
+        perPage: 50,
+      );
+      _allDelegates = response.delegates;
+      emit(SearchLoaded(response));
+    } catch (e) {
+      emit(SearchError('Cannot refresh: $e'));
+    }
+  }
+
   Future<void> _onLoadMore(
     LoadMoreDelegates event,
     Emitter<SearchState> emit,
   ) async {
     final currentState = state;
     if (currentState is! SearchLoaded) return;
-
-    // Check if there are more pages
     if (_currentPage >= currentState.response.meta.totalPages) return;
 
     emit(SearchLoaded(currentState.response, isLoadingMore: true));

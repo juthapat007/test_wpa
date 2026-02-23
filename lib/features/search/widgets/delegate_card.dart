@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/features/search/domain/entities/delegate.dart';
+import 'package:test_wpa/features/search/presentation/bloc/search_bloc.dart';
 
 class DelegateCard extends StatelessWidget {
   final Delegate delegate;
@@ -14,16 +16,16 @@ class DelegateCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 1,
       child: InkWell(
-        onTap: () {
-          Modular.to.pushNamed(
+        onTap: () async {
+          // ✅ await การเปิดหน้า แล้ว refresh เพื่ออัปเดต badge
+          await Modular.to.pushNamed(
             '/other_profile',
             arguments: {'delegate_id': delegate.id},
           );
+          if (context.mounted) {
+            ReadContext(context).read<SearchBloc>().add(RefreshDelegates());
+          }
         },
-        // delegate_card.dart
-        // onTap: () {
-        //   Modular.to.pushNamed('/other-profile/${delegate.id}');
-        // },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(14),

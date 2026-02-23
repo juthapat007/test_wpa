@@ -20,3 +20,5 @@ class SearchDelegates extends SearchEvent {
 class LoadMoreDelegates extends SearchEvent {}
 
 class ResetSearch extends SearchEvent {}
+
+class RefreshDelegates extends SearchEvent {}
