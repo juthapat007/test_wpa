@@ -10,7 +10,9 @@ class AppTheme {
     //AppBar Theme
     appBarTheme: const AppBarTheme(
       backgroundColor: AppColors.surface,
-      foregroundColor: AppColors.textPrimary,
+      foregroundColor: AppColors.primaryLight,
+      iconTheme: IconThemeData(size: 32),
+
       // elevation: 0,
       centerTitle: true,
       titleTextStyle: TextStyle(
@@ -18,7 +20,7 @@ class AppTheme {
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
       ),
-      iconTheme: IconThemeData(color: AppColors.textPrimary),
+      // iconTheme: IconThemeData(color: AppColors.textPrimary),
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
       backgroundColor: AppColors.surface,

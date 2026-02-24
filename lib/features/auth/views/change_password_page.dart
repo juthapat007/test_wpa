@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 import 'package:test_wpa/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:test_wpa/features/widgets/app_bar_back.dart';
 import 'package:test_wpa/features/widgets/app_button.dart';
 import 'package:test_wpa/features/widgets/app_dialog.dart';
 import 'package:test_wpa/features/widgets/app_text_form_field.dart';
@@ -110,12 +111,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(
-          title: const Text('Change Password'),
-          backgroundColor: AppColors.border,
-          elevation: 0,
-        ),
+        appBar: const AppBarBack(title: 'Change Password'),
+
         body: BlocBuilder<AuthBloc, AuthState>(
           builder: (context, state) {
             final isLoading = state is AuthLoading;

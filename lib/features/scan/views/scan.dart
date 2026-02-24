@@ -19,6 +19,9 @@ class Scan extends StatefulWidget {
 class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
   String? _delegateId;
   String? _userName;
+  String? _userTitle;
+  String? _userCompany;
+  String? _userTeam;
 
   final _storage = const FlutterSecureStorage();
 
@@ -48,11 +51,15 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
   Future<void> _loadUserData() async {
     final id = await _storage.read(key: 'delegate_id');
     final userDataStr = await _storage.read(key: 'user_data');
-    String? name;
+
+    String? name, title, company, team;
     if (userDataStr != null) {
       try {
         final userData = jsonDecode(userDataStr);
         name = userData['name'];
+        title = userData['title'];
+        company = userData['company']?['name'] ?? userData['company'];
+        team = userData['team']?['name'] ?? userData['team'];
       } catch (e) {
         print('Error parsing user data: $e');
       }
@@ -120,7 +127,7 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
                   const SizedBox(width: space.m),
                   const Expanded(
                     child: Text(
-                      'QR Code ไม่ถูกต้อง',
+                      'QR Code wrong',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -178,18 +185,39 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const SizedBox(height: space.m),
-            _buildToggleModeButton(),
-            const SizedBox(height: space.xl),
             if (_userName != null) ...[
               Text(
                 '$_userName',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: space.xs),
+              if (_userTitle != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  '$_userTitle',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+
+              SizedBox(height: space.m),
+              // Wrap(
+              //   spacing: space.s,
+              //   runSpacing: space.s,
+              //   alignment: WrapAlignment.center,
+              //   children: [
+              //     if (_userCompany != null)
+              //       _buildInfoChip(Icons.business_outlined, _userCompany!),
+              //     if (_userTeam != null)
+              //       _buildInfoChip(Icons.group_outlined, _userTeam!),
+              //     if (_delegateId != null)
+              //       _buildInfoChip(Icons.badge_outlined, 'ID: $_delegateId'),
+              //   ],
+              // ),
+              // const SizedBox(height: space.m),
             ],
 
             Container(
@@ -219,127 +247,163 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
                     ),
                     child: _buildQrCodeImage(qrCodeBase64),
                   ),
-                  const SizedBox(height: space.l),
-                  if (_delegateId != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: space.l,
-                        vertical: space.m,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.primary.withOpacity(0.1),
-                            AppColors.primaryLight.withOpacity(0.1),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.primary.withOpacity(0.2),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.badge_outlined,
-                            size: 18,
-                            color: AppColors.primary,
-                          ),
-                          const SizedBox(width: space.s),
-                          Text(
-                            'ID: $_delegateId',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 1.2,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
+
+                  //===================================================================================================
+
+                  //===================================================================================================
                 ],
               ),
             ),
-            const SizedBox(height: space.xl),
+            const SizedBox(height: space.l),
+
+            // ========== Action Buttons ==========
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildActionButton(
+                  icon: Icons.qr_code_scanner,
+                  label: 'Scan QR',
+                  color: AppColors.secondary,
+                  onTap: _openScanner,
+                ),
+                _buildActionButton(
+                  icon: Icons.download_rounded,
+                  label: 'Save QR',
+                  color: AppColors.primary,
+                  onTap: _saveQrCode,
+                ),
+                _buildActionButton(
+                  icon: Icons.person_search_rounded,
+                  label: 'Search',
+                  color: AppColors.primaryLight,
+                  onTap: _openSearchDialog,
+                ),
+              ],
+            ),
+            const SizedBox(height: space.m),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildToggleModeButton() {
-    return ScaleTransition(
-      scale: _scaleAnimation,
-      child: GestureDetector(
-        onTap: _openScanner,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: space.l,
-            vertical: space.m,
-          ),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppColors.secondary.withOpacity(0.9),
-                AppColors.secondary,
-              ],
+  // ========== Action Button Widget ==========
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 70, // 👈 ปรับขนาดได้ตามใจ
+            height: 70, // 👈 ปรับขนาดได้ตามใจ
+            padding: const EdgeInsets.all(space.m), // 👈 ปรับ padding ได้ตรงนี้
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(
+                16,
+              ), // 👈 เปลี่ยนจาก shape: BoxShape.circle
+              border: Border.all(color: color.withOpacity(0.3), width: 1.5),
             ),
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.secondary.withOpacity(0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            child: Icon(icon, color: color, size: 30),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.qr_code_scanner,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: space.m),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    'สลับโหมด',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    'สแกน QR Code คนอื่น',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: space.s),
-              const Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.white,
-                size: 16,
-              ),
-            ],
+          const SizedBox(height: space.s),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
           ),
-        ),
+        ],
       ),
+    );
+  }
+
+  // ========== Save QR ==========
+  Future<void> _saveQrCode() async {
+    // TODO: implement save to gallery
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white),
+            SizedBox(width: 8),
+            Text('QR Code saved to gallery'),
+          ],
+        ),
+        backgroundColor: AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  // ========== Search Dialog ==========
+  void _openSearchDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: const Text('Search by ID'),
+          content: TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText: 'Enter Delegate ID',
+              prefixIcon: const Icon(Icons.person_search_rounded),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onSubmitted: (_) {
+              final id = int.tryParse(controller.text.trim());
+              if (id != null) {
+                Navigator.pop(ctx);
+                Modular.to.pushNamed(
+                  '/other_profile',
+                  arguments: {'delegate_id': id},
+                );
+              }
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () {
+                final id = int.tryParse(controller.text.trim());
+                if (id != null) {
+                  Navigator.pop(ctx);
+                  Modular.to.pushNamed(
+                    '/other_profile',
+                    arguments: {'delegate_id': id},
+                  );
+                }
+              },
+              child: const Text('Search'),
+            ),
+          ],
+        );
+      },
     );
   }
 

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:meta/meta.dart';
 import 'package:test_wpa/core/network/dio_client.dart';
 import 'package:test_wpa/features/auth/domain/repositories/auth_repository.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:test_wpa/core/services/notification_websocket_service.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 part 'auth_event.dart';
 part 'auth_state.dart';
 
@@ -30,6 +32,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         password: event.password,
       );
       await DioClient().init();
+      final storage = Modular.get<FlutterSecureStorage>();
+      final token = await storage.read(key: 'auth_token');
+      if (token != null) {
+        NotificationWebSocketService.instance.connect(token);
+      }
       //คอยเก็บ token
       // final fcmToken = await FirebaseMessaging.instance.getToken();
       // if (fcmToken != null) {
@@ -50,6 +57,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Future<void> _onLogout(AuthLogout event, Emitter<AuthState> emit) async {
     try {
+      NotificationWebSocketService.instance.disconnect();
       await authRepository.logout();
       emit(AuthUnauthenticated());
     } catch (e) {

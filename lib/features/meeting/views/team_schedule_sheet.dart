@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 import 'package:test_wpa/features/meeting/domain/entities/table_view_entities.dart';
 
@@ -114,6 +115,7 @@ class TeamScheduleSheet extends StatelessWidget {
                     },
                   ),
           ),
+          SizedBox(height: space_bottom.xl),
         ],
       ),
     );

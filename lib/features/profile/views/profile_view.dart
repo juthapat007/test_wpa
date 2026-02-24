@@ -112,7 +112,12 @@ class ProfileView extends StatelessWidget {
 
               // ========== Personal Info Section ==========
               Container(
-                color: Colors.white,
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade300, width: 1),
+                ),
                 child: Column(
                   children: [
                     ProfileInfoCard(
@@ -130,7 +135,6 @@ class ProfileView extends StatelessWidget {
                       label: 'Job Title',
                       value: profile.title,
                       showBorder: true,
-
                       onTap: () => _showEditDialog(
                         context,
                         'Job Title',
@@ -163,16 +167,24 @@ class ProfileView extends StatelessWidget {
                 padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
                 child: ProfileSectionHeader(title: 'SECURITY'),
               ),
-
               Container(
-                color: Colors.white,
-                child: ProfileInfoCard(
-                  label: 'Change Password',
-                  value: '',
-                  showBorder: false,
-                  onTap: () {
-                    Modular.to.pushNamed('/change_password');
-                  },
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade300, width: 1),
+                ),
+                child: Column(
+                  children: [
+                    ProfileInfoCard(
+                      label: 'Change Password',
+                      value: '',
+                      showBorder: false,
+                      onTap: () {
+                        Modular.to.pushNamed('/change_password');
+                      },
+                    ),
+                  ],
                 ),
               ),
 

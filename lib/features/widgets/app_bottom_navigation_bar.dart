@@ -22,29 +22,30 @@ class AppBottomNavigationBar extends StatelessWidget {
         //BottomNavigationBar ทำงานเมื่อเปลี่ยนหน้า โดยใช้ currentIndex เพื่อเลือกหน้าที่ต้องการ และ
         currentIndex: validIndex,
         onTap: (index) {
-          final route = bottomNavItems[index].route;
+          // final route = bottomNavItems[index].route;
 
           // ✅ ถ้ากดหน้า chat ให้ reload rooms ก่อน navigate
-          if (route == '/chat') {
-            try {
-              ModularWatchExtension(
-                context,
-              ).read<ChatBloc>().add(LoadChatRooms());
-            } catch (e) {
-              print('ChatBloc not found: $e');
-            }
-          }
+          // if (route == '/chat') {
+          //   try {
+          //     ModularWatchExtension(
+          //       context,
+          //     ).read<ChatBloc>().add(LoadChatRooms());
+          //   } catch (e) {
+          //     print('ChatBloc not found: $e');
+          //   }
+          // }
 
           // ✅ Force refresh ทุกหน้า เพื่อให้ state reset
-          Modular.to.navigate(route);
+          // Modular.to.navigate(route);
 
-          // ✅ ถ้ากดหน้าเดิม ให้ pop แล้ว push ใหม่เพื่อ rebuild
-          if (index == currentIndex) {
-            // Delay เล็กน้อยเพื่อให้ navigate เสร็จก่อน
-            Future.delayed(const Duration(milliseconds: 50), () {
-              Modular.to.navigate(route);
-            });
-          }
+          // // ✅ ถ้ากดหน้าเดิม ให้ pop แล้ว push ใหม่เพื่อ rebuild
+          // if (index == currentIndex) {
+          //   // Delay เล็กน้อยเพื่อให้ navigate เสร็จก่อน
+          //   Future.delayed(const Duration(milliseconds: 50), () {
+          //     Modular.to.navigate(route);
+          //   });
+          // }
+          Modular.to.navigate(bottomNavItems[index].route);
         },
         backgroundColor:
             Colors.transparent, // ✅ ใช้สีโปร่งใส เพราะมี Container ครอบแล้ว
@@ -53,36 +54,44 @@ class AppBottomNavigationBar extends StatelessWidget {
         unselectedItemColor: AppColors.textSecondary,
 
         type: BottomNavigationBarType.fixed,
-        items: bottomNavItems.asMap().entries.map((entry) {
-          final index = entry.key;
-          final item = entry.value;
+        // items: bottomNavItems.asMap().entries.map((entry) {
+        //   final index = entry.key;
+        //   final item = entry.value;
 
-          // 💬 ถ้าเป็น Chat tab ให้ wrap ด้วย Badge
-          if (item.route == '/chat') {
-            return BottomNavigationBarItem(
-              icon: _buildChatIconWithBadge(context, item.icon),
-              activeIcon: _buildChatIconWithBadge(
-                context,
-                item.icon,
-                isActive: true,
+        //   // 💬 ถ้าเป็น Chat tab ให้ wrap ด้วย Badge
+        //   if (item.route == '/chat') {
+        //     return BottomNavigationBarItem(
+        //       icon: _buildChatIconWithBadge(context, item.icon),
+        //       activeIcon: _buildChatIconWithBadge(
+        //         context,
+        //         item.icon,
+        //         isActive: true,
+        //       ),
+        //       label: item.label,
+        //     );
+        //   }
+
+        //   // ปกติ
+        //   return BottomNavigationBarItem(
+        //     icon: Padding(
+        //       padding: const EdgeInsets.all(8.0), // ✅ เพิ่ม padding รอบๆ
+        //       child: Icon(item.icon),
+        //     ),
+        //     activeIcon: Padding(
+        //       padding: const EdgeInsets.all(8.0), // ✅ เพิ่ม padding รอบๆ
+        //       child: Icon(item.icon),
+        //     ),
+        //     label: item.label,
+        //   );
+        // }).toList(),
+        items: bottomNavItems
+            .map(
+              (item) => BottomNavigationBarItem(
+                icon: Icon(item.icon),
+                label: item.label,
               ),
-              label: item.label,
-            );
-          }
-
-          // ปกติ
-          return BottomNavigationBarItem(
-            icon: Padding(
-              padding: const EdgeInsets.all(8.0), // ✅ เพิ่ม padding รอบๆ
-              child: Icon(item.icon),
-            ),
-            activeIcon: Padding(
-              padding: const EdgeInsets.all(8.0), // ✅ เพิ่ม padding รอบๆ
-              child: Icon(item.icon),
-            ),
-            label: item.label,
-          );
-        }).toList(),
+            )
+            .toList(),
       ),
     );
   }

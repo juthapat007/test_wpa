@@ -8,6 +8,7 @@ import 'package:test_wpa/features/meeting/widgets/table_legend_widget.dart';
 import 'package:test_wpa/features/meeting/widgets/table_slot_header.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/time_slot_chip.dart';
+import 'package:test_wpa/features/widgets/add_button_outline.dart';
 import 'package:test_wpa/features/widgets/app_button.dart';
 import 'package:test_wpa/features/widgets/app_dialog.dart';
 import 'package:test_wpa/features/meeting/views/team_schedule_sheet.dart';
@@ -81,33 +82,20 @@ class _TableGridWidgetState extends State<TableGridWidget> {
 
             const TableLegend(showLeave: true),
             const SizedBox(height: 12),
-            // ✅ เพิ่มปุ่มตรงนี้
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(20),
-                    ),
-                  ),
-                  builder: (_) => TeamScheduleSheet(response: widget.response),
+
+            AddButtonOutline(
+              text: 'View team schedule',
+              icon: Icons.people_outline,
+              color: AppColors.primary,
+              onPressed: () => showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                 ),
-                icon: const Icon(Icons.people_outline),
-                label: const Text('View team schedule'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: const BorderSide(color: AppColors.primary),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
+                builder: (_) => TeamScheduleSheet(response: widget.response),
               ),
             ),
-
             if (booths.isNotEmpty) ...[
               const SizedBox(height: 16),
               const Text(

@@ -14,3 +14,8 @@ class RejectConnectionRequest extends ConnectionEvent {
   final int id;
   RejectConnectionRequest(this.id);
 }
+
+class WsFriendRequestReceived extends ConnectionEvent {
+  final WsEvent event;
+  WsFriendRequestReceived(this.event);
+}

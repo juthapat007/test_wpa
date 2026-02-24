@@ -9,13 +9,11 @@ import 'package:test_wpa/features/schedules/domain/entities/leave_form.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_state.dart';
-import 'package:test_wpa/features/widgets/app_scaffold.dart';
 import 'package:test_wpa/features/widgets/bottom_action_bar.dart';
 import 'package:intl/intl.dart';
 
 class AttendanceStatus extends StatefulWidget {
   final List<Schedule> selectedSchedules;
-
   const AttendanceStatus({super.key, required this.selectedSchedules});
 
   @override
@@ -23,20 +21,13 @@ class AttendanceStatus extends StatefulWidget {
 }
 
 class _AttendanceStatusState extends State<AttendanceStatus> {
-  List<LeaveType> _leaveTypes = [];
   LeaveType? _selectedLeaveType;
-  final TextEditingController _reasonController = TextEditingController();
+  final _reasonController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  bool _isLoading = true;
-  bool _isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
-    _loadLeaveTypes();
-  }
-
-  void _loadLeaveTypes() {
     Modular.get<ScheduleBloc>().add(LoadLeaveTypes());
   }
 
@@ -47,325 +38,337 @@ class _AttendanceStatusState extends State<AttendanceStatus> {
   }
 
   void _handleConfirm() {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    if (_selectedLeaveType == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a leave type'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    // สร้าง leave forms จาก selected schedules
-    final leaveForms = widget.selectedSchedules.map((schedule) {
-      return LeaveForm(
-        scheduleId: schedule.id,
-        leaveTypeId: _selectedLeaveType!.id,
-        explanation: _reasonController.text.trim(),
-      );
-    }).toList();
-
-    final request = LeaveFormsRequest(leaves: leaveForms);
-
-    // Log ข้อมูลที่จะส่ง
-    debugPrint('📝 Submitting leave forms:');
-    debugPrint(
-      '   Schedule IDs: ${widget.selectedSchedules.map((s) => s.id).toList()}',
+    if (!_formKey.currentState!.validate()) return;
+    final leaveForms = widget.selectedSchedules
+        .map(
+          (s) => LeaveForm(
+            scheduleId: s.id,
+            leaveTypeId: _selectedLeaveType!.id,
+            explanation: _reasonController.text.trim(),
+          ),
+        )
+        .toList();
+    ReadContext(context).read<ScheduleBloc>().add(
+      SubmitLeaveForms(LeaveFormsRequest(leaves: leaveForms)),
     );
-    debugPrint(
-      '   Leave Type: ${_selectedLeaveType!.displayName} (ID: ${_selectedLeaveType!.id})',
-    );
-    debugPrint('   Explanation: ${_reasonController.text}');
-    debugPrint('   JSON: ${request.toJson()}');
-
-    // ส่ง event ไปยัง BLoC
-    Modular.get<ScheduleBloc>().add(SubmitLeaveForms(request));
   }
 
-  void _handleSubmitSuccess() {
-    // แสดง success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Leave forms submitted successfully! ✓'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
-      ),
-    );
-
-    // รอ 1 วินาทีแล้วกลับไปหน้าก่อนหน้า
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        Navigator.pop(context, true); // ส่ง true กลับไปเพื่อบอกว่าส่งสำเร็จ
-      }
-    });
+  void _onStateChanged(BuildContext context, ScheduleState state) {
+    if (state is LeaveTypesError) {
+      _showSnackBar(state.message, Colors.red);
+    } else if (state is LeaveFormsSubmitted) {
+      _showSnackBar('Leave forms submitted successfully! ✓', Colors.green);
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) Navigator.pop(context, true);
+      });
+    } else if (state is LeaveFormsSubmitError) {
+      _showSnackBar('Error: ${state.message}', Colors.red);
+    }
   }
 
-  void _handleSubmitError(String message) {
+  void _showSnackBar(String message, Color bgColor) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Error: $message'),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 3),
+        content: Text(message),
+        backgroundColor: bgColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(12),
       ),
     );
-  }
-
-  void _handleCancel() {
-    Navigator.pop(context); // กลับไปหน้าเดิมพร้อมข้อมูลเดิม
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: Modular.get<ScheduleBloc>(),
-      child: Scaffold(
-        backgroundColor: color.AppColors.background,
-        appBar: AppBar(
-          title: const Text('Attendance Status'),
-          centerTitle: true,
-        ),
-        bottomNavigationBar: BottomActionBar(
-          onCancel: _handleCancel,
-          onConfirm: _handleConfirm,
-          isLoading: _isSubmitting,
-        ),
+      child: BlocConsumer<ScheduleBloc, ScheduleState>(
+        listener: _onStateChanged,
+        builder: (context, state) {
+          final isLoading = state is ScheduleLoading;
+          final isSubmitting = state is LeaveFormsSubmitting;
+          final leaveTypes = state is LeaveTypesLoaded
+              ? state.leaveTypes
+              : <LeaveType>[];
 
-        body: BlocConsumer<ScheduleBloc, ScheduleState>(
-          listener: (context, state) {
-            // จัดการ leave types loaded
-            if (state is LeaveTypesLoaded) {
-              setState(() {
-                _leaveTypes = state.leaveTypes;
-                _isLoading = false;
-              });
-            } else if (state is LeaveTypesError) {
-              setState(() {
-                _isLoading = false;
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-            // จัดการ submit states
-            else if (state is LeaveFormsSubmitting) {
-              setState(() {
-                _isSubmitting = true;
-              });
-            } else if (state is LeaveFormsSubmitted) {
-              setState(() {
-                _isSubmitting = false;
-              });
-              _handleSubmitSuccess();
-            } else if (state is LeaveFormsSubmitError) {
-              setState(() {
-                _isSubmitting = false;
-              });
-              _handleSubmitError(state.message);
-            }
-          },
-          builder: (context, state) {
-            if (_isLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
+          return Scaffold(
+            backgroundColor: color.AppColors.background,
+            appBar: AppBar(
+              title: const Text(
+                'Attendance Status',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+              ),
+              centerTitle: true,
+              backgroundColor: Colors.white,
+              foregroundColor: color.AppColors.textPrimary,
+              elevation: 0,
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(1),
+                child: Container(color: Colors.grey[200], height: 1),
+              ),
+            ),
+            bottomNavigationBar: BottomActionBar(
+              onCancel: () => Navigator.pop(context),
+              onConfirm: _handleConfirm,
+              isLoading: isSubmitting,
+            ),
+            body: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : Stack(
+                    children: [
+                      _buildForm(leaveTypes),
+                      if (isSubmitting) _buildLoadingOverlay(),
+                    ],
+                  ),
+          );
+        },
+      ),
+    );
+  }
 
-            return Stack(
+  Widget _buildForm(List<LeaveType> leaveTypes) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(space.m, space.m, space.m, space.m + 80),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: space.s),
+            _SectionLabel(icon: Icons.category_outlined, label: 'Leave Type'),
+            SizedBox(height: space.s),
+            _LeaveTypeDropdown(
+              leaveTypes: leaveTypes,
+              value: _selectedLeaveType,
+              onChanged: (v) => setState(() => _selectedLeaveType = v),
+            ),
+            SizedBox(height: space.l),
+            _SectionLabel(icon: Icons.edit_note_outlined, label: 'Explanation'),
+            SizedBox(height: space.s),
+            _ExplanationField(controller: _reasonController),
+            SizedBox(height: space.l),
+            Row(
               children: [
-                // Scrollable content
-                SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(
-                    space.m,
-                    space.m,
-                    space.m,
-                    space.m + 80, // Extra padding for bottom action bar
+                const Text(
+                  'Selected Meetings',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: color.AppColors.textPrimary,
                   ),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Selected Schedules Section
-                        SizedBox(height: space.l),
-
-                        // Leave Type Dropdown
-                        Text(
-                          'Leave Type',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: color.AppColors.textPrimary,
-                          ),
-                        ),
-                        SizedBox(height: space.s),
-
-                        DropdownButtonFormField<LeaveType>(
-                          decoration: InputDecoration(
-                            labelText: 'Select leave type',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 16,
-                            ),
-                          ),
-                          value: _selectedLeaveType,
-                          items: _leaveTypes.where((type) => type.active).map((
-                            LeaveType type,
-                          ) {
-                            return DropdownMenuItem<LeaveType>(
-                              value: type,
-                              child: Text(type.displayName),
-                            );
-                          }).toList(),
-                          onChanged: (LeaveType? newValue) {
-                            setState(() {
-                              _selectedLeaveType = newValue;
-                            });
-                          },
-                          validator: (value) => value == null
-                              ? 'Please select a leave type'
-                              : null,
-                        ),
-
-                        SizedBox(height: space.l),
-
-                        // Reason TextField
-                        Text(
-                          'Explanation',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: color.AppColors.textPrimary,
-                          ),
-                        ),
-                        SizedBox(height: space.s),
-
-                        TextFormField(
-                          controller: _reasonController,
-                          maxLines: 4,
-                          decoration: InputDecoration(
-                            hintText: 'Please provide details...',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            contentPadding: const EdgeInsets.all(12),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please provide an explanation';
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: height.s),
-
-                        Text(
-                          'Selected Meetings (${widget.selectedSchedules.length})',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: color.AppColors.textPrimary,
-                          ),
-                        ),
-                        SizedBox(height: space.s),
-
-                        // List of selected schedules
-                        ...widget.selectedSchedules.map((schedule) {
-                          final startTime = DateFormat(
-                            'h:mm a',
-                          ).format(schedule.startAt);
-                          final endTime = DateFormat(
-                            'h:mm a',
-                          ).format(schedule.endAt);
-
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.blue[50],
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.blue[200]!),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.event,
-                                  color: color.AppColors.warning,
-                                  size: 20,
-                                ),
-                                SizedBox(width: space.s),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '$startTime - $endTime',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                      if (schedule.delegate?.company != null)
-                                        Text(
-                                          schedule.delegate!.company!,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[700],
-                                          ),
-                                        ),
-                                      Text(
-                                        'Table ${schedule.tableNumber}',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.grey[600],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }),
-
-                        SizedBox(height: height.xl),
-                      ],
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: color.AppColors.primary,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${widget.selectedSchedules.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-
-                if (_isSubmitting)
-                  Container(
-                    color: Colors.black26,
-                    child: const Center(
-                      child: Card(
-                        child: Padding(
-                          padding: EdgeInsets.all(20),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              CircularProgressIndicator(),
-                              SizedBox(height: 16),
-                              Text('Submitting leave forms...'),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
               ],
-            );
-          },
+            ),
+            SizedBox(height: space.s),
+            ...widget.selectedSchedules.map((s) => _ScheduleCard(schedule: s)),
+            SizedBox(height: space.xl),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingOverlay() => Container(
+    color: Colors.black.withOpacity(0.3),
+    child: Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20),
+          ],
+        ),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text(
+              'Submitting...',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+// ─── Private widgets ──────────────────────────────────────────────────────────
+
+class _SectionLabel extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _SectionLabel({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Icon(icon, size: 17, color: color.AppColors.primary),
+      const SizedBox(width: 6),
+      Text(
+        label,
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: color.AppColors.textPrimary,
+        ),
+      ),
+    ],
+  );
+}
+
+class _LeaveTypeDropdown extends StatelessWidget {
+  final List<LeaveType> leaveTypes;
+  final LeaveType? value;
+  final ValueChanged<LeaveType?> onChanged;
+
+  const _LeaveTypeDropdown({
+    required this.leaveTypes,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) => DropdownButtonFormField<LeaveType>(
+    decoration: InputDecoration(
+      hintText: 'Select leave type',
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: Colors.grey[300]!),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(
+          color: color.AppColors.primary,
+          width: 1.5,
+        ),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    ),
+    value: value,
+    items: leaveTypes
+        .where((t) => t.active)
+        .map((t) => DropdownMenuItem(value: t, child: Text(t.displayName)))
+        .toList(),
+    onChanged: onChanged,
+    validator: (v) => v == null ? 'Please select a leave type' : null,
+  );
+}
+
+class _ExplanationField extends StatelessWidget {
+  final TextEditingController controller;
+  const _ExplanationField({required this.controller});
+
+  @override
+  Widget build(BuildContext context) => TextFormField(
+    controller: controller,
+    maxLines: 4,
+    decoration: InputDecoration(
+      hintText: 'Please provide details...',
+      hintStyle: TextStyle(color: Colors.grey[400]),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: Colors.grey[300]!),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(
+          color: color.AppColors.primary,
+          width: 1.5,
+        ),
+      ),
+      contentPadding: const EdgeInsets.all(14),
+    ),
+    validator: (v) => (v == null || v.trim().isEmpty)
+        ? 'Please provide an explanation'
+        : null,
+  );
+}
+
+class _ScheduleCard extends StatelessWidget {
+  final Schedule schedule;
+  const _ScheduleCard({required this.schedule});
+
+  @override
+  Widget build(BuildContext context) {
+    final start = DateFormat('h:mm a').format(schedule.startAt);
+    final end = DateFormat('h:mm a').format(schedule.endAt);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.AppColors.primary.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.access_time,
+              size: 18,
+              color: color.AppColors.primary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$start – $end',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+                if (schedule.delegate?.company != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    schedule.delegate!.company!,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+                const SizedBox(height: 2),
+                Text(
+                  'Table ${schedule.tableNumber}',
+                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.check_circle_outline, color: Colors.green, size: 18),
+        ],
       ),
     );
   }

@@ -150,7 +150,7 @@ class EmptySlotCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.blue[50],
+        color: AppColors.info.withOpacity(0.2),
         border: Border.all(color: Colors.grey[200]!, width: 1),
         borderRadius: BorderRadius.circular(10),
       ),
@@ -175,7 +175,7 @@ class EmptySlotCard extends StatelessWidget {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.info.withOpacity(0.12),
+                  color: AppColors.info.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -183,7 +183,7 @@ class EmptySlotCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.info,
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ),

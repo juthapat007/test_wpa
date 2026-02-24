@@ -19,3 +19,8 @@ class MarkNotificationRead extends NotificationEvent {
   final int id;
   MarkNotificationRead(this.id);
 }
+
+class WsNotificationReceived extends NotificationEvent {
+  final WsEvent event;
+  WsNotificationReceived(this.event);
+}
