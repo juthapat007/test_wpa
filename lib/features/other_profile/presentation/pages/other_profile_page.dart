@@ -26,7 +26,7 @@ class OtherProfilePage extends StatefulWidget {
 
 class _OtherProfilePageState extends State<OtherProfilePage> {
   ProfileDetailLoaded? _lastLoaded;
-  static const double timelineOffset = 38.0;
+  static const double timelineOffset = 28.0;
 
   @override
   Widget build(BuildContext context) {

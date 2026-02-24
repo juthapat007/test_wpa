@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/network/dio_client.dart';
+import 'package:test_wpa/core/widgets/app_providers.dart';
 
 // Auth
 import 'package:test_wpa/features/auth/data/repository/auth_repository_impl.dart';
@@ -239,17 +240,29 @@ class AppModule extends Module {
     /// ===== Protected =====
 
     //  Meeting
+    // r.child(
+    //   '/meeting',
+    //   child: (_) => MultiBlocProvider(
+    //     providers: [
+    //       BlocProvider.value(value: Modular.get<ScheduleBloc>()),
+    //       BlocProvider.value(value: Modular.get<TableBloc>()),
+    //     ],
+    //     child: const MeetingPage(),
+    //   ),
+    // );
     r.child(
       '/meeting',
-      child: (_) => MultiBlocProvider(
-        providers: [
-          BlocProvider.value(value: Modular.get<ScheduleBloc>()),
-          BlocProvider.value(value: Modular.get<TableBloc>()),
-        ],
-        child: const MeetingPage(),
+      child: (_) => AppProviders(
+        // ✅ ครอบตรงนี้ที่เดียว
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: Modular.get<ScheduleBloc>()),
+            BlocProvider.value(value: Modular.get<TableBloc>()),
+          ],
+          child: const MeetingPage(),
+        ),
       ),
     );
-
     r.child(
       '/search',
       child: (_) => BlocProvider.value(
@@ -278,6 +291,16 @@ class AppModule extends Module {
       ),
     );
 
+    // r.child(
+    //   '/notification',
+    //   child: (_) => MultiBlocProvider(
+    //     providers: [
+    //       BlocProvider.value(value: Modular.get<NotificationBloc>()),
+    //       BlocProvider.value(value: Modular.get<ConnectionBloc>()),
+    //     ],
+    //     child: const NotificationWidget(),
+    //   ),
+    // );
     r.child(
       '/notification',
       child: (_) => MultiBlocProvider(
