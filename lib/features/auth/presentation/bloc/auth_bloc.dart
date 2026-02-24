@@ -4,7 +4,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:meta/meta.dart';
 import 'package:test_wpa/core/network/dio_client.dart';
 import 'package:test_wpa/features/auth/domain/repositories/auth_repository.dart';
-import 'package:test_wpa/core/services/notification_websocket_service.dart';
+import 'package:test_wpa/features/chat/data/services/chat_websocket_service.dart';
+
+// import 'package:test_wpa/core/services/notification_websocket_service.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 part 'auth_event.dart';
 part 'auth_state.dart';
@@ -35,7 +37,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final storage = Modular.get<FlutterSecureStorage>();
       final token = await storage.read(key: 'auth_token');
       if (token != null) {
-        NotificationWebSocketService.instance.connect(token);
+        Modular.get<ChatWebSocketService>().connect(token);
+
+        // NotificationWebSocketService.instance.connect(token);
       }
       //คอยเก็บ token
       // final fcmToken = await FirebaseMessaging.instance.getToken();
@@ -57,7 +61,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Future<void> _onLogout(AuthLogout event, Emitter<AuthState> emit) async {
     try {
-      NotificationWebSocketService.instance.disconnect();
+      // NotificationWebSocketService.instance.disconnect();
+      await Modular.get<ChatWebSocketService>().disconnect();
+
       await authRepository.logout();
       emit(AuthUnauthenticated());
     } catch (e) {
