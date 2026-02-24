@@ -341,7 +341,7 @@ class AppModule extends Module {
       ),
     );
 
-    // /notification — ใช้ instance เดิม ไม่ต้อง LoadUnreadCount ซ้ำ
+    // /notification — AppShell already provides NotificationBloc + ConnectionBloc + ChatBloc
     r.child(
       '/notification',
       child: (_) => AppShell(child: const NotificationWidget()),
@@ -353,43 +353,6 @@ class AppModule extends Module {
     r.child(
       '/chat/room',
       child: (_) => AppShell(child: const ChatConversationPage()),
-    );
-
-    r.child(
-      '/profile',
-      child: (_) => BlocProvider.value(
-        value: Modular.get<ProfileBloc>()..add(LoadProfile()),
-        child: const ProfilePage(),
-      ),
-    );
-
-    // r.child(
-    //   '/notification',
-    //   child: (_) => MultiBlocProvider(
-    //     providers: [
-    //       BlocProvider.value(value: Modular.get<NotificationBloc>()),
-    //       BlocProvider.value(value: Modular.get<ConnectionBloc>()),
-    //     ],
-    //     child: const NotificationWidget(),
-    //   ),
-    // );
-    r.child(
-      '/notification',
-      child: (_) => MultiBlocProvider(
-        providers: [
-          BlocProvider.value(value: Modular.get<NotificationBloc>()),
-          BlocProvider.value(value: Modular.get<ConnectionBloc>()),
-        ],
-        child: const NotificationWidget(),
-      ),
-    );
-
-    r.child(
-      '/schedule',
-      child: (_) => BlocProvider.value(
-        value: Modular.get<ScheduleBloc>()..add(LoadSchedules()),
-        child: const ScheduleWidget(),
-      ),
     );
 
     r.child(
