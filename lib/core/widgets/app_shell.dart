@@ -1,0 +1,43 @@
+// lib/core/widgets/app_shell.dart
+
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_modular/flutter_modular.dart';
+import 'package:test_wpa/features/notification/presentation/bloc/notification_bloc.dart';
+import 'package:test_wpa/features/notification/presentation/bloc/connection_bloc.dart';
+import 'package:test_wpa/features/chat/presentation/bloc/chat_bloc.dart';
+
+class AppShell extends StatefulWidget {
+  final Widget child;
+  const AppShell({super.key, required this.child});
+
+  @override
+  State<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends State<AppShell> {
+  late final NotificationBloc _notificationBloc;
+  late final ConnectionBloc _connectionBloc;
+  late final ChatBloc _chatBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _notificationBloc = Modular.get<NotificationBloc>()..add(LoadUnreadCount());
+    _connectionBloc = Modular.get<ConnectionBloc>()
+      ..add(LoadConnectionRequests());
+    _chatBloc = Modular.get<ChatBloc>();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: _notificationBloc),
+        BlocProvider.value(value: _connectionBloc),
+        BlocProvider.value(value: _chatBloc),
+      ],
+      child: widget.child,
+    );
+  }
+}

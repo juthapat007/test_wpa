@@ -6,6 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/network/dio_client.dart';
 import 'package:test_wpa/core/widgets/app_providers.dart';
+import 'package:test_wpa/core/widgets/app_shell.dart';
 
 // Auth
 import 'package:test_wpa/features/auth/data/repository/auth_repository_impl.dart';
@@ -250,10 +251,42 @@ class AppModule extends Module {
     //     child: const MeetingPage(),
     //   ),
     // );
+
+    // r.child(
+    //   '/meeting',
+    //   child: (_) => AppProviders(
+    //     // ✅ ครอบตรงนี้ที่เดียว
+    //     child: MultiBlocProvider(
+    //       providers: [
+    //         BlocProvider.value(value: Modular.get<ScheduleBloc>()),
+    //         BlocProvider.value(value: Modular.get<TableBloc>()),
+    //       ],
+    //       child: const MeetingPage(),
+    //     ),
+    //   ),
+    // );
+    // r.child(
+    //   '/search',
+    //   child: (_) => BlocProvider.value(
+    //     value: Modular.get<SearchBloc>()..add(SearchDelegates()),
+    //     child: const SearchPage(),
+    //   ),
+    // );
+
+    // r.child('/chat', child: (_) => const ConnectedChat());
+
+    // r.child('/chat/room', child: (_) => const ChatConversationPage());
+
+    // r.child(
+    //   '/scan',
+    //   child: (_) => BlocProvider.value(
+    //     value: Modular.get<ScanBloc>(),
+    //     child: const Scan(),
+    //   ),
+    // );
     r.child(
       '/meeting',
-      child: (_) => AppProviders(
-        // ✅ ครอบตรงนี้ที่เดียว
+      child: (_) => AppShell(
         child: MultiBlocProvider(
           providers: [
             BlocProvider.value(value: Modular.get<ScheduleBloc>()),
@@ -263,24 +296,63 @@ class AppModule extends Module {
         ),
       ),
     );
+
+    // /search
     r.child(
       '/search',
-      child: (_) => BlocProvider.value(
-        value: Modular.get<SearchBloc>()..add(SearchDelegates()),
-        child: const SearchPage(),
+      child: (_) => AppShell(
+        child: BlocProvider.value(
+          value: Modular.get<SearchBloc>()..add(SearchDelegates()),
+          child: const SearchPage(),
+        ),
       ),
     );
 
-    r.child('/chat', child: (_) => const ConnectedChat());
+    // /schedule
+    r.child(
+      '/schedule',
+      child: (_) => AppShell(
+        child: BlocProvider.value(
+          value: Modular.get<ScheduleBloc>()..add(LoadSchedules()),
+          child: const ScheduleWidget(),
+        ),
+      ),
+    );
 
-    r.child('/chat/room', child: (_) => const ChatConversationPage());
-
+    // /scan
     r.child(
       '/scan',
-      child: (_) => BlocProvider.value(
-        value: Modular.get<ScanBloc>(),
-        child: const Scan(),
+      child: (_) => AppShell(
+        child: BlocProvider.value(
+          value: Modular.get<ScanBloc>(),
+          child: const Scan(),
+        ),
       ),
+    );
+
+    // /profile
+    r.child(
+      '/profile',
+      child: (_) => AppShell(
+        child: BlocProvider.value(
+          value: Modular.get<ProfileBloc>()..add(LoadProfile()),
+          child: const ProfilePage(),
+        ),
+      ),
+    );
+
+    // /notification — ใช้ instance เดิม ไม่ต้อง LoadUnreadCount ซ้ำ
+    r.child(
+      '/notification',
+      child: (_) => AppShell(child: const NotificationWidget()),
+    );
+
+    // /chat
+    r.child('/chat', child: (_) => AppShell(child: const ConnectedChat()));
+
+    r.child(
+      '/chat/room',
+      child: (_) => AppShell(child: const ChatConversationPage()),
     );
 
     r.child(
