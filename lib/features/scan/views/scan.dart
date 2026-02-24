@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_modular/flutter_modular.dart';
@@ -8,6 +10,9 @@ import 'package:test_wpa/features/scan/presentation/bloc/scan_bloc.dart';
 import 'package:test_wpa/features/scan/views/qr_scanner_screen.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
+import 'package:path_provider/path_provider.dart';
 
 class Scan extends StatefulWidget {
   const Scan({super.key});
@@ -22,6 +27,7 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
   String? _userTitle;
   String? _userCompany;
   String? _userTeam;
+  String? _currentQrBase64;
 
   final _storage = const FlutterSecureStorage();
 
@@ -179,6 +185,7 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
   }
 
   Widget _buildQrCodeView(String qrCodeBase64) {
+    _currentQrBase64 = qrCodeBase64;
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       child: Center(
@@ -255,10 +262,10 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
                   onTap: _saveQrCode,
                 ),
                 _buildActionButton(
-                  icon: Icons.person_search_rounded,
+                  icon: Icons.share,
                   label: 'Share',
                   color: AppColors.primaryLight,
-                  onTap: _openSearchDialog,
+                  onTap: _shareQrCode,
                 ),
               ],
             ),
@@ -309,23 +316,104 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
   }
 
   // ========== Save QR ==========
+  // Future<void> _saveQrCode() async {
+  //   // TODO: implement save to gallery
+  //   ScaffoldMessenger.of(context).showSnackBar(
+  //     SnackBar(
+  //       content: const Row(
+  //         children: [
+  //           Icon(Icons.check_circle, color: Colors.white),
+  //           SizedBox(width: 8),
+  //           Text('QR Code saved to gallery'),
+  //         ],
+  //       ),
+  //       backgroundColor: AppColors.primary,
+  //       behavior: SnackBarBehavior.floating,
+  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  //       duration: const Duration(seconds: 2),
+  //     ),
+  //   );
+  // }
+  // ========== Save QR to Gallery ==========
   Future<void> _saveQrCode() async {
-    // TODO: implement save to gallery
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 8),
-            Text('QR Code saved to gallery'),
-          ],
+    if (_currentQrBase64 == null) return;
+
+    try {
+      final base64String = _currentQrBase64!.contains(',')
+          ? _currentQrBase64!.split(',').last
+          : _currentQrBase64!;
+      final bytes = base64Decode(base64String);
+
+      final result = await ImageGallerySaverPlus.saveImage(
+        Uint8List.fromList(bytes),
+        quality: 100,
+        name:
+            'QR_${_delegateId ?? 'code'}_${DateTime.now().millisecondsSinceEpoch}',
+      );
+
+      if (!mounted) return;
+
+      final success = result['isSuccess'] == true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                success ? Icons.check_circle : Icons.error_outline,
+                color: Colors.white,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                success ? 'บันทึก QR Code ลงแกลเลอรีแล้ว' : 'บันทึกไม่สำเร็จ',
+              ),
+            ],
+          ),
+          backgroundColor: success ? AppColors.primary : AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          duration: const Duration(seconds: 2),
         ),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('เกิดข้อผิดพลาด: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  // ========== Share QR ==========
+  Future<void> _shareQrCode() async {
+    if (_currentQrBase64 == null) return;
+
+    try {
+      final base64String = _currentQrBase64!.contains(',')
+          ? _currentQrBase64!.split(',').last
+          : _currentQrBase64!;
+      final bytes = base64Decode(base64String);
+
+      // เขียนไฟล์ชั่วคราว
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/qr_${_delegateId ?? 'code'}.png');
+      await file.writeAsBytes(bytes);
+
+      await Share.shareXFiles([
+        XFile(file.path),
+      ], text: 'QR Code${_userName != null ? " ของ $_userName" : ""}');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('เกิดข้อผิดพลาด: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   // ========== Search Dialog ==========

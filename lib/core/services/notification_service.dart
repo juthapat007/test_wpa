@@ -48,6 +48,11 @@ class NotificationService {
   static final _localNotifications = FlutterLocalNotificationsPlugin();
 
   static Future<void> init() async {
+      await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
     );
