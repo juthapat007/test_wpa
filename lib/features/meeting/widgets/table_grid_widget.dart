@@ -95,6 +95,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                 ),
                 builder: (_) => TeamScheduleSheet(response: widget.response),
               ),
+              isLoading: false,
             ),
             if (booths.isNotEmpty) ...[
               const SizedBox(height: 16),

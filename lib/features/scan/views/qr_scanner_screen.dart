@@ -45,7 +45,6 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
           _isProcessing = true;
         });
 
-        // 🎯 ส่งค่า QR Code กลับไป
         Navigator.pop(context, barcode.rawValue);
         break;
       }
@@ -62,31 +61,14 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
           MobileScanner(
             controller: _controller,
             onDetect: _onDetect,
-            // errorBuilder: (context, error, child) {
-            //   return _buildErrorView(error.toString());
-            // },
-//             errorBuilder: (
-//   BuildContext context,
-//   MobileScannerException error,
-//   Widget? child,
-// ) {
-//   return const Center(
-//     child: Text('Camera Error'),
-//   );
-// },
-errorBuilder: (
-  BuildContext context,
-  MobileScannerException error,
-) {
-  return Center(
-    child: Text(
-      'Camera error: ${error.errorCode}',
-      style: const TextStyle(color: Colors.red),
-    ),
-  );
-},
-
-
+            errorBuilder: (BuildContext context, MobileScannerException error) {
+              return Center(
+                child: Text(
+                  'Camera error: ${error.errorCode}',
+                  style: const TextStyle(color: Colors.red),
+                ),
+              );
+            },
           ),
 
           // Overlay with scanning frame
@@ -103,10 +85,7 @@ errorBuilder: (
   }
 
   Widget _buildScannerOverlay() {
-    return CustomPaint(
-      painter: ScannerOverlayPainter(),
-      child: Container(),
-    );
+    return CustomPaint(painter: ScannerOverlayPainter(), child: Container());
   }
 
   Widget _buildTopControls() {
@@ -160,35 +139,28 @@ errorBuilder: (
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Colors.transparent,
-              Colors.black.withOpacity(0.7),
-            ],
+            colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
           ),
         ),
         child: SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.qr_code_scanner,
-                size: 48,
-                color: Colors.white,
-              ),
+              const Icon(Icons.qr_code_scanner, size: 48, color: Colors.white),
               const SizedBox(height: space.m),
               Text(
-                'สแกน QR Code',
+                'Scan QR Code',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: space.s),
               Text(
-                'วาง QR Code ไว้ในกรอบเพื่อสแกน',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white70,
-                    ),
+                'Place the QR Code within the frame to scan',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -205,26 +177,22 @@ errorBuilder: (
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 80,
-              color: Colors.red,
-            ),
+            const Icon(Icons.error_outline, size: 80, color: Colors.red),
             const SizedBox(height: space.l),
             Text(
               'ไม่สามารถเข้าถึงกล้องได้',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: space.m),
             Text(
               error,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white70,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: space.xl),
@@ -246,7 +214,7 @@ errorBuilder: (
   }
 }
 
-// 🎨 Custom Painter สำหรับวาด Scanning Frame
+// Custom Painter สำหรับวาด Scanning Frame
 class ScannerOverlayPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -256,8 +224,7 @@ class ScannerOverlayPainter extends CustomPainter {
     final Rect scanArea = Rect.fromLTWH(left, top, scanAreaSize, scanAreaSize);
 
     // Draw semi-transparent overlay
-    final Paint overlayPaint = Paint()
-      ..color = Colors.black.withOpacity(0.6);
+    final Paint overlayPaint = Paint()..color = Colors.black.withOpacity(0.6);
 
     canvas.drawPath(
       Path()
@@ -332,35 +299,3 @@ class ScannerOverlayPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-
-// import 'package:flutter/material.dart';
-// import 'package:mobile_scanner/mobile_scanner.dart';
-
-// class ScannerPage extends StatelessWidget {
-//   const ScannerPage({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: const Text('Scanner')),
-//       body: MobileScanner(
-//         onDetect: (capture) {
-//           final barcode = capture.barcodes.first;
-//           debugPrint(barcode.rawValue);
-//         },
-//         errorBuilder: (
-//           BuildContext context,
-//           MobileScannerException error,
-//           Widget? child,
-//         ) {
-//           return Center(
-//             child: Text(
-//               'Camera error: ${error.errorCode}',
-//               style: const TextStyle(color: Colors.red),
-//             ),
-//           );
-//         },
-//       ),
-//     );
-//   }
-// }

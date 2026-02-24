@@ -75,6 +75,7 @@ import 'package:meta/meta.dart';
 import 'package:test_wpa/core/services/notification_websocket_service.dart';
 import 'package:test_wpa/features/notification/domain/entities/connection_request_entity.dart';
 import 'package:test_wpa/features/notification/domain/repositories/connection_repository.dart';
+import 'package:test_wpa/core/constants/print_logger.dart';
 
 part 'connection_event.dart';
 part 'connection_state.dart';
@@ -95,10 +96,19 @@ class ConnectionBloc extends Bloc<ConnectionEvent, ConnectionRequestState> {
 
   // ─── WebSocket listener ────────────────────────────────────────────────────
 
+  // void _listenToWebSocket() {
+  //   _wsSubscription = NotificationWebSocketService.instance.events.listen((
+  //     event,
+  //   ) {
+  //     if (event.type == WsEventType.friendRequest) {
+  //       add(WsFriendRequestReceived(event));
+  //     }
+  //   });
   void _listenToWebSocket() {
     _wsSubscription = NotificationWebSocketService.instance.events.listen((
       event,
     ) {
+      log.i('[ConnectionBloc] ✅ WS event=${event.type}'); // เช็คบรรทัดนี้
       if (event.type == WsEventType.friendRequest) {
         add(WsFriendRequestReceived(event));
       }

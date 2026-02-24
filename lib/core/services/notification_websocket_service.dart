@@ -5,9 +5,9 @@ import 'package:test_wpa/core/constants/print_logger.dart';
 
 enum WsEventType {
   notificationBadge, // unread count อัปเดต
-  friendRequest,     // connection_request ใหม่
-  requestAccepted,   // คนอื่น accept request เรา
-  requestRejected,   // คนอื่น reject request เรา
+  friendRequest, // connection_request ใหม่
+  requestAccepted, // คนอื่น accept request เรา
+  requestRejected, // คนอื่น reject request เรา
   unknown,
 }
 
@@ -37,7 +37,7 @@ class NotificationWebSocketService {
   /// เมื่อได้รับ type == 'new_notification'
   void handleIncomingEvent(Map<String, dynamic> message) {
     final notifType = _extractNotifType(message);
-    log.i('[NotificationWS] handleIncomingEvent notif.type=$notifType');
+    log.i('[NotificationWS] ✅ RECEIVED notif.type=$notifType');
 
     switch (notifType) {
       case 'connection_request':

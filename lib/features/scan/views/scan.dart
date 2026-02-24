@@ -157,7 +157,7 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
     return AppScaffold(
       title: 'QR CODE',
       currentIndex: 2,
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: AppColors.background,
       appBarStyle: AppBarStyle.elegant,
       body: _delegateId == null
           ? const Center(child: CircularProgressIndicator())
@@ -204,30 +204,16 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
               ],
 
               SizedBox(height: space.m),
-              // Wrap(
-              //   spacing: space.s,
-              //   runSpacing: space.s,
-              //   alignment: WrapAlignment.center,
-              //   children: [
-              //     if (_userCompany != null)
-              //       _buildInfoChip(Icons.business_outlined, _userCompany!),
-              //     if (_userTeam != null)
-              //       _buildInfoChip(Icons.group_outlined, _userTeam!),
-              //     if (_delegateId != null)
-              //       _buildInfoChip(Icons.badge_outlined, 'ID: $_delegateId'),
-              //   ],
-              // ),
-              // const SizedBox(height: space.m),
             ],
 
             Container(
               padding: const EdgeInsets.all(space.l),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.background,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: AppColors.textPrimary.withOpacity(0.08),
                     blurRadius: 24,
                     offset: const Offset(0, 8),
                   ),
@@ -247,10 +233,6 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
                     ),
                     child: _buildQrCodeImage(qrCodeBase64),
                   ),
-
-                  //===================================================================================================
-
-                  //===================================================================================================
                 ],
               ),
             ),
@@ -274,7 +256,7 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
                 ),
                 _buildActionButton(
                   icon: Icons.person_search_rounded,
-                  label: 'Search',
+                  label: 'Share',
                   color: AppColors.primaryLight,
                   onTap: _openSearchDialog,
                 ),
@@ -300,9 +282,9 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
       child: Column(
         children: [
           Container(
-            width: 70, // 👈 ปรับขนาดได้ตามใจ
-            height: 70, // 👈 ปรับขนาดได้ตามใจ
-            padding: const EdgeInsets.all(space.m), // 👈 ปรับ padding ได้ตรงนี้
+            width: 70,
+            height: 70,
+            padding: const EdgeInsets.all(space.m),
             decoration: BoxDecoration(
               color: color.withOpacity(0.12),
               borderRadius: BorderRadius.circular(

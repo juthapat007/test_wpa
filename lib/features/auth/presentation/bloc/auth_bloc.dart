@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -42,10 +43,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         // NotificationWebSocketService.instance.connect(token);
       }
       //คอยเก็บ token
-      // final fcmToken = await FirebaseMessaging.instance.getToken();
-      // if (fcmToken != null) {
-      //   await authRepository.registerDeviceToken(fcmToken);
-      // }
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      if (fcmToken != null) {
+        await authRepository.registerDeviceToken(fcmToken);
+      }
       emit(
         AuthAuthenticated(
           avatarUrl: result.user?.avatarUrl,
@@ -63,7 +64,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       // NotificationWebSocketService.instance.disconnect();
       await Modular.get<ChatWebSocketService>().disconnect();
-
+      // ✅ เพิ่มตรงนี้ — ส่ง empty string ก่อน logout
+      await authRepository.registerDeviceToken("");
       await authRepository.logout();
       emit(AuthUnauthenticated());
     } catch (e) {

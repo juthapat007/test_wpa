@@ -83,11 +83,18 @@ class NotificationSenderModel {
   });
 
   factory NotificationSenderModel.fromJson(Map<String, dynamic> json) {
+    final rawUrl = json['avatar_url'] as String?;
     return NotificationSenderModel(
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
-      avatarUrl: json['avatar_url'],
+      // avatarUrl: json['avatar_url'],
+      avatarUrl: _resolveUrl(rawUrl),
     );
+  }
+  static String? _resolveUrl(String? url) {
+    if (url == null || url.isEmpty) return null;
+    if (url.startsWith('http')) return url; // ถ้าเป็น full URL แล้ว
+    return 'https://wpa-docker.onrender.com$url'; // เติม base URL
   }
 
   NotificationSender toEntity() {

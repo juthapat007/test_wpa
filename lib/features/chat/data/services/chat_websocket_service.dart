@@ -799,6 +799,9 @@ class ChatWebSocketService {
         case 'ping':
           // ไม่ต้องทำอะไร
           break;
+        // case 'friend_request': // 👈 เพิ่มตรงนี้
+        //   _handleFriendRequest(data['data']);
+        //   break;
 
         case 'confirm_subscription':
           log.d('Subscription confirmed: ${data['identifier']}');

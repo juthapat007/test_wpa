@@ -31,7 +31,8 @@ class AuthApi {
         data: {
           'device': {
             'device_token': token,
-            'platform': Platform.isAndroid ? 'android' : 'ios',
+            if (token.isNotEmpty)
+              'platform': Platform.isAndroid ? 'android' : 'ios',
           },
         },
       );

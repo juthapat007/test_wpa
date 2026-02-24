@@ -8,7 +8,9 @@ import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_event.dart';
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_state.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_event_card.dart';
+import 'package:test_wpa/features/schedules/presentation/widgets/timeline_row.dart';
 import 'package:test_wpa/features/schedules/utils/schedule_card_helper.dart';
+import 'package:test_wpa/features/widgets/add_button_outline.dart';
 import 'package:test_wpa/features/widgets/app_bar_back.dart';
 import 'package:test_wpa/features/widgets/app_button.dart';
 import 'package:test_wpa/features/widgets/app_dialog.dart';
@@ -24,6 +26,7 @@ class OtherProfilePage extends StatefulWidget {
 
 class _OtherProfilePageState extends State<OtherProfilePage> {
   ProfileDetailLoaded? _lastLoaded;
+  static const double timelineOffset = 38.0;
 
   @override
   Widget build(BuildContext context) {
@@ -165,6 +168,86 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
 
   // ─── Event Section ────────────────────────────────────────────────────────
 
+  // Widget _buildEventSection(ProfileDetailLoaded state, BuildContext context) {
+  //   if (state.isScheduleLoading && state.availableDates.isEmpty) {
+  //     return const Padding(
+  //       padding: EdgeInsets.all(32),
+  //       child: Center(child: CircularProgressIndicator()),
+  //     );
+  //   }
+  //   if (state.availableDates.isEmpty) return const SizedBox.shrink();
+
+  //   return Container(
+  //     margin: const EdgeInsets.symmetric(horizontal: 16),
+  //     decoration: BoxDecoration(
+  //       color: Colors.white,
+  //       borderRadius: BorderRadius.circular(16),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.black.withOpacity(0.06),
+  //           blurRadius: 12,
+  //           offset: const Offset(0, 4),
+  //         ),
+  //       ],
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         const Padding(
+  //           padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+  //           child: Text(
+  //             'Event Plan',
+  //             style: TextStyle(
+  //               fontSize: 18,
+  //               fontWeight: FontWeight.w700,
+  //               color: Color(0xFF1A2340),
+  //             ),
+  //           ),
+  //         ),
+  //         DateTabBar(
+  //           availableDates: state.availableDates,
+  //           selectedDate: state.selectedDate,
+  //           onDateSelected: (date) => ReadContext(context)
+  //               .read<ProfileDetailBloc>()
+  //               .add(LoadScheduleOthers(widget.delegateId, date: date)),
+  //         ),
+  //         if (state.isScheduleLoading)
+  //           const Padding(
+  //             padding: EdgeInsets.symmetric(vertical: 24),
+  //             child: Center(child: CircularProgressIndicator()),
+  //           )
+  //         else if (state.schedules?.isEmpty ?? true)
+  //           Padding(
+  //             padding: const EdgeInsets.symmetric(vertical: 24),
+  //             child: Center(
+  //               child: Text(
+  //                 'No events on this day',
+  //                 style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+  //               ),
+  //             ),
+  //           )
+  //         else
+  //           Padding(
+  //             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+
+  //             child: Column(
+  //               children: state.schedules!
+  //                   .map(
+  //                     (s) => Padding(
+  //                       padding: const EdgeInsets.only(bottom: 12),
+  //                       child: ScheduleEventCard(
+  //                         schedule: s,
+  //                         type: ScheduleCardHelper.resolveCardType(s),
+  //                       ),
+  //                     ),
+  //                   )
+  //                   .toList(),
+  //             ),
+  //           ),
+  //       ],
+  //     ),
+  //   );
+  // }
   Widget _buildEventSection(ProfileDetailLoaded state, BuildContext context) {
     if (state.isScheduleLoading && state.availableDates.isEmpty) {
       return const Padding(
@@ -226,18 +309,29 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           else
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: Column(
-                children: state.schedules!
-                    .map(
-                      (s) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: ScheduleEventCard(
-                          schedule: s,
-                          type: ScheduleCardHelper.resolveCardType(s),
-                        ),
-                      ),
-                    )
-                    .toList(),
+              child: Stack(
+                children: [
+                  // Timeline vertical line
+                  Positioned(
+                    left: timelineOffset,
+                    top: 0,
+                    bottom: 0,
+                    child: Container(width: 1, color: Colors.grey[200]),
+                  ),
+                  Column(
+                    children: state.schedules!
+                        .map(
+                          (s) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: TimelineRow(
+                              schedule: s,
+                              cardType: ScheduleCardHelper.resolveCardType(s),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
               ),
             ),
         ],
@@ -313,10 +407,11 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         return Row(
           children: [
             Expanded(
-              child: AppButton(
+              //ค่อยมาแก้
+              child: AddButtonOutline(
                 text: 'Accept',
-                backgroundColor: const Color(0xFF5DC98A),
-                textColor: Colors.white,
+                icon: Icons.check,
+                color: AppColors.primary,
                 isLoading: isSending,
                 onPressed: isSending
                     ? null
@@ -327,10 +422,11 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
             ),
             const SizedBox(width: 6),
             Expanded(
-              child: AppButton(
-                text: 'Decline',
-                backgroundColor: Colors.white,
-                textColor: const Color(0xFFE05454),
+              child: AddButtonOutline(
+                text: 'Reject',
+                icon: Icons.close,
+                color: AppColors.warning,
+
                 isLoading: isSending,
                 onPressed: isSending
                     ? null

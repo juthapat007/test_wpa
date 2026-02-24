@@ -4,7 +4,7 @@ import 'package:test_wpa/core/constants/set_space.dart';
 class AddButtonOutline extends StatelessWidget {
   final String text;
   final IconData icon;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final Color color;
   final double borderRadius;
   final EdgeInsetsGeometry padding;
@@ -13,10 +13,11 @@ class AddButtonOutline extends StatelessWidget {
     super.key,
     required this.text,
     required this.icon,
-    required this.onPressed,
+    this.onPressed,
     this.color = Colors.blue, // default color
     this.borderRadius = 8,
     this.padding = const EdgeInsets.symmetric(vertical: space.m),
+    required bool isLoading,
   });
 
   @override
