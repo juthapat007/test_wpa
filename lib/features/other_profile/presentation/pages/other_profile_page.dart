@@ -26,7 +26,7 @@ class OtherProfilePage extends StatefulWidget {
 
 class _OtherProfilePageState extends State<OtherProfilePage> {
   ProfileDetailLoaded? _lastLoaded;
-  static const double timelineOffset = 28.0;
+  static const double timelineOffset = 20.0;
 
   @override
   Widget build(BuildContext context) {
@@ -166,88 +166,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     );
   }
 
-  // ─── Event Section ────────────────────────────────────────────────────────
-
-  // Widget _buildEventSection(ProfileDetailLoaded state, BuildContext context) {
-  //   if (state.isScheduleLoading && state.availableDates.isEmpty) {
-  //     return const Padding(
-  //       padding: EdgeInsets.all(32),
-  //       child: Center(child: CircularProgressIndicator()),
-  //     );
-  //   }
-  //   if (state.availableDates.isEmpty) return const SizedBox.shrink();
-
-  //   return Container(
-  //     margin: const EdgeInsets.symmetric(horizontal: 16),
-  //     decoration: BoxDecoration(
-  //       color: Colors.white,
-  //       borderRadius: BorderRadius.circular(16),
-  //       boxShadow: [
-  //         BoxShadow(
-  //           color: Colors.black.withOpacity(0.06),
-  //           blurRadius: 12,
-  //           offset: const Offset(0, 4),
-  //         ),
-  //       ],
-  //     ),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         const Padding(
-  //           padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
-  //           child: Text(
-  //             'Event Plan',
-  //             style: TextStyle(
-  //               fontSize: 18,
-  //               fontWeight: FontWeight.w700,
-  //               color: Color(0xFF1A2340),
-  //             ),
-  //           ),
-  //         ),
-  //         DateTabBar(
-  //           availableDates: state.availableDates,
-  //           selectedDate: state.selectedDate,
-  //           onDateSelected: (date) => ReadContext(context)
-  //               .read<ProfileDetailBloc>()
-  //               .add(LoadScheduleOthers(widget.delegateId, date: date)),
-  //         ),
-  //         if (state.isScheduleLoading)
-  //           const Padding(
-  //             padding: EdgeInsets.symmetric(vertical: 24),
-  //             child: Center(child: CircularProgressIndicator()),
-  //           )
-  //         else if (state.schedules?.isEmpty ?? true)
-  //           Padding(
-  //             padding: const EdgeInsets.symmetric(vertical: 24),
-  //             child: Center(
-  //               child: Text(
-  //                 'No events on this day',
-  //                 style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-  //               ),
-  //             ),
-  //           )
-  //         else
-  //           Padding(
-  //             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-
-  //             child: Column(
-  //               children: state.schedules!
-  //                   .map(
-  //                     (s) => Padding(
-  //                       padding: const EdgeInsets.only(bottom: 12),
-  //                       child: ScheduleEventCard(
-  //                         schedule: s,
-  //                         type: ScheduleCardHelper.resolveCardType(s),
-  //                       ),
-  //                     ),
-  //                   )
-  //                   .toList(),
-  //             ),
-  //           ),
-  //       ],
-  //     ),
-  //   );
-  // }
   Widget _buildEventSection(ProfileDetailLoaded state, BuildContext context) {
     if (state.isScheduleLoading && state.availableDates.isEmpty) {
       return const Padding(
@@ -491,6 +409,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           AppDialogAction(
             label: 'Keep',
             onPressed: () => Navigator.of(context).pop(),
+            backgroundColor: Colors.grey[100],
           ),
           AppDialogAction(
             label: 'Yes, Cancel',

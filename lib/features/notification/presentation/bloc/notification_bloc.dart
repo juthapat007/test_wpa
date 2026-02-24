@@ -242,6 +242,11 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   ) async {
     try {
       await notificationRepository.markAllAsRead(type: event.type);
+
+      // ✅ Refetch count จาก server แทนการ hardcode เป็น 0
+      // เพราะ type filter อาจไม่ครอบ notifications ทุกประเภท
+      final freshCount = await notificationRepository.getUnreadCount();
+
       final currentState = state;
       if (currentState is NotificationLoaded) {
         final updatedNotifications = currentState.notifications.map((n) {
@@ -257,21 +262,26 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
         emit(
           NotificationLoaded(
             notifications: updatedNotifications,
-            unreadCount: 0,
+            unreadCount: freshCount, // ✅ ใช้ค่าจาก server
           ),
         );
       }
     } catch (e) {
-      emit(NotificationError('Failed to mark all as read: $e'));
+      emit(NotificationError('Failed to mark all as read: \$e'));
     }
   }
 
+  // ✅ แก้ _onMarkRead — หลัง mark แล้ว refetch count จาก server
   Future<void> _onMarkRead(
     MarkNotificationRead event,
     Emitter<NotificationState> emit,
   ) async {
     try {
       await notificationRepository.markAsRead(event.id);
+
+      // ✅ Refetch count จาก server
+      final freshCount = await notificationRepository.getUnreadCount();
+
       final currentState = state;
       if (currentState is NotificationLoaded) {
         final updatedNotifications = currentState.notifications.map((n) {
@@ -287,16 +297,15 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
           }
           return n;
         }).toList();
-        final newUnread = updatedNotifications.where((n) => n.isUnread).length;
         emit(
           NotificationLoaded(
             notifications: updatedNotifications,
-            unreadCount: newUnread,
+            unreadCount: freshCount, // ✅ ใช้ค่าจาก server
           ),
         );
       }
     } catch (e) {
-      emit(NotificationError('Failed to mark as read: $e'));
+      emit(NotificationError('Failed to mark as read: \$e'));
     }
   }
 

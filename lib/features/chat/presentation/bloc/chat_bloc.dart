@@ -448,11 +448,23 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     Emitter<ChatState> emit,
   ) {
     bool hasChanges = false;
+
     _messages = _messages.map((m) {
+      // Case 1: ตรง messageId → mark read ตามปกติ
       if (m.id == event.messageId && !m.isRead) {
         hasChanges = true;
         return m.copyWith(isRead: true);
       }
+
+      // Case 2: bulk read — server ส่ง messageId == '0' หรือ 'all'
+      // mark ทุก message ที่เราเป็นคนส่ง (senderId == currentUserId)
+      if ((event.messageId == '0' || event.messageId == 'all') &&
+          m.senderId == (_currentUserId ?? '') &&
+          !m.isRead) {
+        hasChanges = true;
+        return m.copyWith(isRead: true);
+      }
+
       return m;
     }).toList();
 

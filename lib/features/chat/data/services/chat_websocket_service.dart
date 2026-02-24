@@ -968,12 +968,18 @@ class ChatWebSocketService {
     try {
       final messageIds = data['message_ids'];
       final readAt = _parseReadAt(data['read_at']);
+
       if (messageIds is List && messageIds.isNotEmpty) {
         for (final msgId in messageIds) {
           _readReceiptController.add(
             ReadReceiptEvent(messageId: msgId.toString(), readAt: readAt),
           );
         }
+      } else {
+        // FIX: ไม่มี message_ids → ส่ง '0' เป็น signal ว่า bulk read ทั้งหมด
+        _readReceiptController.add(
+          ReadReceiptEvent(messageId: '0', readAt: readAt),
+        );
       }
     } catch (e) {
       log.e('Error handling bulk_read', error: e);

@@ -1,6 +1,7 @@
 // Common widget ที่ใช้ร่วมกันได้ทุก module (schedule, meeting, other_profile)
 
 import 'package:flutter/material.dart';
+import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 import 'package:test_wpa/core/utils/date_time_helper.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
@@ -47,7 +48,7 @@ class MeetingCard extends StatelessWidget {
     final endTime = DateTimeHelper.formatTime12(schedule.endAt);
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       decoration: BoxDecoration(
         color: helper.backgroundColor,
         border: Border.all(color: Colors.grey[200]!, width: 1),
@@ -63,12 +64,12 @@ class MeetingCard extends StatelessWidget {
               Text(
                 '$startTime - $endTime',
                 style: const TextStyle(
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
                 ),
               ),
-
+              SizedBox(width: height.m),
               // table — กลาง (ดัน badge ไปขวา)
               if (schedule.tableNumber != null) ...[
                 const Spacer(), // ✅ ดัน table ให้อยู่กลาง
@@ -86,7 +87,8 @@ class MeetingCard extends StatelessWidget {
               _buildBadge(helper),
             ],
           ),
-          SizedBox(width: 100),
+          SizedBox(height: 10),
+          //บอกรายละเอียดแผน
           // Row 2: company • country
           Text(
             _buildSubtitleText(helper),
@@ -148,7 +150,7 @@ class EmptySlotCard extends StatelessWidget {
         : null;
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       decoration: BoxDecoration(
         color: AppColors.info.withOpacity(0.2),
         border: Border.all(color: Colors.grey[200]!, width: 1),

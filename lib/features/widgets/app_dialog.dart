@@ -70,7 +70,7 @@ class AppDialog extends StatelessWidget {
               description,
               textAlign: TextAlign.start,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 14,
                 color: AppColors.textSecondary,
                 height: 1.5,
               ),

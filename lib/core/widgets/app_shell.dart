@@ -3,10 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_modular/flutter_modular.dart';
-import 'package:test_wpa/features/chat/data/services/chat_websocket_service.dart';
 import 'package:test_wpa/features/chat/presentation/bloc/chat_bloc.dart';
-import 'package:test_wpa/features/notification/presentation/bloc/connection_bloc.dart';
 import 'package:test_wpa/features/notification/presentation/bloc/notification_bloc.dart';
+import 'package:test_wpa/features/notification/presentation/bloc/connection_bloc.dart';
+import 'package:test_wpa/features/auth/presentation/bloc/auth_bloc.dart';
 
 class AppShell extends StatefulWidget {
   final Widget child;
@@ -17,37 +17,41 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
-  late final NotificationBloc _notificationBloc;
-  late final ConnectionBloc _connectionBloc;
-  late final ChatBloc _chatBloc;
+  bool _wsInitialized = false;
 
   @override
   void initState() {
     super.initState();
+    // ✅ Connect WebSocket และ load initial data หลังจาก frame แรก render เสร็จ
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeRealtime();
+    });
+  }
 
-    _notificationBloc = Modular.get<NotificationBloc>()..add(LoadUnreadCount());
+  Future<void> _initializeRealtime() async {
+    if (_wsInitialized) return;
+    _wsInitialized = true;
 
-    _connectionBloc = Modular.get<ConnectionBloc>()
-      ..add(LoadConnectionRequests());
+    final chatBloc = Modular.get<ChatBloc>();
+    final notifBloc = Modular.get<NotificationBloc>();
 
-    _chatBloc = Modular.get<ChatBloc>();
+    // ✅ 1. Connect WebSocket ทันที (ไม่ต้องรอให้ navigate ไป /chat)
+    chatBloc.add(ConnectWebSocket());
 
-    // ✅ Connect WebSocket ทันทีหลัง login ถ้ายังไม่ได้ connect
-    // (ไม่ใช่แค่ตอนเปิดหน้า Chat)
-    // WS จำเป็นต้องเปิดตั้งแต่ต้นเพราะ NotificationChannel อยู่ใน connection เดียวกัน
-    final wsService = Modular.get<ChatWebSocketService>();
-    if (!wsService.isConnected) {
-      _chatBloc.add(ConnectWebSocket());
-    }
+    // ✅ 2. Load notification unread count ทันที เพื่อให้ badge แสดงตัวเลข
+    notifBloc.add(LoadUnreadCount());
   }
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Provide singleton BLoC instances ทั้งหมดให้ทุก child route
+    // ใช้ BlocProvider.value เพื่อไม่ให้ dispose bloc เมื่อ route เปลี่ยน
     return MultiBlocProvider(
       providers: [
-        BlocProvider.value(value: _notificationBloc),
-        BlocProvider.value(value: _connectionBloc),
-        BlocProvider.value(value: _chatBloc),
+        BlocProvider.value(value: Modular.get<AuthBloc>()),
+        BlocProvider.value(value: Modular.get<ChatBloc>()),
+        BlocProvider.value(value: Modular.get<NotificationBloc>()),
+        BlocProvider.value(value: Modular.get<ConnectionBloc>()),
       ],
       child: widget.child,
     );

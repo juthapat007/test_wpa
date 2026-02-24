@@ -341,7 +341,7 @@ class AppModule extends Module {
       ),
     );
 
-    // /notification — ใช้ instance เดิม ไม่ต้อง LoadUnreadCount ซ้ำ
+    // /notification — AppShell already provides NotificationBloc + ConnectionBloc + ChatBloc
     r.child(
       '/notification',
       child: (_) => AppShell(child: const NotificationWidget()),
@@ -356,43 +356,6 @@ class AppModule extends Module {
     );
 
     r.child(
-      '/profile',
-      child: (_) => BlocProvider.value(
-        value: Modular.get<ProfileBloc>()..add(LoadProfile()),
-        child: const ProfilePage(),
-      ),
-    );
-
-    // r.child(
-    //   '/notification',
-    //   child: (_) => MultiBlocProvider(
-    //     providers: [
-    //       BlocProvider.value(value: Modular.get<NotificationBloc>()),
-    //       BlocProvider.value(value: Modular.get<ConnectionBloc>()),
-    //     ],
-    //     child: const NotificationWidget(),
-    //   ),
-    // );
-    r.child(
-      '/notification',
-      child: (_) => MultiBlocProvider(
-        providers: [
-          BlocProvider.value(value: Modular.get<NotificationBloc>()),
-          BlocProvider.value(value: Modular.get<ConnectionBloc>()),
-        ],
-        child: const NotificationWidget(),
-      ),
-    );
-
-    r.child(
-      '/schedule',
-      child: (_) => BlocProvider.value(
-        value: Modular.get<ScheduleBloc>()..add(LoadSchedules()),
-        child: const ScheduleWidget(),
-      ),
-    );
-
-    r.child(
       '/other_profile/:id',
       child: (_) {
         final delegateId = int.tryParse(r.args.params['id'] ?? '');
@@ -403,19 +366,18 @@ class AppModule extends Module {
           );
         }
 
-        return MultiBlocProvider(
-          providers: [
-            BlocProvider(
-              create: (_) =>
-                  Modular.get<ProfileDetailBloc>()
-                    ..add(LoadProfileDetail(delegateId)),
-            ),
-            BlocProvider.value(value: Modular.get<ChatBloc>()),
-          ],
-          child: OtherProfilePage(delegateId: delegateId),
+        // ✅ ครอบด้วย AppShell ก่อน เพื่อให้ได้ ChatBloc, NotificationBloc, ConnectionBloc
+        return AppShell(
+          child: BlocProvider(
+            create: (_) =>
+                Modular.get<ProfileDetailBloc>()
+                  ..add(LoadProfileDetail(delegateId)),
+            child: OtherProfilePage(delegateId: delegateId),
+          ),
         );
       },
     );
+
     r.child(
       '/other_profile',
       child: (_) {
@@ -428,19 +390,17 @@ class AppModule extends Module {
           );
         }
 
-        return MultiBlocProvider(
-          providers: [
-            BlocProvider(
-              create: (_) =>
-                  Modular.get<ProfileDetailBloc>()
-                    ..add(LoadProfileDetail(delegateId)),
-            ),
-            BlocProvider.value(value: Modular.get<ChatBloc>()),
-          ],
-          child: OtherProfilePage(delegateId: delegateId),
+        return AppShell(
+          child: BlocProvider(
+            create: (_) =>
+                Modular.get<ProfileDetailBloc>()
+                  ..add(LoadProfileDetail(delegateId)),
+            child: OtherProfilePage(delegateId: delegateId),
+          ),
         );
       },
     );
+
     r.child(
       '/change_password',
       child: (_) => BlocProvider.value(
