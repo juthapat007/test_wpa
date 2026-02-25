@@ -3,7 +3,7 @@ import 'package:test_wpa/core/constants/set_space.dart';
 
 class AddButtonOutline extends StatelessWidget {
   final String text;
-  final IconData icon;
+  final IconData? icon;
   final VoidCallback? onPressed;
   final Color color;
   final double borderRadius;
@@ -12,7 +12,7 @@ class AddButtonOutline extends StatelessWidget {
   const AddButtonOutline({
     super.key,
     required this.text,
-    required this.icon,
+     this.icon,
     this.onPressed,
     this.color = Colors.blue, // default color
     this.borderRadius = 8,

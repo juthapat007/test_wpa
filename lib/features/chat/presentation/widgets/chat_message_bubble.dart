@@ -68,17 +68,17 @@ class ChatMessageBubble extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (!isMe && message.senderName.isNotEmpty) ...[
-                      Text(
-                        message.senderName,
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                    ],
+                    // if (!isMe && message.senderName.isNotEmpty) ...[
+                    //   Text(
+                    //     message.senderName,
+                    //     style: const TextStyle(
+                    //       color: AppColors.primary,
+                    //       fontSize: 12,
+                    //       fontWeight: FontWeight.w600,
+                    //     ),
+                    //   ),
+                    //   const SizedBox(height: 4),
+                    // ],
                     Text(
                       message.content,
                       style: TextStyle(

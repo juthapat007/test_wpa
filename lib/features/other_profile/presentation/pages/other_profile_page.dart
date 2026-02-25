@@ -189,19 +189,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: Text(
-              'Event Plan',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1A2340),
-              ),
-            ),
-          ),
           DateTabBar(
             availableDates: state.availableDates,
             selectedDate: state.selectedDate,
@@ -209,6 +198,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                 .read<ProfileDetailBloc>()
                 .add(LoadScheduleOthers(widget.delegateId, date: date)),
           ),
+
           if (state.isScheduleLoading)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
@@ -269,13 +259,13 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         Expanded(child: _buildConnectButton(profile, context, isSending)),
         const SizedBox(width: 10),
         Expanded(
-          child: AppButton(
+          child: AddButtonOutline(
             text: 'Chat',
-            backgroundColor: const Color(0xFF4A90D9),
-            textColor: Colors.white,
+
             onPressed: () => ReadContext(context).read<ChatBloc>().add(
               CreateChatRoom(profile.id.toString(), profile.name),
             ),
+            isLoading: false,
           ),
         ),
       ],
@@ -326,30 +316,32 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           children: [
             Expanded(
               //ค่อยมาแก้
-              child: AddButtonOutline(
-                text: 'Accept',
-                icon: Icons.check,
-                color: AppColors.primary,
-                isLoading: isSending,
-                onPressed: isSending
-                    ? null
-                    : () => ReadContext(context).read<ProfileDetailBloc>().add(
-                        AcceptFriendRequest(requestId),
-                      ),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Expanded(
-              child: AddButtonOutline(
+              child: AppButton(
                 text: 'Reject',
-                icon: Icons.close,
-                color: AppColors.warning,
 
+                // icon: Icons.close,
+                // color: AppColors.warning,
+                backgroundColor: AppColors.warning,
+                textColor: AppColors.background,
                 isLoading: isSending,
                 onPressed: isSending
                     ? null
                     : () => ReadContext(context).read<ProfileDetailBloc>().add(
                         RejectFriendRequest(requestId),
+                      ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: AppButton(
+                text: 'Accept',
+                backgroundColor: AppColors.primary,
+                textColor: AppColors.background,
+                isLoading: isSending,
+                onPressed: isSending
+                    ? null
+                    : () => ReadContext(context).read<ProfileDetailBloc>().add(
+                        AcceptFriendRequest(requestId),
                       ),
               ),
             ),

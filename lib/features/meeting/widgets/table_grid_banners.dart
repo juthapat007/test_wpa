@@ -46,14 +46,24 @@ class MyTableBanner extends StatelessWidget {
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: Row(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Position ${response.myTable}',
+                  'MY SEAT',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: width.s,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Table ${response.myTable}',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: width.l,
+                    fontSize: width.xxl,
                     fontWeight: FontWeight.bold,
                     height: 1.1,
                   ),

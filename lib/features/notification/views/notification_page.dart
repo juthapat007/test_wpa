@@ -6,7 +6,7 @@ import 'package:test_wpa/features/notification/domain/entities/connection_reques
 import 'package:test_wpa/features/notification/domain/entities/notification_entity.dart';
 import 'package:test_wpa/features/notification/presentation/bloc/connection_bloc.dart';
 import 'package:test_wpa/features/notification/presentation/bloc/notification_bloc.dart';
-import 'package:test_wpa/features/widgets/app_scaffold.dart';
+import 'package:test_wpa/features/widgets/app_bar_back.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class NotificationPage extends StatefulWidget {
@@ -24,7 +24,6 @@ class _NotificationPageState extends State<NotificationPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-
     ReadContext(
       context,
     ).read<NotificationBloc>().add(LoadNotifications(type: 'system'));
@@ -39,17 +38,18 @@ class _NotificationPageState extends State<NotificationPage>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: Column(
+    return Scaffold(
+      appBar: const AppBarBack(title: 'Notifications'),
+      body: Column(
         children: [
-          _buildTabBar(),
+          _TabBar(controller: _tabController),
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildSystemNotificationsTab(),
-                _buildAttendanceTab(),
-                _buildConnectionRequestsTab(),
+                _SystemNotificationsTab(),
+                _AttendanceTab(),
+                _FriendRequestsTab(),
               ],
             ),
           ),
@@ -57,9 +57,18 @@ class _NotificationPageState extends State<NotificationPage>
       ),
     );
   }
+}
 
-  // ─── Tab Bar ────────────────────────────────────────────────────────────
-  Widget _buildTabBar() {
+// ═══════════════════════════════════════════════════════════════════════════
+// Tab Bar
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _TabBar extends StatelessWidget {
+  final TabController controller;
+  const _TabBar({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -67,7 +76,7 @@ class _NotificationPageState extends State<NotificationPage>
       ),
       child: TabBar(
         isScrollable: true,
-        controller: _tabController,
+        controller: controller,
         labelColor: const Color(0xFF1A3A6B),
         unselectedLabelColor: Colors.grey[400],
         indicatorColor: const Color(0xFF1A3A6B),
@@ -91,14 +100,13 @@ class _NotificationPageState extends State<NotificationPage>
         tabs: [
           const Tab(text: 'EVENT PLAN'),
           const Tab(text: 'ATTENDANCE STATUS'),
-
           Tab(
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('FRIENDS REQUETS'),
+                const Text('FRIENDS REQUESTS'),
                 const SizedBox(width: 4),
-                _buildConnectionBadgeDot(),
+                _PendingBadgeDot(),
               ],
             ),
           ),
@@ -106,16 +114,17 @@ class _NotificationPageState extends State<NotificationPage>
       ),
     );
   }
+}
 
-  // จุดแดงเล็กๆ แบบในรูป
-  Widget _buildConnectionBadgeDot() {
+class _PendingBadgeDot extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     return BlocBuilder<ConnectionBloc, ConnectionRequestState>(
       builder: (context, state) {
-        int pendingCount = 0;
-        if (state is ConnectionRequestLoaded) {
-          pendingCount = state.requests.where((r) => r.isPending).length;
-        }
-        if (pendingCount == 0) return const SizedBox.shrink();
+        final hasPending =
+            state is ConnectionRequestLoaded &&
+            state.requests.any((r) => r.isPending);
+        if (!hasPending) return const SizedBox.shrink();
         return Container(
           width: 7,
           height: 7,
@@ -127,190 +136,450 @@ class _NotificationPageState extends State<NotificationPage>
       },
     );
   }
+}
 
-  Widget _buildMarkAllReadButton() {
+// ═══════════════════════════════════════════════════════════════════════════
+// Tab 1: System Notifications
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _SystemNotificationsTab extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     return BlocBuilder<NotificationBloc, NotificationState>(
-      builder: (context, state) {
-        if (_tabController.index != 0) return const SizedBox.shrink();
-        final hasUnread =
-            state is NotificationLoaded &&
-            state.notifications.any((n) => n.isUnread);
-        if (!hasUnread) return const SizedBox.shrink();
-        return TextButton(
-          onPressed: () {
-            ReadContext(context).read<NotificationBloc>().add(
-              MarkAllNotificationsRead(type: 'system'),
-            );
-          },
-          child: Text(
-            'Read All',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: color.AppColors.primary,
+      builder: (context, state) => switch (state) {
+        NotificationLoading() => const Center(
+          child: CircularProgressIndicator(),
+        ),
+        NotificationLoaded(notifications: final items) when items.isEmpty =>
+          const _EmptyState(
+            icon: Icons.notifications_none_rounded,
+            title: 'No Notifications',
+            message:
+                'You\'re all caught up.\nNew notifications will appear here.',
+          ),
+        NotificationLoaded(notifications: final items) => RefreshIndicator(
+          onRefresh: () async => ReadContext(
+            context,
+          ).read<NotificationBloc>().add(LoadNotifications(type: 'system')),
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: items.length,
+            separatorBuilder: (_, __) =>
+                Divider(height: 1, color: Colors.grey[200]),
+            itemBuilder: (context, index) => _NotificationTile(
+              item: items[index],
+              onTap: () {
+                final item = items[index];
+                if (item.isUnread) {
+                  ReadContext(
+                    context,
+                  ).read<NotificationBloc>().add(MarkNotificationRead(item.id));
+                }
+              },
             ),
           ),
-        );
+        ),
+        NotificationError(message: final msg) => _ErrorState(
+          message: msg,
+          onRetry: () => ReadContext(
+            context,
+          ).read<NotificationBloc>().add(LoadNotifications(type: 'system')),
+        ),
+        _ => const SizedBox.shrink(),
       },
     );
   }
+}
 
-  // ─── Tab 1: Event Plan / System ──────────────────────────────────────────
-  Widget _buildSystemNotificationsTab() {
-    return BlocBuilder<NotificationBloc, NotificationState>(
-      builder: (context, state) {
-        if (state is NotificationLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (state is NotificationLoaded) {
-          if (state.notifications.isEmpty) {
-            return _buildEmptyState(
-              icon: Icons.notifications_none_rounded,
-              title: 'No Notifications',
-              message:
-                  'You\'re all caught up. New notifications\nwill appear here.',
-            );
-          }
-          return RefreshIndicator(
-            onRefresh: () async {
-              ReadContext(
-                context,
-              ).read<NotificationBloc>().add(LoadNotifications(type: 'system'));
-            },
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: state.notifications.length,
-              separatorBuilder: (_, __) =>
-                  Divider(height: 1, color: Colors.grey[200]),
-              itemBuilder: (context, index) {
-                final item = state.notifications[index];
-                return _NotificationTile(
-                  item: item,
-                  onTap: () {
-                    if (item.isUnread) {
-                      ReadContext(context).read<NotificationBloc>().add(
-                        MarkNotificationRead(item.id),
-                      );
-                    }
-                  },
-                );
-              },
-            ),
-          );
-        }
-        if (state is NotificationError) {
-          return _buildErrorState(
-            message: state.message,
-            onRetry: () => ReadContext(
-              context,
-            ).read<NotificationBloc>().add(LoadNotifications(type: 'system')),
-          );
-        }
-        return const SizedBox.shrink();
-      },
-    );
-  }
+// ═══════════════════════════════════════════════════════════════════════════
+// Tab 2: Attendance
+// ═══════════════════════════════════════════════════════════════════════════
 
-  // ─── Tab 2: Attendance Status ────────────────────────────────────────────
-  Widget _buildAttendanceTab() {
-    return _buildEmptyState(
-      icon: Icons.how_to_reg_outlined,
-      title: 'Attendance Status',
-      message: 'Your attendance records\nwill appear here.',
-    );
-  }
+class _AttendanceTab extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const _EmptyState(
+    icon: Icons.how_to_reg_outlined,
+    title: 'Attendance Status',
+    message: 'Your attendance records\nwill appear here.',
+  );
+}
 
-  // ─── Tab 3: Friends Requests ─────────────────────────────────────────────
-  Widget _buildConnectionRequestsTab() {
+// ═══════════════════════════════════════════════════════════════════════════
+// Tab 3: Friend Requests
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _FriendRequestsTab extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     return BlocConsumer<ConnectionBloc, ConnectionRequestState>(
       listener: (context, state) {
-        if (state is ConnectionRequestActionSuccess) {
+        final msg = switch (state) {
+          ConnectionRequestActionSuccess(message: final m) => (m, Colors.green),
+          ConnectionRequestError(message: final m) => (m, Colors.red),
+          _ => null,
+        };
+        if (msg != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
-        if (state is ConnectionRequestError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.red,
+              content: Text(msg.$1),
+              backgroundColor: msg.$2,
               duration: const Duration(seconds: 2),
             ),
           );
         }
       },
-      builder: (context, state) {
-        if (state is ConnectionRequestLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (state is ConnectionRequestLoaded) {
-          final pendingRequests = state.requests
-              .where((r) => r.isPending)
-              .toList();
-
-          if (pendingRequests.isEmpty) {
-            return _buildEmptyState(
-              icon: Icons.people_outline,
-              title: 'No Friend Requests',
-              message: 'You don\'t have any pending\nfriend requests.',
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: () async {
-              ReadContext(
-                context,
-              ).read<ConnectionBloc>().add(LoadConnectionRequests());
-            },
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              itemCount: pendingRequests.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                final request = pendingRequests[index];
-                return _FriendRequestCard(
-                  request: request,
-                  onConfirm: () {
-                    ReadContext(context).read<ConnectionBloc>().add(
-                      AcceptConnectionRequest(request.id),
-                    );
-                  },
-                  onNotNow: () {
-                    ReadContext(context).read<ConnectionBloc>().add(
-                      RejectConnectionRequest(request.id),
-                    );
-                  },
-                );
-              },
-            ),
-          );
-        }
-
-        if (state is ConnectionRequestError) {
-          return _buildErrorState(
-            message: state.message,
-            onRetry: () => ReadContext(
-              context,
-            ).read<ConnectionBloc>().add(LoadConnectionRequests()),
-          );
-        }
-
-        return const SizedBox.shrink();
+      builder: (context, state) => switch (state) {
+        ConnectionRequestLoading() => const Center(
+          child: CircularProgressIndicator(),
+        ),
+        ConnectionRequestLoaded(requests: final reqs) => _buildList(
+          context,
+          reqs.where((r) => r.isPending).toList(),
+        ),
+        ConnectionRequestError(message: final msg) => _ErrorState(
+          message: msg,
+          onRetry: () => ReadContext(
+            context,
+          ).read<ConnectionBloc>().add(LoadConnectionRequests()),
+        ),
+        _ => const SizedBox.shrink(),
       },
     );
   }
 
-  // ─── Shared helpers ──────────────────────────────────────────────────────
-  Widget _buildEmptyState({
-    required IconData icon,
-    required String title,
-    required String message,
-  }) {
+  Widget _buildList(BuildContext context, List<ConnectionRequest> pending) {
+    if (pending.isEmpty) {
+      return const _EmptyState(
+        icon: Icons.people_outline,
+        title: 'No Friend Requests',
+        message: 'You don\'t have any pending\nfriend requests.',
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: () async => ReadContext(
+        context,
+      ).read<ConnectionBloc>().add(LoadConnectionRequests()),
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        itemCount: pending.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 0),
+        itemBuilder: (context, index) {
+          final request = pending[index];
+          return _FriendRequestCard(
+            request: request,
+            onConfirm: () => ReadContext(
+              context,
+            ).read<ConnectionBloc>().add(AcceptConnectionRequest(request.id)),
+            onNotNow: () => ReadContext(
+              context,
+            ).read<ConnectionBloc>().add(RejectConnectionRequest(request.id)),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Notification Tile
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _NotificationTile extends StatelessWidget {
+  final NotificationItem item;
+  final VoidCallback onTap;
+
+  const _NotificationTile({required this.item, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: item.isUnread
+          ? color.AppColors.primary.withOpacity(0.04)
+          : Colors.white,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildAvatar(),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _title,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: item.isUnread
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: color.AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        if (item.isUnread)
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: color.AppColors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                      ],
+                    ),
+                    if (_body.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        _body,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: color.AppColors.textSecondary,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 6),
+                    Text(
+                      timeago.format(item.createdAt),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvatar() {
+    final avatarUrl = item.notifiable?.requester?.avatarUrl;
+    if (avatarUrl != null && avatarUrl.isNotEmpty) {
+      return CircleAvatar(
+        radius: 22,
+        backgroundImage: NetworkImage(avatarUrl),
+        onBackgroundImageError: (_, __) {},
+      );
+    }
+    return CircleAvatar(
+      radius: 22,
+      backgroundColor: _tileColor.withOpacity(0.12),
+      child: Icon(_tileIcon, size: 22, color: _tileColor),
+    );
+  }
+
+  String get _title => switch (item.type) {
+    'connection_request' => item.notifiable?.requester?.name ?? 'Someone',
+    'connection_accepted' => item.notifiable?.target?.name ?? 'Someone',
+    _ => item.typeLabel,
+  };
+
+  String get _body => switch (item.type) {
+    'connection_request' => switch (item.notifiable?.status) {
+      'accepted' => 'Accepted your friend request',
+      'rejected' => 'Declined your friend request',
+      _ => 'Sent you a friend request',
+    },
+    'connection_accepted' => 'Accepted your friend request ✓',
+    _ => item.notifiable?.content ?? '',
+  };
+
+  IconData get _tileIcon => switch (item.type) {
+    'new_message' => Icons.chat_bubble_outline,
+    'new_connection' => Icons.person_add_outlined,
+    'schedule_reminder' => Icons.schedule_outlined,
+    _ => Icons.notifications_outlined,
+  };
+
+  Color get _tileColor => switch (item.type) {
+    'new_message' => color.AppColors.primary,
+    'new_connection' => color.AppColors.secondary,
+    'schedule_reminder' => color.AppColors.warning,
+    _ => Colors.grey,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Friend Request Card — ใช้ style เดียวกับ DelegateCard
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _FriendRequestCard extends StatelessWidget {
+  final ConnectionRequest request;
+  final VoidCallback onConfirm;
+  final VoidCallback onNotNow;
+
+  const _FriendRequestCard({
+    required this.request,
+    required this.onConfirm,
+    required this.onNotNow,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final sender = request.sender;
+    final avatarUrl = sender?.avatarUrl ?? '';
+    final name = sender?.name ?? 'Unknown';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 1,
+      child: InkWell(
+        onTap: () => Modular.to.pushNamed(
+          '/other_profile',
+          arguments: {'delegate_id': request.senderId},
+        ),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              // ── Avatar ────────────────────────────────────────────────
+              CircleAvatar(
+                radius: 26,
+                backgroundImage: avatarUrl.isNotEmpty
+                    ? NetworkImage(avatarUrl)
+                    : null,
+                backgroundColor: const Color(0xFF4A90D9).withOpacity(0.15),
+                child: avatarUrl.isEmpty
+                    ? Text(
+                        name[0].toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF4A90D9),
+                        ),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 14),
+
+              // ── Name + title + company ────────────────────────────────
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A2340),
+                      ),
+                    ),
+                    if (sender?.title?.isNotEmpty == true) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        sender!.title!,
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      ),
+                    ],
+                    if (sender?.companyName?.isNotEmpty == true) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        sender!.companyName!,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 10),
+
+              // ── Buttons — ป้องกัน tap bubble ขึ้นการ์ด ───────────────
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {},
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _ActionButton(
+                      label: 'Reject',
+                      onTap: onNotNow,
+                      filled: false,
+                    ),
+                    const SizedBox(width: 8),
+                    _ActionButton(
+                      label: 'Accept',
+                      onTap: onConfirm,
+                      filled: true,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  final bool filled;
+
+  const _ActionButton({
+    required this.label,
+    required this.onTap,
+    required this.filled,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: filled
+              ? color
+                    .AppColors
+                    .primary // ปุ่ม Confirm
+              : color.AppColors.warning, // ปุ่ม Not Now (เปลี่ยนสีตามต้องการ)
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            color: Colors.white, // 👈 ตัวอักษรขาวทั้งคู่
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Shared Widgets
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _EmptyState extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String message;
+
+  const _EmptyState({
+    required this.icon,
+    required this.title,
+    required this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(48),
@@ -342,11 +611,16 @@ class _NotificationPageState extends State<NotificationPage>
       ),
     );
   }
+}
 
-  Widget _buildErrorState({
-    required String message,
-    required VoidCallback onRetry,
-  }) {
+class _ErrorState extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _ErrorState({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -375,317 +649,6 @@ class _NotificationPageState extends State<NotificationPage>
             const SizedBox(height: 20),
             OutlinedButton(onPressed: onRetry, child: const Text('Retry')),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Notification Tile (System tab)
-// ═══════════════════════════════════════════════════════════════════════════
-class _NotificationTile extends StatelessWidget {
-  final NotificationItem item;
-  final VoidCallback onTap;
-
-  const _NotificationTile({required this.item, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: item.isUnread
-          ? color.AppColors.primary.withOpacity(0.04)
-          : Colors.white,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildLeading(),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _getTitle(),
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: item.isUnread
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                              color: color.AppColors.textPrimary,
-                            ),
-                          ),
-                        ),
-                        if (item.isUnread)
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: color.AppColors.primary,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    if (_getBody().isNotEmpty)
-                      Text(
-                        _getBody(),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: color.AppColors.textSecondary,
-                          height: 1.4,
-                        ),
-                      ),
-                    const SizedBox(height: 6),
-                    Text(
-                      _formatTime(item.createdAt),
-                      style: TextStyle(fontSize: 12, color: Colors.grey[400]),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLeading() {
-    final requester = item.notifiable?.requester;
-    if (requester != null &&
-        requester.avatarUrl != null &&
-        requester.avatarUrl!.isNotEmpty) {
-      return CircleAvatar(
-        radius: 22,
-        backgroundImage: NetworkImage(requester.avatarUrl!),
-        onBackgroundImageError: (_, __) {},
-      );
-    }
-    final iconData = _getIconForType(item.type);
-    final iconColor = _getColorForType(item.type);
-    return CircleAvatar(
-      radius: 22,
-      backgroundColor: iconColor.withOpacity(0.12),
-      child: Icon(iconData, size: 22, color: iconColor),
-    );
-  }
-
-  String _getTitle() {
-    final requester = item.notifiable?.requester;
-    switch (item.type) {
-      case 'connection_request':
-        return requester?.name ?? 'Someone';
-      case 'connection_accepted':
-        final target = item.notifiable?.target;
-        return target?.name ?? 'Someone';
-      default:
-        return item.typeLabel;
-    }
-  }
-
-  String _getBody() {
-    switch (item.type) {
-      case 'connection_request':
-        final status = item.notifiable?.status;
-        if (status == 'accepted') return 'Accepted your friend request';
-        if (status == 'rejected') return 'Declined your friend request';
-        return 'Sent you a friend request';
-      case 'connection_accepted':
-        return 'Accepted your friend request ✓';
-      default:
-        return item.notifiable?.content ?? '';
-    }
-  }
-
-  IconData _getIconForType(String type) {
-    switch (type) {
-      case 'new_message':
-        return Icons.chat_bubble_outline;
-      case 'new_connection':
-        return Icons.person_add_outlined;
-      case 'schedule_reminder':
-        return Icons.schedule_outlined;
-      default:
-        return Icons.notifications_outlined;
-    }
-  }
-
-  Color _getColorForType(String type) {
-    switch (type) {
-      case 'new_message':
-        return color.AppColors.primary;
-      case 'new_connection':
-        return color.AppColors.secondary;
-      case 'schedule_reminder':
-        return color.AppColors.warning;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  String _formatTime(DateTime dateTime) {
-    try {
-      return timeago.format(dateTime);
-    } catch (_) {
-      return '';
-    }
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Friend Request Card — ตรงกับ UI ในรูป
-// ═══════════════════════════════════════════════════════════════════════════
-class _FriendRequestCard extends StatelessWidget {
-  final ConnectionRequest request;
-  final VoidCallback onConfirm;
-  final VoidCallback onNotNow;
-
-  const _FriendRequestCard({
-    required this.request,
-    required this.onConfirm,
-    required this.onNotNow,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final sender = request.sender;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          // ── Avatar ──────────────────────────────────────────────────
-          _buildAvatar(sender),
-          const SizedBox(width: 14),
-
-          // ── Name + Company • Title ───────────────────────────────────
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  sender?.name ?? 'Unknown',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A2340),
-                  ),
-                ),
-                const SizedBox(height: 3),
-                if (_buildSubtitle(sender).isNotEmpty)
-                  Text(
-                    _buildSubtitle(sender),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[500]),
-                  ),
-              ],
-            ),
-          ),
-
-          const SizedBox(width: 10),
-
-          // ── Buttons ──────────────────────────────────────────────────
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _ActionButton(label: 'Not Now', onTap: onNotNow, isFilled: false),
-              const SizedBox(width: 8),
-              _ActionButton(label: 'Confirm', onTap: onConfirm, isFilled: true),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAvatar(ConnectionRequestDelegate? sender) {
-    final hasAvatar =
-        sender?.avatarUrl != null && sender!.avatarUrl!.isNotEmpty;
-    return CircleAvatar(
-      radius: 26,
-      backgroundImage: hasAvatar ? NetworkImage(sender!.avatarUrl!) : null,
-      backgroundColor: const Color(0xFFE0B89A).withOpacity(0.35),
-      child: !hasAvatar
-          ? Text(
-              (sender?.name ?? 'U').substring(0, 1).toUpperCase(),
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFC47F4F),
-              ),
-            )
-          : null,
-    );
-  }
-
-  String _buildSubtitle(ConnectionRequestDelegate? sender) {
-    final parts = <String>[];
-    if (sender?.companyName != null && sender!.companyName!.isNotEmpty) {
-      parts.add(sender.companyName!);
-    }
-    if (sender?.title != null && sender!.title!.isNotEmpty) {
-      parts.add(sender.title!);
-    }
-    return parts.join(' • ');
-  }
-}
-
-// ─── ปุ่ม Not Now / Confirm ──────────────────────────────────────────────
-class _ActionButton extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-  final bool isFilled; // true = Confirm (golden), false = Not Now (outline)
-
-  const _ActionButton({
-    required this.label,
-    required this.onTap,
-    required this.isFilled,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          // Confirm = สีทอง amber, Not Now = ขอบฟ้าใส
-          color: isFilled ? const Color(0xFFD4A843) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: isFilled
-              ? null
-              : Border.all(color: const Color(0xFF4A90D9), width: 1.2),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: isFilled ? Colors.white : const Color(0xFF4A90D9),
-          ),
         ),
       ),
     );

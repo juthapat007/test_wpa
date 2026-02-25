@@ -6,8 +6,6 @@ import 'package:meta/meta.dart';
 import 'package:test_wpa/core/network/dio_client.dart';
 import 'package:test_wpa/features/auth/domain/repositories/auth_repository.dart';
 import 'package:test_wpa/features/chat/data/services/chat_websocket_service.dart';
-
-// import 'package:test_wpa/core/services/notification_websocket_service.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 part 'auth_event.dart';
 part 'auth_state.dart';
@@ -43,11 +41,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         // NotificationWebSocketService.instance.connect(token);
       }
       //คอยเก็บ token
+
       // final fcmToken = await FirebaseMessaging.instance.getToken();
       // print('🔥 FCM Token: $fcmToken');
       // if (fcmToken != null) {
       //   await authRepository.registerDeviceToken(fcmToken);
       // }
+
+      /// fcm
       emit(
         AuthAuthenticated(
           avatarUrl: result.user?.avatarUrl,

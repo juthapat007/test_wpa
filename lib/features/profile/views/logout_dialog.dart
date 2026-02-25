@@ -17,6 +17,7 @@ void showLogoutDialog(BuildContext context) {
       description: 'Are you sure you want to log out?',
       actions: [
         AppDialogAction(
+          backgroundColor: AppColors.background,
           onPressed: () => Navigator.pop(context),
           label: 'Cancel',
         ),

@@ -59,7 +59,7 @@ class _SearchPageState extends State<SearchPage> {
           DelegateSearchBar(
             controller: _searchController,
             icon: Icons.search,
-            label: 'Search by name, email, or company',
+            label: 'Search by name',
             onSearch: _onSearch,
           ),
 

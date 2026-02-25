@@ -18,7 +18,7 @@ abstract class ChatRepository {
   // REST API
   Future<List<ChatRoom>> getChatRooms();
 
-  // ✨ UPDATED: Return Map ที่มี messages และ metadata สำหรับ pagination
+  // UPDATED: Return Map ที่มี messages และ metadata สำหรับ pagination
   Future<Map<String, dynamic>> getChatHistory(
     String roomId, {
     int? page,
@@ -36,7 +36,6 @@ abstract class ChatRepository {
   Future<void> deleteMessage(String messageId);
 }
 
-// 🆕 NEW: Typing event data class
 class TypingEvent {
   final String userId;
   final bool isTyping;

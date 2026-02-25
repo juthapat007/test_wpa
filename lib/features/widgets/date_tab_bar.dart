@@ -21,8 +21,10 @@ class DateTabBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          _buildConferenceLabel(),
+
           const SizedBox(height: 12),
           // Date chips
           SingleChildScrollView(

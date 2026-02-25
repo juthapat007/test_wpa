@@ -1,7 +1,7 @@
 // lib/app/app_module.dart
 
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Notification;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/network/dio_client.dart';
@@ -344,7 +344,7 @@ class AppModule extends Module {
     // /notification — AppShell already provides NotificationBloc + ConnectionBloc + ChatBloc
     r.child(
       '/notification',
-      child: (_) => AppShell(child: const NotificationWidget()),
+      child: (_) => AppShell(child: const Notification()),
     );
 
     // /chat
