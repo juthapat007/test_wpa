@@ -157,28 +157,50 @@ class _SystemNotificationsTab extends StatelessWidget {
             message:
                 'You\'re all caught up.\nNew notifications will appear here.',
           ),
-        NotificationLoaded(notifications: final items) => RefreshIndicator(
-          onRefresh: () async => ReadContext(
-            context,
-          ).read<NotificationBloc>().add(LoadNotifications(type: 'system')),
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: items.length,
-            separatorBuilder: (_, __) =>
-                Divider(height: 1, color: Colors.grey[200]),
-            itemBuilder: (context, index) => _NotificationTile(
-              item: items[index],
-              onTap: () {
-                final item = items[index];
-                if (item.isUnread) {
-                  ReadContext(
+        // ใน NotificationLoaded case ที่ items ไม่ว่าง
+        NotificationLoaded(notifications: final items) => Column(
+          children: [
+            // ปุ่ม mark all — แสดงตลอดเมื่อมี items ไม่ว่าจะ unread หรือเปล่า
+            Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: TextButton.icon(
+                  onPressed: () => ReadContext(
                     context,
-                  ).read<NotificationBloc>().add(MarkNotificationRead(item.id));
-                }
-              },
+                  ).read<NotificationBloc>().add(MarkAllNotificationsRead()),
+                  icon: const Icon(Icons.done_all, size: 16),
+                  label: const Text('Mark all as read'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: color.AppColors.primary,
+                    textStyle: const TextStyle(fontSize: 13),
+                  ),
+                ),
+              ),
             ),
-          ),
+
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemCount: items.length,
+                separatorBuilder: (_, __) =>
+                    Divider(height: 1, color: Colors.grey[200]),
+                itemBuilder: (context, index) => _NotificationTile(
+                  item: items[index],
+                  onTap: () {
+                    final item = items[index];
+                    if (item.isUnread) {
+                      ReadContext(context).read<NotificationBloc>().add(
+                        MarkNotificationRead(item.id),
+                      );
+                    }
+                  },
+                ),
+              ),
+            ),
+          ],
         ),
+
         NotificationError(message: final msg) => _ErrorState(
           message: msg,
           onRetry: () => ReadContext(

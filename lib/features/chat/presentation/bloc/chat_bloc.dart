@@ -40,6 +40,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
   ChatBloc({required this.chatRepository}) : super(ChatInitial()) {
     _initializeCurrentUserId();
+    _subscribeToStreams();
 
     on<ConnectWebSocket>(_onConnectWebSocket);
     on<DisconnectWebSocket>(_onDisconnectWebSocket);
@@ -66,55 +67,74 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
     on<DeleteMessageLocal>(_onDeleteMessageLocal);
     on<UpdateMessageLocal>(_onUpdateMessageLocal);
+    on<MarkAllChatsRead>(_onMarkAllChatsRead);
   }
 
   // ─── WebSocket ───────────────────────────────────────────────────────────
 
+  // Future<void> _onConnectWebSocket(
+  //   ConnectWebSocket event,
+  //   Emitter<ChatState> emit,
+  // ) async {
+  //   try {
+  //     await _messageSubscription?.cancel();
+  //     await _connectionSubscription?.cancel();
+  //     await _readReceiptSubscription?.cancel();
+  //     await _messageDeletedSubscription?.cancel();
+  //     await _messageUpdatedSubscription?.cancel();
+  //     await _typingSubscription?.cancel();
+  //     await chatRepository.connectWebSocket();
+
+  //     _messageSubscription = chatRepository.messageStream.listen(
+  //       (message) => add(WebSocketMessageReceived(message)),
+  //     );
+  //     _connectionSubscription = chatRepository.connectionStream.listen(
+  //       (isConnected) => add(WebSocketConnectionChanged(isConnected)),
+  //     );
+  //     _readReceiptSubscription = chatRepository.readReceiptStream.listen(
+  //       (receipt) => add(
+  //         MessageReadReceived(
+  //           messageId: receipt.messageId,
+  //           readAt: receipt.readAt,
+  //         ),
+  //       ),
+  //     );
+  //     _messageDeletedSubscription = chatRepository.messageDeletedStream.listen(
+  //       (event) => add(WebSocketMessageDeleted(messageId: event.messageId)),
+  //     );
+  //     _messageUpdatedSubscription = chatRepository.messageUpdatedStream.listen(
+  //       (event) => add(
+  //         WebSocketMessageUpdated(
+  //           messageId: event.messageId,
+  //           content: event.content,
+  //           editedAt: event.editedAt,
+  //         ),
+  //       ),
+  //     );
+  //     _typingSubscription = chatRepository.typingStream.listen((event) {
+  //       add(
+  //         event.isTyping
+  //             ? TypingStarted(event.userId)
+  //             : TypingStopped(event.userId),
+  //       );
+  //     });
+  //   } catch (e) {
+  //     log.e('Failed to connect WebSocket', error: e);
+  //     emit(ChatError('Failed to connect WebSocket: $e'));
+  //   }
+  // }
   Future<void> _onConnectWebSocket(
     ConnectWebSocket event,
     Emitter<ChatState> emit,
   ) async {
     try {
-      await _messageSubscription?.cancel();
-      await _connectionSubscription?.cancel();
-      await _readReceiptSubscription?.cancel();
-      await _messageDeletedSubscription?.cancel();
-      await _messageUpdatedSubscription?.cancel();
+      // ✅ ถ้า connect อยู่แล้ว ไม่ต้อง connect ซ้ำ
+      final wsService = (chatRepository as ChatRepositoryImpl).webSocketService;
+      if (wsService.isConnected) {
+        log.i('WebSocket already connected, skipping');
+        return;
+      }
       await chatRepository.connectWebSocket();
-
-      _messageSubscription = chatRepository.messageStream.listen(
-        (message) => add(WebSocketMessageReceived(message)),
-      );
-      _connectionSubscription = chatRepository.connectionStream.listen(
-        (isConnected) => add(WebSocketConnectionChanged(isConnected)),
-      );
-      _readReceiptSubscription = chatRepository.readReceiptStream.listen(
-        (receipt) => add(
-          MessageReadReceived(
-            messageId: receipt.messageId,
-            readAt: receipt.readAt,
-          ),
-        ),
-      );
-      _messageDeletedSubscription = chatRepository.messageDeletedStream.listen(
-        (event) => add(WebSocketMessageDeleted(messageId: event.messageId)),
-      );
-      _messageUpdatedSubscription = chatRepository.messageUpdatedStream.listen(
-        (event) => add(
-          WebSocketMessageUpdated(
-            messageId: event.messageId,
-            content: event.content,
-            editedAt: event.editedAt,
-          ),
-        ),
-      );
-      _typingSubscription = chatRepository.typingStream.listen((event) {
-        add(
-          event.isTyping
-              ? TypingStarted(event.userId)
-              : TypingStopped(event.userId),
-        );
-      });
     } catch (e) {
       log.e('Failed to connect WebSocket', error: e);
       emit(ChatError('Failed to connect WebSocket: $e'));
@@ -154,6 +174,42 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
 
     _emitCurrentState(emit);
+  }
+
+  void _subscribeToStreams() {
+    _messageSubscription = chatRepository.messageStream.listen(
+      (message) => add(WebSocketMessageReceived(message)),
+    );
+    _connectionSubscription = chatRepository.connectionStream.listen(
+      (isConnected) => add(WebSocketConnectionChanged(isConnected)),
+    );
+    _readReceiptSubscription = chatRepository.readReceiptStream.listen(
+      (receipt) => add(
+        MessageReadReceived(
+          messageId: receipt.messageId,
+          readAt: receipt.readAt,
+        ),
+      ),
+    );
+    _messageDeletedSubscription = chatRepository.messageDeletedStream.listen(
+      (event) => add(WebSocketMessageDeleted(messageId: event.messageId)),
+    );
+    _messageUpdatedSubscription = chatRepository.messageUpdatedStream.listen(
+      (event) => add(
+        WebSocketMessageUpdated(
+          messageId: event.messageId,
+          content: event.content,
+          editedAt: event.editedAt,
+        ),
+      ),
+    );
+    _typingSubscription = chatRepository.typingStream.listen((event) {
+      add(
+        event.isTyping
+            ? TypingStarted(event.userId)
+            : TypingStopped(event.userId),
+      );
+    });
   }
 
   // ─── Typing ───────────────────────────────────────────────────────────────
@@ -270,7 +326,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       }
 
       final response = await chatRepository.getChatHistory(
-        event.room.id,
+        // event.room.id,
+        event.room.participantId,
         page: 1,
         limit: 50,
       );
@@ -278,7 +335,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       _messages = response['messages'];
       final totalPages = response['totalPages'] ?? 1;
       _hasMoreMessages = _currentPage < totalPages;
-
+      //เพิ่มตรงนี้ — mark as read ทันทีที่เปิดห้อง
+      if (event.room.unreadCount > 0) {
+        add(MarkAsRead(event.room.participantId));
+      }
       emit(_buildRoomState());
     } catch (e) {
       log.e('Failed to load chat history', error: e);
@@ -336,7 +396,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   ) async {
     try {
       final response = await chatRepository.getChatHistory(
-        event.roomId,
+        // event.roomId,
+        _selectedRoom!.participantId,
         page: 1,
         limit: event.limit ?? 50,
       );
@@ -371,7 +432,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
     try {
       final response = await chatRepository.getChatHistory(
-        event.roomId,
+        // event.roomId,
+        _selectedRoom!.participantId,
         page: nextPage,
         limit: event.limit,
       );
@@ -432,9 +494,15 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     try {
       await chatRepository.markAsRead(event.roomId);
       _chatRooms = _chatRooms.map((room) {
-        return room.id == event.roomId ? room.copyWith(unreadCount: 0) : room;
+        // return room.id == event.roomId ? room.copyWith(unreadCount: 0) : room;
+        return room.participantId == event.roomId
+            ? room.copyWith(unreadCount: 0)
+            : room;
       }).toList();
-      if (_selectedRoom?.id == event.roomId) {
+      // if (_selectedRoom?.id == event.roomId) {
+      //   _selectedRoom = _selectedRoom!.copyWith(unreadCount: 0);
+      // }
+      if (_selectedRoom?.participantId == event.roomId) {
         _selectedRoom = _selectedRoom!.copyWith(unreadCount: 0);
       }
       _emitCurrentState(emit);
@@ -615,6 +683,27 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
   }
 
+  Future<void> _onMarkAllChatsRead(
+    MarkAllChatsRead event,
+    Emitter<ChatState> emit,
+  ) async {
+    final unreadRooms = _chatRooms.where((r) => r.unreadCount > 0).toList();
+    if (unreadRooms.isEmpty) return;
+
+    for (final room in unreadRooms) {
+      try {
+        await chatRepository.markAsRead(room.participantId);
+      } catch (e) {
+        log.w('Failed to mark room ${room.id} as read', error: e);
+      }
+    }
+
+    _chatRooms = _chatRooms
+        .map((r) => r.unreadCount > 0 ? r.copyWith(unreadCount: 0) : r)
+        .toList();
+
+    _emitCurrentState(emit);
+  }
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
   /// ✅ Single source of truth สำหรับ emit state ของห้องแชท

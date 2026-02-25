@@ -75,6 +75,10 @@ class ChatWebSocketService {
   // ─── Connect ─────────────────────────────────────────────────────────────
 
   Future<void> connect(String token) async {
+    if (_isConnected && _channel != null) {
+      log.i('WebSocket already connected, skipping reconnect');
+      return;
+    }
     _lastToken = token;
     _reconnectAttempts = 0;
     _cancelTimers();

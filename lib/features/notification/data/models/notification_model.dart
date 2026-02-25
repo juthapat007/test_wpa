@@ -23,7 +23,8 @@ class NotificationItemModel {
       type: json['type'] ?? '',
       readAt: json['read_at'],
       createdAt: json['created_at'] ?? '',
-      isUnread: json['unread?'] ?? true,
+      // isUnread: json['unread?'] ?? true,
+      isUnread: json['is_unread?'] ?? false,
       notifiable: json['notifiable'] != null
           ? NotificationNotifiableModel.fromJson(json['notifiable'])
           : null,

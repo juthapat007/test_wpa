@@ -72,6 +72,8 @@ class MarkAsRead extends ChatEvent {
   MarkAsRead(this.roomId);
 }
 
+class MarkAllChatsRead extends ChatEvent {}
+
 /// Read receipt จาก WebSocket — อีกฝ่ายอ่านข้อความของเราแล้ว
 class MessageReadReceived extends ChatEvent {
   final String messageId;
