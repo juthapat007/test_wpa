@@ -276,7 +276,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         Expanded(
           child: AddButtonOutline(
             text: 'Chat',
-
+            icon: Icons.chat_bubble_outline,
             onPressed: () => ReadContext(context).read<ChatBloc>().add(
               CreateChatRoom(profile.id.toString(), profile.name),
             ),

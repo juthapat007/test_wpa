@@ -59,8 +59,6 @@ class ConnectionApi {
   }
 
   /// DELETE /api/v1/connections/:delegate_id
-  /// ⚠️ backend ต้องมี endpoint นี้ — ถ้ายังไม่มีจะได้ 404
-  ///    path นี้ต่างจาก /networking/unfriend/ ที่เคยใช้
   Future<void> unfriend(int delegateId) async {
     try {
       // await dio.delete('/connections/$delegateId');

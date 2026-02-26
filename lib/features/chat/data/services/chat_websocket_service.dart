@@ -221,7 +221,7 @@ class ChatWebSocketService {
   // ─── Handle incoming messages ─────────────────────────────────────────────
 
   void _handleMessage(dynamic rawData) {
-    log.wtf('[ChatWS RAW] $rawData');
+    // log.wtf('[ChatWS RAW] $rawData');
     try {
       final data = jsonDecode(rawData.toString());
       final type = data['type'] as String?;
@@ -234,7 +234,7 @@ class ChatWebSocketService {
         case 'ping':
           // รีเซ็ต watchdog ทุกครั้งที่ได้รับ ping จาก server
           _lastPingReceived = DateTime.now();
-          log.v('[Ping] received from server ✓');
+          // log.v('[Ping] received from server ✓');
           break;
 
         case 'confirm_subscription':

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
@@ -26,52 +28,73 @@ class MyTableBanner extends StatelessWidget {
             DateTimeHelper.parseFlexibleDateTime(currentTime, response.date),
           );
 
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.7))],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), // ← blur พื้นหลัง
+        child: Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15), // ← โปร่งใส
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
               color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.event_seat, color: Colors.white, size: 28),
+            ), // ← ขอบขาวจาง
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withOpacity(0.2),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'MY SEAT',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
-                    fontSize: width.s,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.2,
-                  ),
+
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Table ${response.myTable}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: width.xxl,
-                    fontWeight: FontWeight.bold,
-                    height: 1.1,
-                  ),
+                child: const Icon(
+                  Icons.event_seat,
+                  color: Colors.white,
+                  size: 28,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'MY SEAT',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: width.s,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Table ${response.myTable}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: width.xxl,
+                        fontWeight: FontWeight.bold,
+                        height: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

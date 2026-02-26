@@ -32,11 +32,11 @@ void showLogoutDialog(BuildContext context) {
               final authBloc = Modular.get<AuthBloc>();
               authBloc.add(AuthLogout());
               await Future.delayed(const Duration(milliseconds: 300));
-              Modular.to.navigate('/');
+              Modular.to.navigate('/login');
             } catch (e) {
               print('Logout error: $e');
               // ถ้า error ให้ navigate อยู่ดี
-              Modular.to.navigate('/');
+              Modular.to.navigate('/login');
             }
           },
         ),

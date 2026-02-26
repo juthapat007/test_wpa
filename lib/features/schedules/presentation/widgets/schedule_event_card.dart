@@ -57,7 +57,6 @@ class MeetingCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row 1: เวลา | table | badge
           Row(
             children: [
               // เวลา — ซ้าย
@@ -69,8 +68,9 @@ class MeetingCard extends StatelessWidget {
                   color: AppColors.textPrimary,
                 ),
               ),
-              SizedBox(width: height.m),
-              // table — กลาง (ดัน badge ไปขวา)
+              SizedBox(width: 100),
+
+              ///มันทำให้โหลดข้อมูลช้าไม่ต้องเอามาก็ได้
               if (schedule.tableNumber != null) ...[
                 const Spacer(), // ✅ ดัน table ให้อยู่กลาง
                 Text(
@@ -82,7 +82,6 @@ class MeetingCard extends StatelessWidget {
                   ),
                 ),
               ],
-
               const Spacer(), // ✅ ดัน badge ไปขวาสุด
               _buildBadge(helper),
             ],

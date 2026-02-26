@@ -71,9 +71,9 @@ class _AppBarTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isOnline =
-        room.lastActiveAt != null &&
-        DateTime.now().difference(room.lastActiveAt!).inMinutes < 5;
+    // final isOnline =
+    //     room.lastActiveAt != null &&
+    //     DateTime.now().difference(room.lastActiveAt!).inMinutes < 5;
 
     return GestureDetector(
       onTap: () {
@@ -114,11 +114,11 @@ class _AppBarTitle extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (isOnline)
-                  const Text(
-                    'Online',
-                    style: TextStyle(fontSize: 12, color: AppColors.success),
-                  ),
+                // if (isOnline)
+                //   const Text(
+                //     'Online',
+                //     style: TextStyle(fontSize: 12, color: AppColors.success),
+                //   ),
               ],
             ),
           ),

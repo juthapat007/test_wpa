@@ -1,3 +1,4 @@
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_wpa/features/schedules/domain/repositories/schedule_repository.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
@@ -7,9 +8,10 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
   final ScheduleRepository scheduleRepository;
 
   ScheduleBloc({required this.scheduleRepository}) : super(ScheduleInitial()) {
-    on<LoadSchedules>(_onLoadSchedules);
-    on<ChangeDate>(_onChangeDate);
-    on<LoadLeaveTypes>(_onLoadLeaveTypes);
+    // ✅ droppable() — ถ้ามี event ซ้ำเข้ามาระหว่างที่กำลัง load อยู่ จะ drop ทิ้ง
+    on<LoadSchedules>(_onLoadSchedules, transformer: droppable());
+    on<ChangeDate>(_onChangeDate, transformer: droppable());
+    on<LoadLeaveTypes>(_onLoadLeaveTypes, transformer: droppable());
     on<SubmitLeaveForms>(_onSubmitLeaveForms);
   }
 
@@ -17,23 +19,12 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
     LoadSchedules event,
     Emitter<ScheduleState> emit,
   ) async {
-    print('ScheduleBloc: Loading with date=${event.date}'); //  ลบ year ออก
     emit(ScheduleLoading());
-
     try {
-      final scheduleResponse = await scheduleRepository.getSchedule(
-        date: event.date,
-      );
-
-      print(
-        '✅ ScheduleBloc: Loaded ${scheduleResponse.schedules.length} schedules',
-      );
-      print('✅ ScheduleBloc: Status = ${scheduleResponse.status}');
-
-      emit(ScheduleLoaded(scheduleResponse));
+      final response = await scheduleRepository.getSchedule(date: event.date);
+      emit(ScheduleLoaded(response));
     } catch (e, stackTrace) {
-      print('❌ ScheduleBloc error: $e');
-      print('❌ StackTrace: $stackTrace');
+      addError(e, stackTrace);
       emit(ScheduleError('Cannot load schedules: $e'));
     }
   }
@@ -44,12 +35,10 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
   ) async {
     emit(ScheduleLoading());
     try {
-      final scheduleResponse = await scheduleRepository.getSchedule(
-        date: event.date,
-      );
-      emit(ScheduleLoaded(scheduleResponse));
-    } catch (e) {
-      print('ScheduleBloc error: $e');
+      final response = await scheduleRepository.getSchedule(date: event.date);
+      emit(ScheduleLoaded(response));
+    } catch (e, stackTrace) {
+      addError(e, stackTrace);
       emit(ScheduleError('Cannot load schedules: $e'));
     }
   }
@@ -60,10 +49,9 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
   ) async {
     try {
       final leaveTypes = await scheduleRepository.getLeaveTypes();
-      print('✅ ScheduleBloc: Loaded ${leaveTypes.length} leave types');
       emit(LeaveTypesLoaded(leaveTypes));
-    } catch (e) {
-      print('❌ ScheduleBloc error loading leave types: $e');
+    } catch (e, stackTrace) {
+      addError(e, stackTrace);
       emit(LeaveTypesError('Cannot load leave types: $e'));
     }
   }
@@ -73,21 +61,15 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
     Emitter<ScheduleState> emit,
   ) async {
     emit(LeaveFormsSubmitting());
-
     try {
-      print('📤 ScheduleBloc: Submitting leave forms...');
-
       final response = await scheduleRepository.submitLeaveForms(event.request);
-
       if (response.success) {
-        print('✅ ScheduleBloc: Leave forms submitted successfully');
         emit(LeaveFormsSubmitted(response));
       } else {
-        print('❌ ScheduleBloc: Submit failed: ${response.message}');
         emit(LeaveFormsSubmitError(response.message));
       }
-    } catch (e) {
-      print('❌ ScheduleBloc error submitting leave forms: $e');
+    } catch (e, stackTrace) {
+      addError(e, stackTrace);
       emit(LeaveFormsSubmitError('Failed to submit leave forms: $e'));
     }
   }

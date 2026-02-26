@@ -47,7 +47,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               backgroundColor: AppColors.success,
             ),
           );
-          Modular.to.navigate('/');
+          Modular.to.navigate('/login');
         } else if (state is ForgotPasswordError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

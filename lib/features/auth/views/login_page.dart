@@ -69,6 +69,11 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    Image.asset(
+                      'assets/images/logo.png',
+                      width: 200,
+                      height: 200,
+                    ),
                     const Text(
                       'Secure Delegate Login',
                       style: TextStyle(

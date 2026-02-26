@@ -15,7 +15,7 @@ class AppView extends StatelessWidget {
 
         if (state is AuthUnauthenticated) {
           print('Navigating to login...');
-          Modular.to.navigate('/');
+          Modular.to.navigate('/login');
         }
       },
       child: const RouterOutlet(),

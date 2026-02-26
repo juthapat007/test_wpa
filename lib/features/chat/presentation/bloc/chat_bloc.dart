@@ -72,57 +72,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
   // ─── WebSocket ───────────────────────────────────────────────────────────
 
-  // Future<void> _onConnectWebSocket(
-  //   ConnectWebSocket event,
-  //   Emitter<ChatState> emit,
-  // ) async {
-  //   try {
-  //     await _messageSubscription?.cancel();
-  //     await _connectionSubscription?.cancel();
-  //     await _readReceiptSubscription?.cancel();
-  //     await _messageDeletedSubscription?.cancel();
-  //     await _messageUpdatedSubscription?.cancel();
-  //     await _typingSubscription?.cancel();
-  //     await chatRepository.connectWebSocket();
-
-  //     _messageSubscription = chatRepository.messageStream.listen(
-  //       (message) => add(WebSocketMessageReceived(message)),
-  //     );
-  //     _connectionSubscription = chatRepository.connectionStream.listen(
-  //       (isConnected) => add(WebSocketConnectionChanged(isConnected)),
-  //     );
-  //     _readReceiptSubscription = chatRepository.readReceiptStream.listen(
-  //       (receipt) => add(
-  //         MessageReadReceived(
-  //           messageId: receipt.messageId,
-  //           readAt: receipt.readAt,
-  //         ),
-  //       ),
-  //     );
-  //     _messageDeletedSubscription = chatRepository.messageDeletedStream.listen(
-  //       (event) => add(WebSocketMessageDeleted(messageId: event.messageId)),
-  //     );
-  //     _messageUpdatedSubscription = chatRepository.messageUpdatedStream.listen(
-  //       (event) => add(
-  //         WebSocketMessageUpdated(
-  //           messageId: event.messageId,
-  //           content: event.content,
-  //           editedAt: event.editedAt,
-  //         ),
-  //       ),
-  //     );
-  //     _typingSubscription = chatRepository.typingStream.listen((event) {
-  //       add(
-  //         event.isTyping
-  //             ? TypingStarted(event.userId)
-  //             : TypingStopped(event.userId),
-  //       );
-  //     });
-  //   } catch (e) {
-  //     log.e('Failed to connect WebSocket', error: e);
-  //     emit(ChatError('Failed to connect WebSocket: $e'));
-  //   }
-  // }
   Future<void> _onConnectWebSocket(
     ConnectWebSocket event,
     Emitter<ChatState> emit,
@@ -481,6 +430,21 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
     try {
       await chatRepository.sendMessage(message);
+      //  อัปเดต last message ใน chat room list
+      // _chatRooms = _chatRooms.map((room) {
+      //   return room.participantId == _selectedRoom!.participantId
+      //       ? room.copyWith(
+      //           lastMessage: message,
+      //           lastActiveAt: message.createdAt,
+      //         )
+      //       : room;
+      // }).toList();
+
+      //  อัปเดต _selectedRoom ด้วย
+      // _selectedRoom = _selectedRoom!.copyWith(
+      //   lastMessage: message,
+      //   lastActiveAt: message.createdAt,
+      // );
       emit(MessageSent(room: _selectedRoom!, messages: _messages));
     } catch (e) {
       log.e('Failed to send message', error: e);

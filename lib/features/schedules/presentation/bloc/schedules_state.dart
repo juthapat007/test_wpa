@@ -10,10 +10,12 @@ final class ScheduleInitial extends ScheduleState {}
 
 final class ScheduleLoading extends ScheduleState {}
 
-final class ScheduleLoaded extends ScheduleState {
+class ScheduleLoaded extends ScheduleState {
   final ScheduleResponse scheduleResponse;
+  final String selectedDate;
 
-  ScheduleLoaded(this.scheduleResponse);
+  ScheduleLoaded(this.scheduleResponse, {String? selectedDate})
+    : selectedDate = selectedDate ?? scheduleResponse.date;
 }
 
 final class ScheduleError extends ScheduleState {

@@ -76,37 +76,6 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  // Future<List<ChatRoom>> getChatRooms() async {
-  //   try {
-  //     final response = await api.getChatRooms();
-  //     final List<dynamic> data = response.data;
-  //     final rooms = data.map((json) {
-  //       final delegate = json['delegate'];
-  //       final lastMessageText = json['last_message'] as String?;
-  //       final lastMessageAt = json['last_message_at'] as String?;
-  //       return ChatRoom(
-  //         // id: delegate['id'].toString(),
-  //         id: json['id'].toString(),
-  //         participantId: delegate['id'].toString(),
-  //         participantName: delegate['name'] ?? 'Unknown',
-  //         participantAvatar: delegate['avatar_url'],
-  //         lastMessage: lastMessageText != null && lastMessageAt != null
-  //             ? ChatMessage(
-  //                 id: DateTime.now().millisecondsSinceEpoch.toString(),
-  //                 senderId: delegate['id'].toString(),
-  //                 senderName: delegate['name'] ?? '',
-  //                 receiverId: '',
-  //                 chatRoomId: json['id'] as int? ?? 0,
-  //                 content: lastMessageText,
-  //                 createdAt: DateTime.parse(lastMessageAt),
-  //               )
-  //             : null,
-  //         unreadCount: json['unread_count'] ?? 0,
-  //         lastActiveAt: lastMessageAt != null
-  //             ? DateTime.parse(lastMessageAt)
-  //             : null,
-  //       );
-  //     }).toList();
   Future<List<ChatRoom>> getChatRooms() async {
     try {
       final response = await api.getChatRooms();
@@ -116,10 +85,7 @@ class ChatRepositoryImpl implements ChatRepository {
         final delegate = json['delegate'];
         final lastMessageText = json['last_message'] as String?;
         final lastMessageAt = json['last_message_at'] as String?;
-        print('=== avatar_url raw: ${delegate['avatar_url']}');
-        print(
-          '=== avatar_url resolved: ${_resolveAvatarUrl(delegate['avatar_url'])}',
-        );
+
         return ChatRoom(
           id: json['id'].toString(),
           participantId: delegate['id'].toString(),

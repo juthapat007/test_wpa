@@ -33,10 +33,9 @@ class _MeetingWidgetState extends State<MeetingWidget> {
   // ─── State ───────────────────────────────────────────────────────────────
   Timer? _timer;
   DateTime _currentTime = DateTime.now();
-  String _selectedDateStr = '';
   bool _showFullList = false;
   bool _shownNoTodayDialog = false;
-
+  String _selectedDateStr = '';
   // ─── Lifecycle ────────────────────────────────────────────────────────────
 
   @override
@@ -194,7 +193,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
             const DateHeader(),
             _buildDateTabBar(),
             _buildTableGridSection(),
-            _buildScheduleSection(), 
+            _buildScheduleSection(),
           ],
         ),
       ),
@@ -214,9 +213,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
           }
           return DateTabBar(
             availableDates: response.availableDates,
-            selectedDate: _selectedDateStr.isNotEmpty
-                ? _selectedDateStr
-                : response.date,
+            selectedDate: state.selectedDate,
             onDateSelected: _onDateSelected,
           );
         }

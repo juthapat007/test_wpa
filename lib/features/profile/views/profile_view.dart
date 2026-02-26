@@ -23,8 +23,6 @@ class ProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✨ ใช้ BlocListener แยกจาก Builder เพื่อจัดการ side effects
-
     return BlocListener<ProfileBloc, ProfileState>(
       listener: (context, state) {
         // ฟังเฉพาะ ProfileLoaded state เท่านั้น
@@ -188,38 +186,7 @@ class ProfileView extends StatelessWidget {
                 ),
               ),
 
-              SizedBox(height: 16),
-
-              // ========== Notifications Section ==========
-              // const Padding(
-              //   padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
-              //   child: ProfileSectionHeader(title: 'NOTIFICATIONS'),
-              // ),
-
-              // Container(
-              //   color: Colors.white,
-              //   child: Column(
-              //     children: [
-              //       ProfileToggleCard(
-              //         label: 'Push Notifications',
-              //         value: profile.pushNotifications,
-              //         showBorder: true,
-              //         onChanged: (val) => ReadContext(
-              //           context,
-              //         ).read<ProfileBloc>().add(TogglePushNotification(val)),
-              //       ),
-              //       ProfileToggleCard(
-              //         label: 'Email Notifications',
-              //         value: profile.emailNotifications,
-              //         showBorder: false,
-              //         onChanged: (val) => ReadContext(
-              //           context,
-              //         ).read<ProfileBloc>().add(ToggleEmailNotification(val)),
-              //       ),
-              //     ],
-              //   ),
-              // ),
-              SizedBox(height: space.m),
+              SizedBox(height: height.m),
 
               // ========== Log Out Button ==========
               Padding(

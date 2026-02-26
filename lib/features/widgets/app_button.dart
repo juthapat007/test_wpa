@@ -28,7 +28,7 @@ class AppButton extends StatelessWidget {
     final bool isDisabled = onPressed == null || isLoading;
 
     return SizedBox(
-      height: space.xxl,
+      height: height.m,
       width: width,
       child: ElevatedButton(
         onPressed: isDisabled ? null : onPressed,

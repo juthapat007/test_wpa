@@ -76,7 +76,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   child: TextButton(
                     onPressed: () {
                       Navigator.pop(context);
-                      Modular.to.navigate('/');
+                      Modular.to.navigate('/login');
                     },
                     style: TextButton.styleFrom(
                       backgroundColor: AppColors.primary,

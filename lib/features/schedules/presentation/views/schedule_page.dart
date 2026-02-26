@@ -3,8 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
-import 'package:test_wpa/features/meeting/presentation/bloc/table_bloc.dart'
-    hide ChangeDate;
+// import 'package:test_wpa/features/meeting/presentation/bloc/table_bloc.dart'
+//     hide ChangeDate;
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_state.dart';
@@ -23,27 +23,34 @@ class SchedulePage extends StatefulWidget {
 }
 
 class _SchedulePageState extends State<SchedulePage> {
-  static const double timelineOffset = 38.0;
+  static const double _timelineOffset = 38.0;
 
-  bool isSelectionMode = false;
-  Set<int> selectedScheduleIds = {};
+  bool _isSelectionMode = false;
+  Set<int> _selectedScheduleIds = {};
   String _selectedDateStr = '';
 
   @override
   void initState() {
     super.initState();
+    // ✅ ยิง LoadSchedules ครั้งเดียวตอน init เท่านั้น
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ReadContext(context).read<ScheduleBloc>().add(LoadSchedules());
+      if (mounted) {
+        ReadContext(context).read<ScheduleBloc>().add(LoadSchedules());
+      }
     });
   }
 
-  void _onDateSelected(String dateString) {
+  // ─── Date selection ──────────────────────────────────────────────────────────
+
+  void _onDateSelected(String date) {
     setState(() {
-      _selectedDateStr = dateString;
-      selectedScheduleIds.clear();
+      _selectedDateStr = date;
+      _selectedScheduleIds.clear();
     });
-    ReadContext(context).read<ScheduleBloc>().add(ChangeDate(dateString));
+    ReadContext(context).read<ScheduleBloc>().add(ChangeDate(date));
   }
+
+  // ─── Retry ───────────────────────────────────────────────────────────────────
 
   void _onRetry() {
     ReadContext(context).read<ScheduleBloc>().add(
@@ -53,33 +60,37 @@ class _SchedulePageState extends State<SchedulePage> {
     );
   }
 
+  // ─── Selection mode ──────────────────────────────────────────────────────────
+
   void _toggleSelectionMode() {
     setState(() {
-      isSelectionMode = !isSelectionMode;
-      if (!isSelectionMode) selectedScheduleIds.clear();
+      _isSelectionMode = !_isSelectionMode;
+      if (!_isSelectionMode) _selectedScheduleIds.clear();
     });
   }
 
   void _cancelSelectionMode() {
     setState(() {
-      isSelectionMode = false;
-      selectedScheduleIds.clear();
+      _isSelectionMode = false;
+      _selectedScheduleIds.clear();
     });
   }
 
   void _toggleScheduleSelection(int scheduleId) {
-    if (!isSelectionMode) return;
+    if (!_isSelectionMode) return;
     setState(() {
-      if (selectedScheduleIds.contains(scheduleId)) {
-        selectedScheduleIds.remove(scheduleId);
+      if (_selectedScheduleIds.contains(scheduleId)) {
+        _selectedScheduleIds.remove(scheduleId);
       } else {
-        selectedScheduleIds.add(scheduleId);
+        _selectedScheduleIds.add(scheduleId);
       }
     });
   }
 
-  void _proceedToAttendanceStatus() async {
-    if (selectedScheduleIds.isEmpty) {
+  // ─── Proceed to attendance ───────────────────────────────────────────────────
+
+  Future<void> _proceedToAttendanceStatus() async {
+    if (_selectedScheduleIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select at least one meeting'),
@@ -90,212 +101,200 @@ class _SchedulePageState extends State<SchedulePage> {
     }
 
     final state = ReadContext(context).read<ScheduleBloc>().state;
-    if (state is ScheduleLoaded) {
-      final selectedSchedules = state.scheduleResponse.schedules
-          .where((s) => selectedScheduleIds.contains(s.id))
-          .toList();
+    if (state is! ScheduleLoaded) return;
 
-      final result = await Modular.to.pushNamed<bool>(
-        '/attendance',
-        arguments: selectedSchedules,
-      );
+    final selectedSchedules = state.scheduleResponse.schedules
+        .where((s) => _selectedScheduleIds.contains(s.id))
+        .toList();
 
-      if (mounted) {
-        setState(() {
-          isSelectionMode = false;
-          selectedScheduleIds.clear();
-        });
+    final result = await Modular.to.pushNamed<bool>(
+      '/attendance',
+      arguments: selectedSchedules,
+    );
 
-        ReadContext(context).read<ScheduleBloc>().add(
-          LoadSchedules(
-            date: _selectedDateStr.isNotEmpty ? _selectedDateStr : null,
-          ),
-        );
+    if (!mounted) return;
 
-        // รอให้ transition animation เสร็จก่อนค่อยแสดง snackbar
-        if (result == true) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Leave submitted successfully! ✓'),
-                  backgroundColor: Colors.green,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  margin: const EdgeInsets.all(12),
-                ),
-              );
-            }
-          });
+    setState(() {
+      _isSelectionMode = false;
+      _selectedScheduleIds.clear();
+    });
+
+    ReadContext(context).read<ScheduleBloc>().add(
+      LoadSchedules(
+        date: _selectedDateStr.isNotEmpty ? _selectedDateStr : null,
+      ),
+    );
+
+    if (result == true) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Leave submitted successfully! ✓'),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              margin: const EdgeInsets.all(12),
+            ),
+          );
         }
-      }
+      });
     }
   }
+
+  // ─── Build ───────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: color.AppColors.surface,
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (isSelectionMode)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: FloatingActionButton(
-                heroTag: 'cancel_selection',
-                backgroundColor: color.AppColors.error,
-                onPressed: _cancelSelectionMode,
-                child: const Icon(Icons.close, color: Colors.white),
+      floatingActionButton: _buildFAB(),
+      // ✅ BlocListener จัดการ side effects แยกจาก BlocBuilder
+      body: BlocListener<ScheduleBloc, ScheduleState>(
+        listenWhen: (_, curr) =>
+            curr is ScheduleLoaded && _selectedDateStr.isEmpty,
+        listener: (context, state) {
+          if (state is! ScheduleLoaded) return;
+          final response = state.scheduleResponse;
+          if (response.availableDates.isEmpty) return;
+
+          // setState(() => _selectedDateStr = response.date);
+          // Modular.get<TableBloc>().add(LoadTableView(date: response.date));
+        },
+        child: AppScaffold(
+          title: 'My Schedule',
+          currentIndex: 4,
+          backgroundColor: const Color(0xFFF9FAFB),
+          appBarStyle: AppBarStyle.elegant,
+          showBottomNavBar: true,
+          body: Stack(
+            children: [
+              // Timeline vertical line
+              Positioned(
+                left: _timelineOffset,
+                top: 0,
+                bottom: 0,
+                child: Container(width: 1, color: Colors.grey[200]),
               ),
-            ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 150),
-            child: FloatingActionButton(
-              heroTag: 'main_action',
-              backgroundColor: isSelectionMode
-                  ? color.AppColors.success
-                  : color.AppColors.warning,
-              onPressed: () {
-                if (isSelectionMode) {
-                  _proceedToAttendanceStatus();
-                } else {
-                  _toggleSelectionMode();
-                }
-              },
-              child: Icon(
-                isSelectionMode ? Icons.check_circle : Icons.event_busy,
-                color: Colors.white,
+              Column(
+                children: [
+                  _buildDateTabBar(),
+                  Expanded(child: _buildScheduleList()),
+                ],
               ),
-            ),
+            ],
           ),
-        ],
-      ),
-      body: AppScaffold(
-        title: 'My Schedule',
-        currentIndex: 4,
-        backgroundColor: const Color(0xFFF9FAFB),
-        appBarStyle: AppBarStyle.elegant,
-        showBottomNavBar: true,
-        body: Stack(
-          children: [
-            // Timeline vertical line
-            Positioned(
-              left: timelineOffset,
-              top: 0,
-              bottom: 0,
-              child: Container(width: 1, color: Colors.grey[200]),
-            ),
-            Column(
-              children: [
-                // ──────────── Date Tab Bar ────────────
-                BlocBuilder<ScheduleBloc, ScheduleState>(
-                  buildWhen: (prev, curr) => curr is ScheduleLoaded,
-                  builder: (context, state) {
-                    if (state is ScheduleLoaded) {
-                      final response = state.scheduleResponse;
-
-                      if (_selectedDateStr.isEmpty &&
-                          response.availableDates.isNotEmpty) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (mounted) {
-                            setState(() => _selectedDateStr = response.date);
-                            // Preload table state สำหรับ Meeting page ที่ใช้ shared bloc
-                            Modular.get<TableBloc>().add(
-                              LoadTableView(date: response.date),
-                            );
-                          }
-                        });
-                      }
-
-                      return DateTabBar(
-                        availableDates: response.availableDates,
-                        selectedDate: _selectedDateStr.isNotEmpty
-                            ? _selectedDateStr
-                            : response.date,
-                        onDateSelected: _onDateSelected,
-                      );
-                    }
-                    return const SizedBox(height: 16);
-                  },
-                ),
-
-                // ──────────── Schedule List ────────────
-                Expanded(
-                  child: BlocBuilder<ScheduleBloc, ScheduleState>(
-                    builder: (context, state) {
-                      if (state is ScheduleLoading) {
-                        return const Center(
-                          child: CircularProgressIndicator(
-                            color: color.AppColors.primary,
-                          ),
-                        );
-                      }
-
-                      if (state is ScheduleLoaded) {
-                        final schedules = state.scheduleResponse.schedules;
-                        if (schedules.isEmpty) return const EmptyScheduleView();
-
-                        return ListView.separated(
-                          padding: const EdgeInsets.only(
-                            left: 16,
-                            right: 16,
-                            bottom: height.l,
-                          ),
-                          itemCount: schedules.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: space.s),
-                          itemBuilder: (context, index) {
-                            final schedule = schedules[index];
-                            final isSelected = selectedScheduleIds.contains(
-                              schedule.id,
-                            );
-                            final isSelectable =
-                                schedule.leave == null &&
-                                schedule.type == 'meeting';
-
-                            return GestureDetector(
-                              onTap: isSelectionMode && isSelectable
-                                  ? () => _toggleScheduleSelection(schedule.id)
-                                  : null,
-                              child: Opacity(
-                                opacity: isSelectionMode && !isSelectable
-                                    ? 0.4
-                                    : 1.0,
-                                child: TimelineRow(
-                                  schedule: schedule,
-                                  cardType: ScheduleCardHelper.resolveCardType(
-                                    schedule,
-                                  ),
-                                  isSelectionMode:
-                                      isSelectionMode && isSelectable,
-                                  isSelected: isSelected,
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      }
-
-                      if (state is ScheduleError) {
-                        return ErrorScheduleView(
-                          message: state.message,
-                          onRetry: _onRetry,
-                        );
-                      }
-
-                      return const SizedBox.shrink();
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ],
         ),
       ),
+    );
+  }
+
+  // ─── Sub-widgets ─────────────────────────────────────────────────────────────
+
+  Widget _buildFAB() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        if (_isSelectionMode)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: FloatingActionButton(
+              heroTag: 'cancel_selection',
+              backgroundColor: color.AppColors.error,
+              onPressed: _cancelSelectionMode,
+              child: const Icon(Icons.close, color: Colors.white),
+            ),
+          ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 150),
+          child: FloatingActionButton(
+            heroTag: 'main_action',
+            backgroundColor: _isSelectionMode
+                ? color.AppColors.success
+                : color.AppColors.warning,
+            onPressed: _isSelectionMode
+                ? _proceedToAttendanceStatus
+                : _toggleSelectionMode,
+            child: Icon(
+              _isSelectionMode ? Icons.check_circle : Icons.event_busy,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ✅ BlocBuilder นี้ไม่มี side effect แล้ว — แค่ render UI
+  Widget _buildDateTabBar() {
+    return BlocBuilder<ScheduleBloc, ScheduleState>(
+      buildWhen: (prev, curr) =>
+          curr is ScheduleLoaded && prev is! ScheduleLoaded,
+      builder: (context, state) {
+        if (state is! ScheduleLoaded) return const SizedBox(height: 16);
+
+        final response = state.scheduleResponse;
+        return DateTabBar(
+          availableDates: response.availableDates,
+          selectedDate: _selectedDateStr.isNotEmpty
+              ? _selectedDateStr
+              : response.date,
+          onDateSelected: _onDateSelected,
+        );
+      },
+    );
+  }
+
+  Widget _buildScheduleList() {
+    return BlocBuilder<ScheduleBloc, ScheduleState>(
+      builder: (context, state) {
+        if (state is ScheduleLoading) {
+          return const Center(
+            child: CircularProgressIndicator(color: color.AppColors.primary),
+          );
+        }
+
+        if (state is ScheduleLoaded) {
+          final schedules = state.scheduleResponse.schedules;
+          if (schedules.isEmpty) return const EmptyScheduleView();
+
+          return ListView.separated(
+            padding: EdgeInsets.only(left: 16, right: 16, bottom: height.l),
+            itemCount: schedules.length,
+            separatorBuilder: (_, __) => const SizedBox(height: space.s),
+            itemBuilder: (context, index) {
+              final schedule = schedules[index];
+              final isSelected = _selectedScheduleIds.contains(schedule.id);
+              final isSelectable =
+                  schedule.leave == null && schedule.type == 'meeting';
+
+              return GestureDetector(
+                onTap: (_isSelectionMode && isSelectable)
+                    ? () => _toggleScheduleSelection(schedule.id)
+                    : null,
+                child: Opacity(
+                  opacity: (_isSelectionMode && !isSelectable) ? 0.4 : 1.0,
+                  child: TimelineRow(
+                    schedule: schedule,
+                    cardType: ScheduleCardHelper.resolveCardType(schedule),
+                    isSelectionMode: _isSelectionMode && isSelectable,
+                    isSelected: isSelected,
+                  ),
+                ),
+              );
+            },
+          );
+        }
+
+        if (state is ScheduleError) {
+          return ErrorScheduleView(message: state.message, onRetry: _onRetry);
+        }
+
+        return const SizedBox.shrink();
+      },
     );
   }
 }

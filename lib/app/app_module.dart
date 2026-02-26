@@ -15,6 +15,7 @@ import 'package:test_wpa/features/auth/domain/repositories/auth_repository.dart'
 import 'package:test_wpa/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:test_wpa/features/auth/views/forgot_password.dart';
 import 'package:test_wpa/features/auth/views/login_page.dart';
+import 'package:test_wpa/features/auth/views/splash_page.dart';
 import 'package:test_wpa/features/chat/presentation/pages/connected_chat.dart';
 import 'package:test_wpa/features/meeting/presentation/page/meeting_page.dart';
 import 'package:test_wpa/features/notification/data/repository/connection_repository_impl.dart';
@@ -226,6 +227,13 @@ class AppModule extends Module {
       '/',
       child: (_) => BlocProvider.value(
         //  .value จะไม่ dispose bloc
+        value: Modular.get<AuthBloc>(),
+        child: const SplashPage(),
+      ),
+    );
+    r.child(
+      '/login',
+      child: (_) => BlocProvider.value(
         value: Modular.get<AuthBloc>(),
         child: const LoginPage(),
       ),

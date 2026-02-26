@@ -51,6 +51,11 @@ class ChatApi {
     required String content,
     required String recipientId,
   }) async {
+    final recipientIdInt = int.tryParse(recipientId); // ✅ tryParse แทน parse
+    if (recipientIdInt == null) {
+      throw Exception('Invalid recipientId: $recipientId');
+    }
+
     try {
       final response = await dio.post(
         '/messages',
@@ -58,7 +63,7 @@ class ChatApi {
           'message': {
             'content': content,
             'chat_room_id': chatRoomId,
-            'recipient_id': int.parse(recipientId),
+            'recipient_id': recipientIdInt,
           },
         },
       );
@@ -72,10 +77,13 @@ class ChatApi {
 
   /// ทำเครื่องหมายว่าอ่านข้อความจากคนนั้นแล้วทั้งหมด
   Future<Response> markAllAsRead(String senderId) async {
+    final senderIdInt = int.tryParse(senderId); // ✅ tryParse แทน parse
+    if (senderIdInt == null) throw Exception('Invalid senderId: $senderId');
+
     try {
       final response = await dio.patch(
         '/messages/read_all',
-        data: {'sender_id': int.parse(senderId)},
+        data: {'sender_id': senderIdInt},
       );
       log.d('All messages from $senderId marked as read');
       return response;
