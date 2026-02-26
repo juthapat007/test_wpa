@@ -30,6 +30,21 @@ class DelegateModel {
     this.connectionStatus = 'none',
   });
 
+  // factory DelegateModel.fromJson(Map<String, dynamic> json) {
+  //   return DelegateModel(
+  //     id: json['id'] ?? 0,
+  //     name: json['name'] ?? '',
+  //     title: json['title'],
+  //     email: json['email'] ?? '',
+  //     companyName: json['company_name'] ?? '',
+  //     avatarUrl: json['avatar_url'] ?? '',
+  //     countryCode: json['country_code'] ?? '',
+  //     isConnected: json['is_connected'] ?? false,
+  //     teamId: json['team_id'],
+  //     firstLogin: json['first_login'],
+  //     connectionStatus: json['connection_status'] ?? 'none',
+  //   );
+  // }
   factory DelegateModel.fromJson(Map<String, dynamic> json) {
     return DelegateModel(
       id: json['id'] ?? 0,
@@ -37,13 +52,20 @@ class DelegateModel {
       title: json['title'],
       email: json['email'] ?? '',
       companyName: json['company_name'] ?? '',
-      avatarUrl: json['avatar_url'] ?? '',
+      avatarUrl: _resolveUrl(json['avatar_url']), // ✅ แก้ตรงนี้
       countryCode: json['country_code'] ?? '',
       isConnected: json['is_connected'] ?? false,
       teamId: json['team_id'],
       firstLogin: json['first_login'],
-      connectionStatus: json['connection_status'] ?? 'none', 
+      connectionStatus: json['connection_status'] ?? 'none',
     );
+  }
+
+  // ✅ เพิ่ม helper นี้ใน DelegateModel
+  static String _resolveUrl(String? url) {
+    if (url == null || url.isEmpty) return '';
+    if (url.startsWith('http')) return url;
+    return 'https://wpa-docker.onrender.com$url';
   }
 
   Delegate toEntity() {
@@ -58,7 +80,7 @@ class DelegateModel {
       isConnected: isConnected,
       teamId: teamId ?? 0,
       firstLogin: firstLogin ?? false,
-      connectionStatus: connectionStatus, 
+      connectionStatus: connectionStatus,
     );
   }
 

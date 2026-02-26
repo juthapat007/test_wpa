@@ -110,15 +110,30 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     }
   }
 
+  bool _isNavigatingToChat = false;
   void _onChatStateChanged(BuildContext context, ChatState state) {
-    if (state is ChatRoomSelected) {
-      Modular.to.pushNamed('/chat/room');
+    if (state is ChatRoomSelected && !_isNavigatingToChat) {
+      _isNavigatingToChat = true; // ✅ lock ก่อน navigate
+      Modular.to.pushNamed('/chat/room').then((_) {
+        // ✅ reset เมื่อกลับมา
+        if (mounted) _isNavigatingToChat = false;
+      });
     } else if (state is ChatError) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(state.message), backgroundColor: Colors.red),
       );
     }
   }
+
+  // void _onChatStateChanged(BuildContext context, ChatState state) {
+  //   if (state is ChatRoomSelected) {
+  //     Modular.to.pushNamed('/chat/room');
+  //   } else if (state is ChatError) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+  //     );
+  //   }
+  // }
 
   // ─── AppBar ───────────────────────────────────────────────────────────────
 

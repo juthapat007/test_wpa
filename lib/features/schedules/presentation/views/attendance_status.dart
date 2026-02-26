@@ -9,6 +9,7 @@ import 'package:test_wpa/features/schedules/domain/entities/leave_form.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_state.dart';
+import 'package:test_wpa/features/widgets/app_bar_back.dart';
 import 'package:test_wpa/features/widgets/bottom_action_bar.dart';
 import 'package:intl/intl.dart';
 
@@ -22,12 +23,14 @@ class AttendanceStatus extends StatefulWidget {
 
 class _AttendanceStatusState extends State<AttendanceStatus> {
   LeaveType? _selectedLeaveType;
+  List<LeaveType> _leaveTypes = [];
   final _reasonController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     super.initState();
+    // Modular.get<ScheduleBloc>().add(LoadLeaveTypes());
     Modular.get<ScheduleBloc>().add(LoadLeaveTypes());
   }
 
@@ -54,13 +57,12 @@ class _AttendanceStatusState extends State<AttendanceStatus> {
   }
 
   void _onStateChanged(BuildContext context, ScheduleState state) {
-    if (state is LeaveTypesError) {
+    if (state is LeaveTypesLoaded) {
+      setState(() => _leaveTypes = state.leaveTypes); // ✅ เซฟไว้ใน local state
+    } else if (state is LeaveTypesError) {
       _showSnackBar(state.message, Colors.red);
     } else if (state is LeaveFormsSubmitted) {
-      _showSnackBar('Leave forms submitted successfully! ✓', Colors.green);
-      Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) Navigator.pop(context, true);
-      });
+      if (mounted) Modular.to.pop(true);
     } else if (state is LeaveFormsSubmitError) {
       _showSnackBar('Error: ${state.message}', Colors.red);
     }
@@ -80,49 +82,31 @@ class _AttendanceStatusState extends State<AttendanceStatus> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: Modular.get<ScheduleBloc>(),
-      child: BlocConsumer<ScheduleBloc, ScheduleState>(
-        listener: _onStateChanged,
-        builder: (context, state) {
-          final isLoading = state is ScheduleLoading;
-          final isSubmitting = state is LeaveFormsSubmitting;
-          final leaveTypes = state is LeaveTypesLoaded
-              ? state.leaveTypes
-              : <LeaveType>[];
+    // return BlocProvider.value(
+    return BlocConsumer<ScheduleBloc, ScheduleState>(
+      listener: _onStateChanged,
 
-          return Scaffold(
-            backgroundColor: color.AppColors.background,
-            appBar: AppBar(
-              title: const Text(
-                'Attendance Status',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
-              ),
-              centerTitle: true,
-              backgroundColor: Colors.white,
-              foregroundColor: color.AppColors.textPrimary,
-              elevation: 0,
-              bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(1),
-                child: Container(color: Colors.grey[200], height: 1),
-              ),
-            ),
-            bottomNavigationBar: BottomActionBar(
-              onCancel: () => Navigator.pop(context),
-              onConfirm: _handleConfirm,
-              isLoading: isSubmitting,
-            ),
-            body: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : Stack(
-                    children: [
-                      _buildForm(leaveTypes),
-                      if (isSubmitting) _buildLoadingOverlay(),
-                    ],
-                  ),
-          );
-        },
-      ),
+      builder: (context, state) {
+        final isLoading = state is ScheduleLoading && _leaveTypes.isEmpty;
+        final isSubmitting = state is LeaveFormsSubmitting;
+
+        return Scaffold(
+          appBar: const AppBarBack(title: 'Attendance Status'),
+          bottomNavigationBar: BottomActionBar(
+            onCancel: () => Navigator.pop(context),
+            onConfirm: _handleConfirm,
+            isLoading: isSubmitting,
+          ),
+          body: isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Stack(
+                  children: [
+                    _buildForm(_leaveTypes),
+                    if (isSubmitting) _buildLoadingOverlay(),
+                  ],
+                ),
+        );
+      },
     );
   }
 
@@ -135,7 +119,7 @@ class _AttendanceStatusState extends State<AttendanceStatus> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(height: space.s),
-            _SectionLabel(icon: Icons.category_outlined, label: 'Leave Type'),
+            _SectionLabel(label: 'Leave Type'),
             SizedBox(height: space.s),
             _LeaveTypeDropdown(
               leaveTypes: leaveTypes,
@@ -218,9 +202,9 @@ class _AttendanceStatusState extends State<AttendanceStatus> {
 // ─── Private widgets ──────────────────────────────────────────────────────────
 
 class _SectionLabel extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
   final String label;
-  const _SectionLabel({required this.icon, required this.label});
+  const _SectionLabel({this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) => Row(

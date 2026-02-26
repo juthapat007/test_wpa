@@ -17,6 +17,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     on<TogglePushNotification>(_onTogglePush);
     on<ToggleEmailNotification>(_onToggleEmail);
     on<UpdateProfileField>(_onUpdateProfileField);
+    on<UpdateAvatar>(_onUpdateAvatar);
   }
 
   Future<void> _onLoadProfile(
@@ -51,7 +52,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     }
   }
 
-  // ✨ แก้ไขให้ emit ProfileLoaded เท่านั้น พร้อม flag isUpdated
+  // // ✨ แก้ไขให้ emit ProfileLoaded เท่านั้น พร้อม flag isUpdated
   Future<void> _onUpdateProfileField(
     UpdateProfileField event,
     Emitter<ProfileState> emit,
@@ -87,6 +88,25 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           currentProfile,
           updateError: 'Failed to update profile. Please try again.',
         ),
+      );
+    }
+  }
+
+  Future<void> _onUpdateAvatar(
+    UpdateAvatar event,
+    Emitter<ProfileState> emit,
+  ) async {
+    if (state is! ProfileLoaded) return;
+    final currentProfile = (state as ProfileLoaded).profile;
+
+    try {
+      await profileApi.uploadAvatar(event.imageFile);
+      final updatedProfile = await profileRepository.getProfile();
+      emit(ProfileLoaded(updatedProfile.toViewModel(), wasUpdated: true));
+    } catch (e) {
+      print('❌ Upload avatar error: $e');
+      emit(
+        ProfileLoaded(currentProfile, updateError: 'Failed to upload avatar.'),
       );
     }
   }

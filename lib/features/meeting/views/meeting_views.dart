@@ -194,7 +194,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
             const DateHeader(),
             _buildDateTabBar(),
             _buildTableGridSection(),
-            _buildScheduleSection(), // ✅ หายไป ต้องเพิ่มกลับ
+            _buildScheduleSection(), 
           ],
         ),
       ),

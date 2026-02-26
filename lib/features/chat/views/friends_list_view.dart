@@ -95,6 +95,7 @@ class _FriendCard extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(child: _Info(delegate: delegate)),
               _ChatButton(delegate: delegate),
+             
             ],
           ),
         ),

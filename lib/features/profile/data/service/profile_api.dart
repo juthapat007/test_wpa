@@ -1,4 +1,5 @@
 import 'dart:core';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:dio/dio.dart';
@@ -23,6 +24,23 @@ class ProfileApi {
       // final response = await dio.patch('/profile', data: {'profile': data});
       final response = await dio.patch('/profile', data: data);
       log.d('edited profile: ${response.data}');
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  ///update profile
+  Future<Response> uploadAvatar(File imageFile) async {
+    try {
+      final formData = FormData.fromMap({
+        'avatar': await MultipartFile.fromFile(
+          imageFile.path,
+          filename: imageFile.path.split('/').last,
+        ),
+      });
+      final response = await dio.patch('/profile/avatar', data: formData);
+      log.d('uploaded avatar: ${response.data}');
       return response;
     } catch (e) {
       rethrow;

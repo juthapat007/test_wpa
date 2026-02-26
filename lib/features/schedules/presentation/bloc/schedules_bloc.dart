@@ -17,11 +17,10 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
     LoadSchedules event,
     Emitter<ScheduleState> emit,
   ) async {
-    print('📥 ScheduleBloc: Loading with date=${event.date}'); // 🔧 ลบ year ออก
+    print('ScheduleBloc: Loading with date=${event.date}'); //  ลบ year ออก
     emit(ScheduleLoading());
 
     try {
-      // 🔧 ไม่ส่ง year ไปเพราะ backend fix ไว้ที่ 2025 แล้ว
       final scheduleResponse = await scheduleRepository.getSchedule(
         date: event.date,
       );

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
 import 'package:test_wpa/features/meeting/domain/entities/table_view_entities.dart';
+import 'package:test_wpa/features/meeting/widgets/delegate_list_tile.dart';
 
 class TableDetailSheet extends StatelessWidget {
   final TableInfo table;
@@ -36,7 +37,14 @@ class TableDetailSheet extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [const SizedBox(height: 24), _buildDelegatesList()],
+                  children: [
+                    const SizedBox(height: 24),
+                    // DelegateListTile(
+                    //   delegate: delegate, // ✅ required
+                    //   tableNumber: table.tableNumber,
+                    // ),
+                    _buildDelegatesList(),
+                  ],
                 ),
               ),
             ),
@@ -60,9 +68,7 @@ class TableDetailSheet extends StatelessWidget {
   }
 
   Widget _buildDelegatesList() {
-    if (table.delegates.isEmpty) {
-      return _buildEmptyState();
-    }
+    if (table.delegates.isEmpty) return _buildEmptyState();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,7 +78,16 @@ class TableDetailSheet extends StatelessWidget {
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-        ...table.delegates.map(_buildDelegateCard),
+        ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: table.delegates.length,
+          separatorBuilder: (_, __) => const Divider(height: 1),
+          itemBuilder: (_, index) => DelegateListTile(
+            delegate: table.delegates[index], // ✅ ตรงนี้แหละที่ขาดไป
+            tableNumber: table.tableNumber,
+          ),
+        ),
       ],
     );
   }
@@ -91,44 +106,6 @@ class TableDetailSheet extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildDelegateCard(TableDelegate delegate) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundImage: delegate.avatarUrl.isNotEmpty
-              ? NetworkImage(delegate.avatarUrl)
-              : null,
-          onBackgroundImageError: (_, _) {},
-          child: delegate.avatarUrl.isEmpty
-              ? Text(
-                  delegate.delegateName.isNotEmpty
-                      ? delegate.delegateName[0].toUpperCase()
-                      : '?',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                )
-              : null,
-        ),
-        title: Text(
-          delegate.delegateName,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (delegate.title?.isNotEmpty ?? false)
-              Text(delegate.title!, style: const TextStyle(fontSize: 12)),
-            Text(
-              delegate.company,
-              style: TextStyle(color: Colors.blue[700], fontSize: 13),
-            ),
-          ],
-        ),
-        isThreeLine: delegate.title?.isNotEmpty ?? false,
       ),
     );
   }

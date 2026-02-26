@@ -5,6 +5,7 @@ import 'package:test_wpa/features/auth/data/services/auth_api.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/features/auth/domain/repositories/auth_repository.dart';
 
+//เก็บลบอ่าน token อยู่ในนี้หมดแล้ว
 class AuthRepositoryImpl implements AuthRepository {
   final AuthApi authApi;
   AuthRepositoryImpl(this.authApi);

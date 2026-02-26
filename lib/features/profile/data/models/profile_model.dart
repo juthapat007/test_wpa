@@ -46,7 +46,8 @@ class ProfileModel extends Equatable {
           ? Company.fromJson(json['company'])
           : Company(id: 0, name: '', country: ''),
 
-      avatarUrl: json['avatar_url'] ?? '',
+      // avatarUrl: json['avatar_url'] ?? '',
+      avatarUrl: _resolveUrl(json['avatar_url']),
 
       team: json['team'] != null
           ? Team.fromJson(json['team'])
@@ -60,6 +61,13 @@ class ProfileModel extends Equatable {
       companyId: json['company_id'] ?? 0,
       teamId: json['team_id'] ?? 0,
     );
+  }
+  static String _resolveUrl(String? url) {
+    if (url == null || url.isEmpty) return '';
+    if (url.startsWith('http')) return url;
+    final resolved = 'https://wpa-docker.onrender.com$url';
+    print('=== avatarUrl resolved: $resolved'); // ✅ เพิ่ม print
+    return resolved;
   }
 
   // แปลงจาก Model ไปเป็น Entity

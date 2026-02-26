@@ -37,6 +37,7 @@ import 'package:test_wpa/features/scan/domain/repositories/qr_repository.dart';
 // Schedule
 import 'package:test_wpa/features/schedules/data/repository/schedule_repository_impl.dart';
 import 'package:test_wpa/features/schedules/data/services/schedule_api.dart';
+import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/domain/repositories/schedule_repository.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
@@ -46,6 +47,7 @@ import 'package:test_wpa/features/schedules/presentation/page/schedule_widget.da
 import 'package:test_wpa/features/schedules/data/services/schedule_others_api.dart';
 import 'package:test_wpa/features/schedules/data/repository/schedule_others_repository_impl.dart';
 import 'package:test_wpa/features/schedules/domain/repositories/schedule_others_repository.dart';
+import 'package:test_wpa/features/schedules/presentation/views/attendance_status.dart';
 
 // Search
 import 'package:test_wpa/features/search/data/repository/delegate_repository_impl.dart';
@@ -220,70 +222,16 @@ class AppModule extends Module {
 
   @override
   void routes(r) {
-    /// ===== Public =====
-    // r.child(
-    //   '/',
-    //   child: (_) => BlocProvider<AuthBloc>(
-    //     create: (_) => Modular.get<AuthBloc>(),
-    //     child: const LoginPage(),
-    //   ),
-    // );
     r.child(
       '/',
       child: (_) => BlocProvider.value(
-        // ✅ .value จะไม่ dispose bloc
+        //  .value จะไม่ dispose bloc
         value: Modular.get<AuthBloc>(),
         child: const LoginPage(),
       ),
     );
     r.child('/forgot_password', child: (_) => const ForgotPasswordPage());
 
-    /// ===== Protected =====
-
-    //  Meeting
-    // r.child(
-    //   '/meeting',
-    //   child: (_) => MultiBlocProvider(
-    //     providers: [
-    //       BlocProvider.value(value: Modular.get<ScheduleBloc>()),
-    //       BlocProvider.value(value: Modular.get<TableBloc>()),
-    //     ],
-    //     child: const MeetingPage(),
-    //   ),
-    // );
-
-    // r.child(
-    //   '/meeting',
-    //   child: (_) => AppProviders(
-    //     // ✅ ครอบตรงนี้ที่เดียว
-    //     child: MultiBlocProvider(
-    //       providers: [
-    //         BlocProvider.value(value: Modular.get<ScheduleBloc>()),
-    //         BlocProvider.value(value: Modular.get<TableBloc>()),
-    //       ],
-    //       child: const MeetingPage(),
-    //     ),
-    //   ),
-    // );
-    // r.child(
-    //   '/search',
-    //   child: (_) => BlocProvider.value(
-    //     value: Modular.get<SearchBloc>()..add(SearchDelegates()),
-    //     child: const SearchPage(),
-    //   ),
-    // );
-
-    // r.child('/chat', child: (_) => const ConnectedChat());
-
-    // r.child('/chat/room', child: (_) => const ChatConversationPage());
-
-    // r.child(
-    //   '/scan',
-    //   child: (_) => BlocProvider.value(
-    //     value: Modular.get<ScanBloc>(),
-    //     child: const Scan(),
-    //   ),
-    // );
     r.child(
       '/meeting',
       child: (_) => AppShell(
@@ -414,6 +362,20 @@ class AppModule extends Module {
         create: (_) => Modular.get<AuthBloc>(),
         child: ResetPasswordPage(token: r.args.data as String),
       ),
+    );
+
+    r.child(
+      '/attendance',
+      child: (_) {
+        final schedules = r.args.data as List<Schedule>;
+        return AppShell(
+          child: BlocProvider.value(
+            // ✅ เพิ่มตรงนี้
+            value: Modular.get<ScheduleBloc>(),
+            child: AttendanceStatus(selectedSchedules: schedules),
+          ),
+        );
+      },
     );
   }
 }

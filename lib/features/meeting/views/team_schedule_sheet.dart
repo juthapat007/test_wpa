@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 import 'package:test_wpa/features/meeting/domain/entities/table_view_entities.dart';
@@ -70,6 +71,11 @@ class TeamScheduleSheet extends StatelessWidget {
                     itemBuilder: (_, index) {
                       final e = entries[index];
                       return ListTile(
+                        onTap: () => Modular.to.pushNamed(
+                          // ✅ เพิ่มแค่นี้
+                          '/other_profile',
+                          arguments: {'delegate_id': e.delegate.delegateId},
+                        ),
                         contentPadding: EdgeInsets.zero,
                         leading: CircleAvatar(
                           backgroundImage: e.delegate.avatarUrl.isNotEmpty

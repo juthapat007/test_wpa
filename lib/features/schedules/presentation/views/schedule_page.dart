@@ -3,14 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
-import 'package:test_wpa/core/utils/date_time_helper.dart';
 import 'package:test_wpa/features/meeting/presentation/bloc/table_bloc.dart'
     hide ChangeDate;
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_state.dart';
-import 'package:test_wpa/features/schedules/presentation/views/attendance_status.dart';
-import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/timeline_row.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/states/empty_schedule_view.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/states/error_schedule_view.dart';
@@ -98,25 +95,41 @@ class _SchedulePageState extends State<SchedulePage> {
           .where((s) => selectedScheduleIds.contains(s.id))
           .toList();
 
-      await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              AttendanceStatus(selectedSchedules: selectedSchedules),
-        ),
+      final result = await Modular.to.pushNamed<bool>(
+        '/attendance',
+        arguments: selectedSchedules,
       );
 
-      // ✅ เปลี่ยนจาก if (result == true) เป็น if (mounted) เสมอ
       if (mounted) {
         setState(() {
           isSelectionMode = false;
           selectedScheduleIds.clear();
         });
+
         ReadContext(context).read<ScheduleBloc>().add(
           LoadSchedules(
             date: _selectedDateStr.isNotEmpty ? _selectedDateStr : null,
           ),
         );
+
+        // รอให้ transition animation เสร็จก่อนค่อยแสดง snackbar
+        if (result == true) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Leave submitted successfully! ✓'),
+                  backgroundColor: Colors.green,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  margin: const EdgeInsets.all(12),
+                ),
+              );
+            }
+          });
+        }
       }
     }
   }
@@ -140,7 +153,7 @@ class _SchedulePageState extends State<SchedulePage> {
               ),
             ),
           Padding(
-            padding: const EdgeInsets.only(bottom: height.xxl),
+            padding: const EdgeInsets.only(bottom: 150),
             child: FloatingActionButton(
               heroTag: 'main_action',
               backgroundColor: isSelectionMode
