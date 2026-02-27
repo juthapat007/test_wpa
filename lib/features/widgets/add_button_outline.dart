@@ -8,15 +8,16 @@ class AddButtonOutline extends StatelessWidget {
   final Color color;
   final double borderRadius;
   final EdgeInsetsGeometry padding;
-
+  final double height;
   const AddButtonOutline({
     super.key,
     required this.text,
-     this.icon,
+    this.icon,
     this.onPressed,
-    this.color = Colors.blue, // default color
+    this.color = Colors.blue,
     this.borderRadius = 8,
-    this.padding = const EdgeInsets.symmetric(vertical: space.m),
+    this.padding = const EdgeInsets.symmetric(vertical: 6),
+    this.height = 48,
     required bool isLoading,
   });
 
@@ -24,10 +25,11 @@ class AddButtonOutline extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
+      height: height,
       child: OutlinedButton.icon(
         onPressed: onPressed,
         icon: Icon(icon),
-        label: Text(text),
+        label: Text(text, style: const TextStyle(fontSize: 14)),
         style: OutlinedButton.styleFrom(
           foregroundColor: color,
           side: BorderSide(color: color),

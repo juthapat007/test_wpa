@@ -49,6 +49,7 @@ class DelegateCard extends StatelessWidget {
                       )
                     : null,
               ),
+
               const SizedBox(width: 14),
 
               // ── Name + title + company ─────────────────────────────────

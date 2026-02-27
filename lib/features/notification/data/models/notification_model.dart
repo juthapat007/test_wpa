@@ -23,7 +23,6 @@ class NotificationItemModel {
       type: json['type'] ?? '',
       readAt: json['read_at'],
       createdAt: json['created_at'] ?? '',
-      // isUnread: json['unread?'] ?? true,
       isUnread: json['is_unread?'] ?? false,
       notifiable: json['notifiable'] != null
           ? NotificationNotifiableModel.fromJson(json['notifiable'])
@@ -46,29 +45,48 @@ class NotificationItemModel {
 class NotificationNotifiableModel {
   final String type;
   final int id;
-  final NotificationSenderModel? sender;
+  final NotificationSenderModel? sender; // requester (คนส่ง request)
+  final NotificationSenderModel? target; // target (คนรับ)
   final String? content;
+  final String? status;
 
   NotificationNotifiableModel({
     required this.type,
     required this.id,
     this.sender,
+    this.target,
     this.content,
+    this.status,
   });
 
   factory NotificationNotifiableModel.fromJson(Map<String, dynamic> json) {
     return NotificationNotifiableModel(
       type: json['type'] ?? '',
       id: json['id'] ?? 0,
+      // ✅ รองรับทั้ง 'sender', 'requester' field จาก backend
       sender: json['sender'] != null
           ? NotificationSenderModel.fromJson(json['sender'])
+          : json['requester'] != null
+          ? NotificationSenderModel.fromJson(json['requester'])
+          : null,
+      target: json['target'] != null
+          ? NotificationSenderModel.fromJson(json['target'])
           : null,
       content: json['content'],
+      status: json['status'],
     );
   }
 
   NotificationNotifiable toEntity() {
-    return NotificationNotifiable(type: type, id: id, content: content);
+    return NotificationNotifiable(
+      type: type,
+      id: id,
+      content: content,
+      status: status,
+      // ✅ ส่ง sender/requester/target ออกไปด้วย — ไม่ทิ้งข้อมูลแล้ว
+      requester: sender?.toEntity(),
+      target: target?.toEntity(),
+    );
   }
 }
 
@@ -84,18 +102,17 @@ class NotificationSenderModel {
   });
 
   factory NotificationSenderModel.fromJson(Map<String, dynamic> json) {
-    final rawUrl = json['avatar_url'] as String?;
     return NotificationSenderModel(
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
-      // avatarUrl: json['avatar_url'],
-      avatarUrl: _resolveUrl(rawUrl),
+      avatarUrl: _resolveUrl(json['avatar_url'] as String?),
     );
   }
+
   static String? _resolveUrl(String? url) {
     if (url == null || url.isEmpty) return null;
-    if (url.startsWith('http')) return url; // ถ้าเป็น full URL แล้ว
-    return 'https://wpa-docker.onrender.com$url'; // เติม base URL
+    if (url.startsWith('http')) return url;
+    return 'https://wpa-docker.onrender.com$url';
   }
 
   NotificationSender toEntity() {

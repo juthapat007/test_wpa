@@ -159,9 +159,6 @@ class _SchedulePageState extends State<SchedulePage> {
           if (state is! ScheduleLoaded) return;
           final response = state.scheduleResponse;
           if (response.availableDates.isEmpty) return;
-
-          // setState(() => _selectedDateStr = response.date);
-          // Modular.get<TableBloc>().add(LoadTableView(date: response.date));
         },
         child: AppScaffold(
           title: 'My Schedule',

@@ -29,8 +29,8 @@ class _LoginPageState extends State<LoginPage> {
 
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
-      print('UI email = ${_emailCtrl.text}');
-      print('UI password = ${_passwordCtrl.text}');
+      // print('UI email = ${_emailCtrl.text}');
+      // print('UI password = ${_passwordCtrl.text}');
       FocusScope.of(context).unfocus();
       BlocProvider.of<AuthBloc>(context).add(
         AuthLoginEvent(

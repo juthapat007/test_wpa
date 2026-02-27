@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:test_wpa/features/auth/domain/repositories/auth_repository.dart';
 import 'package:test_wpa/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:test_wpa/features/notification/presentation/bloc/notification_bloc.dart';
 

@@ -57,10 +57,8 @@ class TableSlotHeader extends StatelessWidget {
           Expanded(
             child: Text(
               '$dateText  |  $timeDisplay',
-              // '$timeDisplay',
               style: const TextStyle(
                 fontSize: 13,
-
                 color: AppColors.textPrimary,
               ),
             ),
@@ -70,11 +68,8 @@ class TableSlotHeader extends StatelessWidget {
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(8),
-                onTap: () {
-                  // ✅ merge timesToday + event times จาก schedules
-                  final allTimes = _mergedTimes();
-                  _showTimeSlotPopup(context, allTimes, currentTime);
-                },
+                onTap: () =>
+                    _showTimeSlotPopup(context, _mergedTimes(), currentTime),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
@@ -185,14 +180,12 @@ class TableSlotHeader extends StatelessWidget {
   }
 
   TimeSlotType _resolveSlotType(String time) {
-    // ลอง lookup หลาย format
     final variants = [
-      time, // "9:00 AM"
-      time.replaceAll(' ', ''), // "9:00AM"
-      time.replaceAll(' ', '').toLowerCase(), // "9:00am"
-      time.length < 8 ? '0$time' : time, // "09:00 AM"
+      time,
+      time.replaceAll(' ', ''),
+      time.replaceAll(' ', '').toLowerCase(),
+      time.length < 8 ? '0$time' : time,
     ];
-
     for (final v in variants) {
       final found = slotTypeMap[v];
       if (found != null) return found;
@@ -221,13 +214,11 @@ class TableSlotHeader extends StatelessWidget {
               DateTimeHelper.parseFlexibleDateTime(time, date),
             );
 
-      // ✅ parse ISO → format → normalize → lookup
       final parsed = DateTimeHelper.parseFlexibleDateTime(time, date);
       final lookupKey = DateTimeHelper.formatApiTime12(
         parsed,
       ).replaceAll(' ', '').toLowerCase();
       final slotType = slotTypeMap[lookupKey] ?? TimeSlotType.unknown;
-      print('ISO: $time → lookupKey: $lookupKey → type: $slotType');
 
       return TimeSlotChip(
         time: label,
@@ -243,18 +234,12 @@ class TableSlotHeader extends StatelessWidget {
 
   List<String> _mergedTimes() {
     final timesToday = response.timesToday;
-    final date = response.date;
-
-    // ดึง ISO time จาก event schedules ที่ไม่อยู่ใน timesToday
     final extraTimes = schedules
         .where((s) => s.type == 'event')
         .map((s) => s.startAt.toUtc().toIso8601String())
         .where((t) => !timesToday.contains(t))
         .toList();
 
-    // รวมแล้ว sort
-    final merged = [...timesToday, ...extraTimes];
-    merged.sort();
-    return merged;
+    return [...timesToday, ...extraTimes]..sort();
   }
 }

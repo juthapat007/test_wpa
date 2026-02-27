@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:logger/logger.dart';
 import 'package:test_wpa/core/constants/print_logger.dart';
 
 class ChatApi {

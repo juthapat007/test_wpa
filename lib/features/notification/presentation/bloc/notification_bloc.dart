@@ -4,7 +4,6 @@ import 'package:meta/meta.dart';
 import 'package:test_wpa/core/services/notification_websocket_service.dart';
 import 'package:test_wpa/features/notification/domain/entities/notification_entity.dart';
 import 'package:test_wpa/features/notification/domain/repositories/notification_repository.dart';
-import 'package:test_wpa/core/services/notification_websocket_service.dart';
 
 part 'notification_event.dart';
 part 'notification_state.dart';
@@ -19,7 +18,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     on<LoadUnreadCount>(_onLoadUnreadCount);
     on<MarkAllNotificationsRead>(_onMarkAllRead);
     on<MarkNotificationRead>(_onMarkRead);
-    on<WsNotificationReceived>(_onWsReceived); // ✅ ใหม่
+    on<WsNotificationReceived>(_onWsReceived);
 
     _listenToWebSocket();
   }
@@ -31,10 +30,11 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       event,
     ) {
       switch (event.type) {
-        case WsEventType.notificationBadge:
-        case WsEventType.friendRequest:
-        case WsEventType.requestAccepted:
-        case WsEventType.requestRejected:
+        // ✅ ดักทุก event ที่เกี่ยวกับ notification
+        case WsEventType.notificationBadge: // admin / system push
+        case WsEventType.friendRequest: // มีคน add เรา
+        case WsEventType.requestAccepted: // คนรับ add ของเรา
+        case WsEventType.requestRejected: // คนปฏิเสธ add ของเรา
           add(WsNotificationReceived(event));
         case WsEventType.unknown:
           break;
@@ -44,24 +44,22 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
 
+  /// ✅ WS event → reload ทั้ง list + count (ไม่ใช่แค่ count)
   Future<void> _onWsReceived(
     WsNotificationReceived event,
     Emitter<NotificationState> emit,
   ) async {
-    // reload unread count จาก server เพื่อให้ badge อัปเดต
     try {
-      final count = await notificationRepository.getUnreadCount();
-      final currentState = state;
-      if (currentState is NotificationLoaded) {
-        emit(
-          NotificationLoaded(
-            notifications: currentState.notifications,
-            unreadCount: count,
-          ),
-        );
-      } else {
-        emit(UnreadCountLoaded(count));
-      }
+      final results = await Future.wait([
+        notificationRepository.getNotifications(type: 'system'),
+        notificationRepository.getUnreadCount(),
+      ]);
+      emit(
+        NotificationLoaded(
+          notifications: results[0] as List<NotificationItem>,
+          unreadCount: results[1] as int,
+        ),
+      );
     } catch (_) {
       // silently fail — badge จะยังแสดงค่าเดิม
     }
@@ -73,14 +71,14 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   ) async {
     emit(NotificationLoading());
     try {
-      final notifications = await notificationRepository.getNotifications(
-        type: event.type,
-      );
-      final unreadCount = await notificationRepository.getUnreadCount();
+      final results = await Future.wait([
+        notificationRepository.getNotifications(type: event.type),
+        notificationRepository.getUnreadCount(),
+      ]);
       emit(
         NotificationLoaded(
-          notifications: notifications,
-          unreadCount: unreadCount,
+          notifications: results[0] as List<NotificationItem>,
+          unreadCount: results[1] as int,
         ),
       );
     } catch (e) {
@@ -114,16 +112,14 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   ) async {
     try {
       await notificationRepository.markAllAsRead(type: event.type);
-
-      final notifications = await notificationRepository.getNotifications(
-        type: 'system',
-      );
-      final freshCount = await notificationRepository.getUnreadCount();
-
+      final results = await Future.wait([
+        notificationRepository.getNotifications(type: 'system'),
+        notificationRepository.getUnreadCount(),
+      ]);
       emit(
         NotificationLoaded(
-          notifications: notifications,
-          unreadCount: freshCount,
+          notifications: results[0] as List<NotificationItem>,
+          unreadCount: results[1] as int,
         ),
       );
     } catch (e) {
@@ -131,37 +127,28 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     }
   }
 
-  // ✅ แก้ _onMarkRead — หลัง mark แล้ว refetch count จาก server
   Future<void> _onMarkRead(
     MarkNotificationRead event,
     Emitter<NotificationState> emit,
   ) async {
     try {
       await notificationRepository.markAsRead(event.id);
-
-      // ✅ Refetch count จาก server
       final freshCount = await notificationRepository.getUnreadCount();
-
       final currentState = state;
       if (currentState is NotificationLoaded) {
-        final updatedNotifications = currentState.notifications.map((n) {
-          if (n.id == event.id) {
-            return NotificationItem(
-              id: n.id,
-              type: n.type,
-              readAt: DateTime.now(),
-              createdAt: n.createdAt,
-              isUnread: false,
-              notifiable: n.notifiable,
-            );
-          }
-          return n;
+        final updated = currentState.notifications.map((n) {
+          if (n.id != event.id) return n;
+          return NotificationItem(
+            id: n.id,
+            type: n.type,
+            readAt: DateTime.now(),
+            createdAt: n.createdAt,
+            isUnread: false,
+            notifiable: n.notifiable,
+          );
         }).toList();
         emit(
-          NotificationLoaded(
-            notifications: updatedNotifications,
-            unreadCount: freshCount, // ✅ ใช้ค่าจาก server
-          ),
+          NotificationLoaded(notifications: updated, unreadCount: freshCount),
         );
       }
     } catch (e) {

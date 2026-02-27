@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_modular/flutter_modular.dart';
+import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
 import 'package:test_wpa/features/notification/domain/entities/connection_request_entity.dart';
 import 'package:test_wpa/features/notification/domain/entities/notification_entity.dart';
@@ -98,8 +99,22 @@ class _TabBar extends StatelessWidget {
           }
         },
         tabs: [
-          const Tab(text: 'EVENT PLAN'),
+          // ✅ Badge dot บน EVENT PLAN tab
+          Tab(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('EVENT PLAN'),
+                const SizedBox(width: 4),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 30),
+                  child: _UnreadBadgeDot(),
+                ),
+              ],
+            ),
+          ),
           const Tab(text: 'ATTENDANCE STATUS'),
+
           Tab(
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -107,11 +122,35 @@ class _TabBar extends StatelessWidget {
                 const Text('FRIENDS REQUESTS'),
                 const SizedBox(width: 4),
                 _PendingBadgeDot(),
+                // Padding(
+                //   padding: const EdgeInsets.only(bottom: 15),
+                //   child: _PendingBadgeDot(),
+                // ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _UnreadBadgeDot extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<NotificationBloc, NotificationState>(
+      builder: (context, state) {
+        final hasUnread = state is NotificationLoaded && state.unreadCount > 0;
+        if (!hasUnread) return const SizedBox.shrink();
+        return Container(
+          width: 7,
+          height: 7,
+          decoration: const BoxDecoration(
+            color: Colors.red,
+            shape: BoxShape.circle,
+          ),
+        );
+      },
     );
   }
 }
@@ -139,7 +178,7 @@ class _PendingBadgeDot extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Tab 1: System Notifications
+// Tab 1: System / Event Notifications
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _SystemNotificationsTab extends StatelessWidget {
@@ -157,28 +196,12 @@ class _SystemNotificationsTab extends StatelessWidget {
             message:
                 'You\'re all caught up.\nNew notifications will appear here.',
           ),
-        // ใน NotificationLoaded case ที่ items ไม่ว่าง
         NotificationLoaded(notifications: final items) => Column(
           children: [
-            // ปุ่ม mark all — แสดงตลอดเมื่อมี items ไม่ว่าจะ unread หรือเปล่า
-            Align(
-              alignment: Alignment.centerRight,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: TextButton.icon(
-                  onPressed: () => ReadContext(
-                    context,
-                  ).read<NotificationBloc>().add(MarkAllNotificationsRead()),
-                  icon: const Icon(Icons.done_all, size: 16),
-                  label: const Text('Mark all as read'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: color.AppColors.primary,
-                    textStyle: const TextStyle(fontSize: 13),
-                  ),
-                ),
-              ),
+            // ✅ แถบสรุป unread count + ปุ่ม mark all
+            _NotificationHeader(
+              unreadCount: (state as NotificationLoaded).unreadCount,
             ),
-
             Expanded(
               child: ListView.separated(
                 padding: const EdgeInsets.symmetric(vertical: 8),
@@ -187,20 +210,12 @@ class _SystemNotificationsTab extends StatelessWidget {
                     Divider(height: 1, color: Colors.grey[200]),
                 itemBuilder: (context, index) => _NotificationTile(
                   item: items[index],
-                  onTap: () {
-                    final item = items[index];
-                    if (item.isUnread) {
-                      ReadContext(context).read<NotificationBloc>().add(
-                        MarkNotificationRead(item.id),
-                      );
-                    }
-                  },
+                  onTap: () => _handleTap(context, items[index]),
                 ),
               ),
             ),
           ],
         ),
-
         NotificationError(message: final msg) => _ErrorState(
           message: msg,
           onRetry: () => ReadContext(
@@ -209,6 +224,478 @@ class _SystemNotificationsTab extends StatelessWidget {
         ),
         _ => const SizedBox.shrink(),
       },
+    );
+  }
+
+  void _handleTap(BuildContext context, NotificationItem item) {
+    // ✅ mark as read เมื่อกด
+    if (item.isUnread) {
+      ReadContext(
+        context,
+      ).read<NotificationBloc>().add(MarkNotificationRead(item.id));
+    }
+    // ✅ เปิด detail sheet เพื่ออ่านเนื้อหาเต็ม (โดยเฉพาะ admin message)
+    _showDetailSheet(context, item);
+  }
+
+  void _showDetailSheet(BuildContext context, NotificationItem item) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _NotificationDetailSheet(item: item),
+    );
+  }
+}
+
+// ─── Header ───────────────────────────────────────────────────────────────
+
+class _NotificationHeader extends StatelessWidget {
+  final int unreadCount;
+  const _NotificationHeader({required this.unreadCount});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: Colors.white,
+      child: Row(
+        children: [
+          if (unreadCount > 0) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: color.AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '$unreadCount unread',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: color.AppColors.primary,
+                ),
+              ),
+            ),
+          ],
+          const Spacer(),
+          TextButton.icon(
+            onPressed: () => ReadContext(
+              context,
+            ).read<NotificationBloc>().add(MarkAllNotificationsRead()),
+            icon: const Icon(Icons.done_all, size: 16),
+            label: const Text('Mark all as read'),
+            style: TextButton.styleFrom(
+              foregroundColor: color.AppColors.primary,
+              textStyle: const TextStyle(fontSize: 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Notification Tile ────────────────────────────────────────────────────
+
+class _NotificationTile extends StatelessWidget {
+  final NotificationItem item;
+  final VoidCallback onTap;
+
+  const _NotificationTile({required this.item, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: item.isUnread
+          ? color.AppColors.primary.withOpacity(0.05)
+          : Colors.white,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ✅ แถบสีซ้ายแสดง unread
+              if (item.isUnread)
+                Container(
+                  width: 3,
+                  height: 48,
+                  margin: const EdgeInsets.only(right: 10),
+                  decoration: BoxDecoration(
+                    color: color.AppColors.primary,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                )
+              else
+                const SizedBox(width: 13),
+
+              _buildAvatar(),
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _title,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: item.isUnread
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: color.AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        // ✅ dot สีน้ำเงินขวา
+                        if (item.isUnread)
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: color.AppColors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                      ],
+                    ),
+                    if (_body.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        _body,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: color.AppColors.textSecondary,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.access_time,
+                          size: 11,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          timeago.format(item.createdAt),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[400],
+                          ),
+                        ),
+                        if (item.isUnread) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            '• Tap to read',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: color.AppColors.primary.withOpacity(0.7),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvatar() {
+    final avatarUrl = item.notifiable?.requester?.avatarUrl;
+    if (avatarUrl != null && avatarUrl.isNotEmpty) {
+      return CircleAvatar(
+        radius: 22,
+        backgroundImage: NetworkImage(avatarUrl),
+        onBackgroundImageError: (_, __) {},
+      );
+    }
+    // ✅ icon ตาม type
+    return CircleAvatar(
+      radius: 22,
+      backgroundColor: _tileColor.withOpacity(0.12),
+      child: Icon(_tileIcon, size: 22, color: _tileColor),
+    );
+  }
+
+  String get _title => switch (item.type) {
+    'connection_request' => item.notifiable?.requester?.name ?? 'Someone',
+    'connection_accepted' =>
+      item.notifiable?.requester?.name ??
+          item.notifiable?.target?.name ??
+          'Someone',
+    _ => item.typeLabel,
+  };
+
+  String get _body => switch (item.type) {
+    'connection_request' => 'Sent you a friend request',
+    'connection_accepted' => 'Accepted your friend request ✓',
+    _ => item.notifiable?.content ?? '',
+  };
+
+  IconData get _tileIcon => switch (item.type) {
+    'new_message' => Icons.chat_bubble_outline,
+    'connection_request' => Icons.person_add_outlined,
+    'connection_accepted' => Icons.people_outline,
+    'schedule_reminder' => Icons.schedule_outlined,
+    _ => Icons.notifications_outlined,
+  };
+
+  Color get _tileColor => switch (item.type) {
+    'connection_request' || 'connection_accepted' => color.AppColors.secondary,
+    'schedule_reminder' => color.AppColors.warning,
+    _ => color.AppColors.primary,
+  };
+}
+
+// ─── Detail Bottom Sheet ──────────────────────────────────────────────────
+
+class _NotificationDetailSheet extends StatelessWidget {
+  final NotificationItem item;
+  const _NotificationDetailSheet({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final avatarUrl = item.notifiable?.requester?.avatarUrl;
+    final senderName = item.notifiable?.requester?.name;
+    final content = item.notifiable?.content;
+    final isConnectionType =
+        item.type == 'connection_request' || item.type == 'connection_accepted';
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.5,
+      maxChildSize: 0.85,
+      minChildSize: 0.3,
+      builder: (_, scrollController) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // Handle
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+
+            Expanded(
+              child: SingleChildScrollView(
+                controller: scrollController,
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Header ────────────────────────────────────────────
+                    Row(
+                      children: [
+                        if (avatarUrl != null && avatarUrl.isNotEmpty)
+                          CircleAvatar(
+                            radius: 28,
+                            backgroundImage: NetworkImage(avatarUrl),
+                          )
+                        else
+                          CircleAvatar(
+                            radius: 28,
+                            backgroundColor: color.AppColors.primary
+                                .withOpacity(0.12),
+                            child: Icon(
+                              isConnectionType
+                                  ? Icons.person_outline
+                                  : Icons.notifications_outlined,
+                              size: 28,
+                              color: color.AppColors.primary,
+                            ),
+                          ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isConnectionType
+                                    ? (senderName ?? 'Someone')
+                                    : item.typeLabel,
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1A2340),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                timeago.format(item.createdAt),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+                    Divider(color: Colors.grey[200]),
+                    const SizedBox(height: 16),
+
+                    // ── Content ──────────────────────────────────────────
+                    if (isConnectionType) ...[
+                      _DetailRow(
+                        icon: Icons.info_outline,
+                        label: 'Status',
+                        value: switch (item.type) {
+                          'connection_request' => 'Sent you a friend request',
+                          'connection_accepted' =>
+                            'Accepted your friend request',
+                          _ => '',
+                        },
+                      ),
+                      if (senderName != null) ...[
+                        const SizedBox(height: 12),
+                        _DetailRow(
+                          icon: Icons.person_outline,
+                          label: 'From',
+                          value: senderName,
+                        ),
+                      ],
+                    ] else if (content != null && content.isNotEmpty) ...[
+                      // ✅ แสดง content เต็มจาก Admin
+                      Text(
+                        'Message',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[500],
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[200]!),
+                        ),
+                        child: Text(
+                          content,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            height: 1.6,
+                            color: Color(0xFF1A2340),
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      Center(
+                        child: Text(
+                          'No additional details',
+                          style: TextStyle(color: Colors.grey[400]),
+                        ),
+                      ),
+                    ],
+
+                    // ✅ ถ้าเป็น friend request ให้กดไปหน้า profile ได้
+                    if (isConnectionType &&
+                        item.notifiable?.id != null &&
+                        item.notifiable!.id > 0) ...[
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            Modular.to.pushNamed(
+                              '/other_profile',
+                              arguments: {'delegate_id': item.notifiable!.id},
+                            );
+                          },
+                          icon: const Icon(Icons.person),
+                          label: const Text('View Profile'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: color.AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _DetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: Colors.grey[500]),
+        const SizedBox(width: 10),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey[500],
+                letterSpacing: 0.3,
+              ),
+            ),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF1A2340),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -303,136 +790,7 @@ class _FriendRequestsTab extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Notification Tile
-// ═══════════════════════════════════════════════════════════════════════════
-
-class _NotificationTile extends StatelessWidget {
-  final NotificationItem item;
-  final VoidCallback onTap;
-
-  const _NotificationTile({required this.item, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: item.isUnread
-          ? color.AppColors.primary.withOpacity(0.04)
-          : Colors.white,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildAvatar(),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _title,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: item.isUnread
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                              color: color.AppColors.textPrimary,
-                            ),
-                          ),
-                        ),
-                        if (item.isUnread)
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: color.AppColors.primary,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                      ],
-                    ),
-                    if (_body.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        _body,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: color.AppColors.textSecondary,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 6),
-                    Text(
-                      timeago.format(item.createdAt),
-                      style: TextStyle(fontSize: 12, color: Colors.grey[400]),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAvatar() {
-    final avatarUrl = item.notifiable?.requester?.avatarUrl;
-    if (avatarUrl != null && avatarUrl.isNotEmpty) {
-      return CircleAvatar(
-        radius: 22,
-        backgroundImage: NetworkImage(avatarUrl),
-        onBackgroundImageError: (_, __) {},
-      );
-    }
-    return CircleAvatar(
-      radius: 22,
-      backgroundColor: _tileColor.withOpacity(0.12),
-      child: Icon(_tileIcon, size: 22, color: _tileColor),
-    );
-  }
-
-  String get _title => switch (item.type) {
-    'connection_request' => item.notifiable?.requester?.name ?? 'Someone',
-    'connection_accepted' => item.notifiable?.target?.name ?? 'Someone',
-    _ => item.typeLabel,
-  };
-
-  String get _body => switch (item.type) {
-    'connection_request' => switch (item.notifiable?.status) {
-      'accepted' => 'Accepted your friend request',
-      'rejected' => 'Declined your friend request',
-      _ => 'Sent you a friend request',
-    },
-    'connection_accepted' => 'Accepted your friend request ✓',
-    _ => item.notifiable?.content ?? '',
-  };
-
-  IconData get _tileIcon => switch (item.type) {
-    'new_message' => Icons.chat_bubble_outline,
-    'new_connection' => Icons.person_add_outlined,
-    'schedule_reminder' => Icons.schedule_outlined,
-    _ => Icons.notifications_outlined,
-  };
-
-  Color get _tileColor => switch (item.type) {
-    'new_message' => color.AppColors.primary,
-    'new_connection' => color.AppColors.secondary,
-    'schedule_reminder' => color.AppColors.warning,
-    _ => Colors.grey,
-  };
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Friend Request Card — ใช้ style เดียวกับ DelegateCard
+// Friend Request Card
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _FriendRequestCard extends StatelessWidget {
@@ -462,83 +820,104 @@ class _FriendRequestCard extends StatelessWidget {
           arguments: {'delegate_id': request.senderId},
         ),
         borderRadius: BorderRadius.circular(12),
+
+        // _FriendRequestCard — เปลี่ยน child ของ Card เป็น Column แทน Row
         child: Padding(
           padding: const EdgeInsets.all(14),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Avatar ────────────────────────────────────────────────
-              CircleAvatar(
-                radius: 26,
-                backgroundImage: avatarUrl.isNotEmpty
-                    ? NetworkImage(avatarUrl)
-                    : null,
-                backgroundColor: const Color(0xFF4A90D9).withOpacity(0.15),
-                child: avatarUrl.isEmpty
-                    ? Text(
-                        name[0].toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF4A90D9),
+              // ── avatar + ชื่อ ──────────────────────────────
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundImage: avatarUrl.isNotEmpty
+                        ? NetworkImage(avatarUrl)
+                        : null,
+                    backgroundColor: const Color(0xFF4A90D9).withOpacity(0.15),
+                    child: avatarUrl.isEmpty
+                        ? Text(
+                            name[0].toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF4A90D9),
+                            ),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1A2340),
+                          ),
                         ),
-                      )
-                    : null,
-              ),
-              const SizedBox(width: 14),
-
-              // ── Name + title + company ────────────────────────────────
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1A2340),
-                      ),
+                        if (sender?.title?.isNotEmpty == true) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            sender!.title!,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                        if (sender?.companyName?.isNotEmpty == true) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            sender!.companyName!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                    if (sender?.title?.isNotEmpty == true) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        sender!.title!,
-                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                      ),
-                    ],
-                    if (sender?.companyName?.isNotEmpty == true) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        sender!.companyName!,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                      ),
-                    ],
-                  ],
-                ),
+                  ),
+                ],
               ),
 
-              const SizedBox(width: 10),
-
-              // ── Buttons — ป้องกัน tap bubble ขึ้นการ์ด ───────────────
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {},
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _ActionButton(
-                      label: 'Reject',
-                      onTap: onNotNow,
-                      filled: false,
+              // ── ล่าง: ปุ่ม Accept / Reject ────────────────────────
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: onNotNow,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: color.AppColors.warning,
+                        side: BorderSide(color: color.AppColors.warning),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Reject'),
                     ),
-                    const SizedBox(width: 8),
-                    _ActionButton(
-                      label: 'Accept',
-                      onTap: onConfirm,
-                      filled: true,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: onConfirm,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: color.AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Accept'),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -566,19 +945,16 @@ class _ActionButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: filled
-              ? color
-                    .AppColors
-                    .primary // ปุ่ม Confirm
-              : color.AppColors.warning, // ปุ่ม Not Now (เปลี่ยนสีตามต้องการ)
+          color: filled ? color.AppColors.primary : color.AppColors.warning,
           borderRadius: BorderRadius.circular(6),
         ),
         child: Text(
           label,
+          overflow: TextOverflow.ellipsis, // ✅ เพิ่ม
           style: const TextStyle(
-            fontSize: 14,
-            color: Colors.white, // 👈 ตัวอักษรขาวทั้งคู่
-          ),
+            fontSize: 13,
+            color: Colors.white,
+          ), // ลด 14 → 13
         ),
       ),
     );

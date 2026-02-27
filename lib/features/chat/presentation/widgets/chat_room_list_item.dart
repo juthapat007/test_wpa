@@ -125,47 +125,6 @@ class ChatRoomCard extends StatelessWidget {
     );
   }
 
-  // Widget _buildAvatar() {
-  //   return Stack(
-  //     children: [
-  //       CircleAvatar(
-  //         radius: 28,
-  //         backgroundColor: AppColors.primary.withOpacity(0.1),
-  //         backgroundImage:
-  //             room.participantAvatar != null &&
-  //                 room.participantAvatar!.isNotEmpty
-  //             ? NetworkImage(room.participantAvatar!)
-  //             : null,
-  //         child:
-  //             room.participantAvatar == null || room.participantAvatar!.isEmpty
-  //             ? Text(
-  //                 _getInitials(room.participantName),
-  //                 style: const TextStyle(
-  //                   color: AppColors.primary,
-  //                   fontSize: 18,
-  //                   fontWeight: FontWeight.bold,
-  //                 ),
-  //               )
-  //             : null,
-  //       ),
-  //       if (room.lastActiveAt != null &&
-  //           DateTime.now().difference(room.lastActiveAt!).inMinutes < 5)
-  //         Positioned(
-  //           right: 0,
-  //           bottom: 0,
-  //           child: Container(
-  //             width: 14,
-  //             height: 14,
-  //             decoration: BoxDecoration(
-  //               color: AppColors.success,
-  //               shape: BoxShape.circle,
-  //               border: Border.all(color: Colors.white, width: 2),
-  //             ),
-  //           ),
-  //         ),
-  //     ],
-  //   );
-  // }
   Widget _buildAvatar() {
     return Stack(
       children: [

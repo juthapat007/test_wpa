@@ -197,7 +197,7 @@ class ChatMessageBubble extends StatelessWidget {
   }
 }
 
-/// ✅ Widget Avatar ที่จัดการ 404 / expired URL ได้อย่างปลอดภัย
+///  Widget Avatar ที่จัดการ 404 / expired URL ได้อย่างปลอดภัย
 class _SafeAvatar extends StatelessWidget {
   final String? imageUrl;
   final String name;

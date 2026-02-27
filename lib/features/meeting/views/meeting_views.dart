@@ -17,6 +17,7 @@ import 'package:test_wpa/features/schedules/presentation/widgets/date_header.dar
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/time_slot_chip.dart';
 import 'package:test_wpa/features/schedules/utils/schedule_card_helper.dart';
+import 'package:test_wpa/features/widgets/add_button_outline.dart';
 import 'package:test_wpa/features/widgets/app_dialog.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
 import 'package:test_wpa/features/widgets/date_tab_bar.dart';
@@ -41,13 +42,20 @@ class _MeetingWidgetState extends State<MeetingWidget> {
   @override
   void initState() {
     super.initState();
-    //นับ เวลาที่เริ่มและ +1
+    //นับเวลาที่เริ่มและ
     _timer = Timer.periodic(
       const Duration(minutes: 1),
       (_) => setState(() => _currentTime = DateTime.now()),
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ReadContext(context).read<ScheduleBloc>().add(LoadSchedules());
+      if (!mounted) return;
+      final state = ReadContext(context).read<ScheduleBloc>().state;
+      if (state is ScheduleLoaded && _selectedDateStr.isEmpty) {
+        // ✅ ถ้า data โหลดไว้แล้ว ใช้เลย ไม่ต้องยิง API ซ้ำ
+        _onFirstScheduleLoaded(state.scheduleResponse);
+      } else {
+        ReadContext(context).read<ScheduleBloc>().add(LoadSchedules());
+      }
     });
   }
 
@@ -204,16 +212,16 @@ class _MeetingWidgetState extends State<MeetingWidget> {
 
   Widget _buildDateTabBar() {
     return BlocBuilder<ScheduleBloc, ScheduleState>(
-      buildWhen: (_, curr) => curr is ScheduleLoaded || curr is ScheduleLoading,
+      buildWhen: (prev, curr) =>
+          curr is ScheduleLoaded && prev is! ScheduleLoaded ||
+          curr is ScheduleLoading && prev is! ScheduleLoading,
       builder: (context, state) {
         if (state is ScheduleLoaded) {
-          final response = state.scheduleResponse;
-          if (_selectedDateStr.isEmpty && response.availableDates.isNotEmpty) {
-            _syncInitialDate(response.date);
-          }
           return DateTabBar(
-            availableDates: response.availableDates,
-            selectedDate: state.selectedDate,
+            availableDates: state.scheduleResponse.availableDates,
+            selectedDate: _selectedDateStr.isNotEmpty
+                ? _selectedDateStr
+                : state.scheduleResponse.date,
             onDateSelected: _onDateSelected,
           );
         }
@@ -393,7 +401,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
               ),
             ),
             const SizedBox(height: 20),
-            TextButton.icon(
+            AddButtonOutline(
               onPressed: () {
                 final s = ReadContext(context).read<ScheduleBloc>().state;
                 if (s is ScheduleLoaded &&
@@ -401,8 +409,9 @@ class _MeetingWidgetState extends State<MeetingWidget> {
                   _onDateSelected(s.scheduleResponse.availableDates.first);
                 }
               },
-              icon: const Icon(Icons.arrow_back, size: 16),
-              label: const Text('Go to first available date'),
+              icon: Icons.chevron_left,
+              text: 'Go to first available date',
+              isLoading: false,
             ),
           ],
         ),
@@ -520,6 +529,24 @@ class _MeetingWidgetState extends State<MeetingWidget> {
         ),
       ),
     );
+  }
+
+  void _onFirstScheduleLoaded(scheduleResponse) {
+    final today = DateTimeHelper.formatApiDate(DateTime.now());
+    final dates = scheduleResponse.availableDates;
+    if (dates.isEmpty) return;
+
+    // ✅ ถ้ามีวันนี้ใช้วันนี้ ถ้าไม่มีก็ใช้วันแรกที่มีเลย — ไม่ต้องกดปุ่ม
+    final targetDate = dates.contains(today) ? today : dates.first;
+
+    setState(() => _selectedDateStr = targetDate);
+    Modular.get<TableBloc>().add(LoadTableView(date: targetDate));
+
+    // แสดง dialog เฉพาะตอนที่ต้องสลับวันเท่านั้น
+    if (targetDate != today && !_shownNoTodayDialog) {
+      _shownNoTodayDialog = true;
+      _maybeShowNoTodayDialog(targetDate);
+    }
   }
 }
 

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart' hide Notification;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/network/dio_client.dart';
-import 'package:test_wpa/core/widgets/app_providers.dart';
 import 'package:test_wpa/core/widgets/app_shell.dart';
 
 // Auth

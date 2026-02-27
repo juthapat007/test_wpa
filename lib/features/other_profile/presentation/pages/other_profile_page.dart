@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_modular/flutter_modular.dart';
+import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 import 'package:test_wpa/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:test_wpa/features/other_profile/domain/entities/profile_detail.dart';
@@ -274,9 +275,9 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         Expanded(child: _buildConnectButton(profile, context, isSending)),
         const SizedBox(width: 10),
         Expanded(
-          child: AddButtonOutline(
+          child: AppButton(
             text: 'Chat',
-            icon: Icons.chat_bubble_outline,
+            // icon: Icons.chat_bubble_outline,
             onPressed: () => ReadContext(context).read<ChatBloc>().add(
               CreateChatRoom(profile.id.toString(), profile.name),
             ),
@@ -296,6 +297,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       case ConnectionStatus.none:
         return AppButton(
           text: 'Add Friend',
+          // height: space_bottom.l,
+          // borderRadius: 12,
           backgroundColor: const Color(0xFF4A90D9),
           textColor: Colors.white,
           isLoading: isSending,
@@ -334,8 +337,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
               child: AppButton(
                 text: 'Reject',
 
-                // icon: Icons.close,
-                // color: AppColors.warning,
                 backgroundColor: AppColors.warning,
                 textColor: AppColors.background,
                 isLoading: isSending,
@@ -346,7 +347,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
                       ),
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 5),
             Expanded(
               child: AppButton(
                 text: 'Accept',
@@ -365,7 +366,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
 
       case ConnectionStatus.connected:
         return AppButton(
-          text: 'Connected ✓',
+          text: 'Connected ',
           backgroundColor: const Color(0xFF5DC98A),
           textColor: Colors.white,
           onPressed: null,

@@ -59,20 +59,24 @@ class MeetingCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              // เวลา — ซ้าย
+              // ✅ ครอบด้วย Flexible กัน overflow
+              // Flexible(
+              // child:
               Text(
                 '$startTime - $endTime',
+                // overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
                 ),
               ),
-              SizedBox(width: 100),
+              // ),
+              SizedBox(width: 20),
 
               ///มันทำให้โหลดข้อมูลช้าไม่ต้องเอามาก็ได้
               if (schedule.tableNumber != null) ...[
-                const Spacer(), // ✅ ดัน table ให้อยู่กลาง
+                const SizedBox(width: space.xs),
                 Text(
                   '${schedule.tableNumber}',
                   style: TextStyle(
@@ -82,13 +86,12 @@ class MeetingCard extends StatelessWidget {
                   ),
                 ),
               ],
-              const Spacer(), // ✅ ดัน badge ไปขวาสุด
+              const Spacer(),
               _buildBadge(helper),
             ],
           ),
           SizedBox(height: 10),
           //บอกรายละเอียดแผน
-          // Row 2: company • country
           Text(
             _buildSubtitleText(helper),
             style: TextStyle(

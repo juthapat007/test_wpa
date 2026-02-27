@@ -1,10 +1,10 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 import 'package:test_wpa/core/utils/date_time_helper.dart';
 import 'package:test_wpa/features/meeting/domain/entities/table_view_entities.dart';
+
+// ─── My Table Banner ─────────────────────────────────────────────────────────
 
 class MyTableBanner extends StatelessWidget {
   final TableViewResponse response;
@@ -28,77 +28,95 @@ class MyTableBanner extends StatelessWidget {
             DateTimeHelper.parseFlexibleDateTime(currentTime, response.date),
           );
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), // ← blur พื้นหลัง
-        child: Container(
-          width: double.infinity,
-          margin: const EdgeInsets.only(bottom: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15), // ← โปร่งใส
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.2),
-            ), // ← ขอบขาวจาง
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withOpacity(0.2),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.primary.withOpacity(0.3),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // ─── Icon box ────────────────────────────────────────────────────
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.event_seat,
+              color: AppColors.primary,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 14),
+
+          // ─── Text ─────────────────────────────────────────────────────────
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'MY SEAT',
+                  style: TextStyle(
+                    color: AppColors.primary.withOpacity(0.6),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Table ${response.myTable}',
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    height: 1.1,
+                  ),
+                ),
+              ],
+            ),
           ),
 
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.event_seat,
-                  color: Colors.white,
-                  size: 28,
-                ),
+          // ─── Time pill ────────────────────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+            ),
+            child: Text(
+              timeRange,
+              style: const TextStyle(
+                color: AppColors.primary,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'MY SEAT',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: width.s,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Table ${response.myTable}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: width.xxl,
-                        fontWeight: FontWeight.bold,
-                        height: 1.1,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 }
+
+// ─── No Assignment Banner ─────────────────────────────────────────────────────
 
 class NoAssignmentBanner extends StatelessWidget {
   const NoAssignmentBanner({super.key});
@@ -107,20 +125,28 @@ class NoAssignmentBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.warning.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(10),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.warning.withOpacity(0.3)),
       ),
       child: Row(
         children: [
-          Icon(Icons.info_outline, size: 16, color: AppColors.warning),
-          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(Icons.info_outline, size: 15, color: AppColors.warning),
+          ),
+          const SizedBox(width: 10),
           Text(
             'No table assigned for this time slot',
             style: TextStyle(
               fontSize: 13,
+              fontWeight: FontWeight.w500,
               color: AppColors.warning.withAlpha(220),
             ),
           ),
@@ -129,6 +155,8 @@ class NoAssignmentBanner extends StatelessWidget {
     );
   }
 }
+
+// ─── No Table Card ────────────────────────────────────────────────────────────
 
 class NoTableCard extends StatelessWidget {
   final TableViewResponse response;
@@ -167,95 +195,108 @@ class NoTableCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF3F4F6),
-              shape: BoxShape.circle,
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3F4F6),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
-              Icons.event_busy,
-              size: 40,
+              Icons.event_busy_outlined,
+              size: 32,
               color: Color(0xFF9CA3AF),
             ),
           ),
           const SizedBox(height: 16),
           const Text(
             'No Table Assigned',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 6),
           const Text(
-            "You don't have a table assignment for this time slot.",
+            "You don't have a table assignment\nfor this time slot.",
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.5,
+              color: AppColors.textSecondary,
+            ),
           ),
           if (nextTimeRange != null) ...[
+            const SizedBox(height: 20),
+            const Divider(height: 1),
             const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 12),
-            const Text(
-              'Try next slot',
-              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 8),
             GestureDetector(
               onTap: () => onTimeSlotChanged?.call(nextSlot!),
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
+                  horizontal: 20,
+                  vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.08),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                  border: Border.all(
+                    color: AppColors.primary.withOpacity(0.25),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.arrow_forward,
-                      size: 16,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: 8),
                     Text(
-                      nextTimeRange,
+                      'Next slot: $nextTimeRange',
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: AppColors.primary,
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    const Icon(
+                      Icons.arrow_forward,
+                      size: 15,
+                      color: AppColors.primary,
+                    ),
                   ],
                 ),
               ),
             ),
           ] else ...[
-            const SizedBox(height: 12),
-            const Row(
+            const SizedBox(height: 16),
+            Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   Icons.info_outline,
-                  size: 14,
-                  color: AppColors.textSecondary,
+                  size: 13,
+                  color: AppColors.textSecondary.withOpacity(0.6),
                 ),
-                SizedBox(width: 6),
+                const SizedBox(width: 6),
                 Text(
                   'Try selecting another time slot',
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: AppColors.textSecondary.withOpacity(0.6),
                   ),
                 ),
               ],

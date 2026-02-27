@@ -1,3 +1,4 @@
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:meta/meta.dart';
 import 'package:test_wpa/features/search/domain/entities/delegate.dart';
@@ -14,10 +15,10 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   List<Delegate> _allDelegates = [];
 
   SearchBloc({required this.delegateRepository}) : super(SearchInitial()) {
-    on<SearchDelegates>(_onSearchDelegates);
-    on<LoadMoreDelegates>(_onLoadMore);
+    on<SearchDelegates>(_onSearchDelegates, transformer: droppable());
+    on<LoadMoreDelegates>(_onLoadMore, transformer: droppable());
     on<ResetSearch>(_onReset);
-    on<RefreshDelegates>(_onRefresh); // ✅ ใหม่
+    on<RefreshDelegates>(_onRefresh, transformer: droppable());
   }
 
   Future<void> _onSearchDelegates(

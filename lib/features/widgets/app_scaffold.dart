@@ -17,7 +17,7 @@ class AppScaffold extends StatelessWidget {
   final Widget? body;
   final List<Widget>? actions;
   final bool showAvatar;
-  final bool showBackButton; // 👈 เพิ่ม parameter แยกสำหรับปุ่ม back
+  final bool showBackButton;
   final Color? backgroundColor;
   final AppBarStyle appBarStyle;
   final bool showBottomNavBar;
@@ -30,7 +30,7 @@ class AppScaffold extends StatelessWidget {
     this.body,
     this.actions,
     this.showAvatar = true,
-    this.showBackButton = false, // 👈 default เป็น false
+    this.showBackButton = false,
     this.backgroundColor,
     this.appBarStyle = AppBarStyle.standard,
     this.showBottomNavBar = true,
@@ -44,34 +44,25 @@ class AppScaffold extends StatelessWidget {
           ? _buildElegantAppBar(context)
           : AppAppBar(
               title: title,
-              showBackButton: showBackButton, // 👈 ใช้ parameter โดยตรง
+              showBackButton: showBackButton,
               leading: showAvatar
                   ? Padding(
                       padding: const EdgeInsets.only(left: 8),
                       child: BlocBuilder<AuthBloc, AuthState>(
                         buildWhen: (previous, current) {
-                          // ✅ rebuild ถ้า avatarUrl เปลี่ยน
                           if (previous is AuthAuthenticated &&
                               current is AuthAuthenticated) {
                             return previous.avatarUrl != current.avatarUrl;
                           }
-                          return true;
+                          return previous.runtimeType != current.runtimeType;
                         },
                         builder: (context, state) {
-                          String? avatarUrl;
-
-                          if (state is AuthAuthenticated) {
-                            avatarUrl = state.avatarUrl;
-                          }
-                          print('=== AUTH STATE: $state');
-                          if (state is AuthAuthenticated) {
-                            print('=== avatarUrl: ${state.avatarUrl}');
-                          }
+                          final avatarUrl = state is AuthAuthenticated
+                              ? state.avatarUrl
+                              : null;
                           return AppAvatar(
                             imageUrl: avatarUrl,
-                            onTap: () {
-                              Modular.to.pushNamed('/profile');
-                            },
+                            onTap: () => Modular.to.pushNamed('/profile'),
                           );
                         },
                       ),
@@ -96,11 +87,9 @@ class AppScaffold extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
           child: Row(
             children: [
-              // Avatar
               if (showAvatar)
                 BlocBuilder<AuthBloc, AuthState>(
                   buildWhen: (previous, current) {
-                    // ✅ rebuild ถ้า avatarUrl เปลี่ยน
                     if (previous is AuthAuthenticated &&
                         current is AuthAuthenticated) {
                       return previous.avatarUrl != current.avatarUrl;
@@ -109,15 +98,6 @@ class AppScaffold extends StatelessWidget {
                   },
                   builder: (context, state) {
                     String? avatarUrl;
-
-                    if (state is AuthAuthenticated) {
-                      avatarUrl = state.avatarUrl;
-                    }
-                    print('=== AUTH STATE: $state');
-                    if (state is AuthAuthenticated) {
-                      print('=== avatarUrl: ${state.avatarUrl}');
-                    }
-
                     return GestureDetector(
                       onTap: () => Modular.to.pushNamed('/profile'),
                       child: Container(

@@ -42,43 +42,6 @@ class _ChatConversationViewState extends State<ChatConversationView> {
     super.dispose();
   }
 
-  // ─── Typing indicator ─────────────────────────────────────────────────────
-
-  // void _onTextChanged() {
-  //   final text = _messageController.text.trim();
-  //   final room = _extractRoom(context.read<ChatBloc>().state);
-  //   if (room == null) return;
-
-  //   if (text.isNotEmpty && !_isTyping) {
-  //     _isTyping = true;
-  //     context.read<ChatBloc>().add(
-  //       SendTypingIndicator(recipientId: room.participantId, isTyping: true),
-  //     );
-  //   } else if (text.isEmpty && _isTyping) {
-  //     _stopTyping();
-  //     return;
-  //   }
-
-  //   // reset auto-stop timer ทุกครั้งที่พิมพ์
-  //   if (_isTyping) {
-  //     _typingTimer?.cancel();
-  //     _typingTimer = Timer(const Duration(seconds: 3), _stopTyping);
-  //   }
-  // }
-
-  // void _stopTyping() {
-  //   if (!_isTyping) return;
-  //   _isTyping = false;
-  //   _typingTimer?.cancel();
-
-  //   final room = _extractRoom(context.read<ChatBloc>().state);
-  //   if (room == null) return;
-
-  //   context.read<ChatBloc>().add(
-  //     SendTypingIndicator(recipientId: room.participantId, isTyping: false),
-  //   );
-  // }
-
   // ─── Scroll / Load More ───────────────────────────────────────────────────
 
   void _onScroll() {
@@ -93,7 +56,7 @@ class _ChatConversationViewState extends State<ChatConversationView> {
 
     final state = context.read<ChatBloc>().state;
 
-    // ✅ FIX: ดึง room/page/hasMore จาก state ทุก type ที่เกี่ยวข้อง
+    //  ดึง room/page/hasMore จาก state ทุก type ที่เกี่ยวข้อง
     final room = _extractRoom(state);
     final hasMore = _extractHasMore(state);
     final currentPage = _extractCurrentPage(state);
@@ -224,39 +187,6 @@ class _ChatConversationViewState extends State<ChatConversationView> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       itemCount: messages.length,
                       itemBuilder: (context, index) {
-                        // Loading indicator ที่ด้านบน (index สุดท้ายของ reverse list)
-                        // final totalExtra =
-                        // (isTyping ? 1 : 0) + (isLoadingMoreState ? 1 : 0);
-                        // if (index >= messages.length) {
-                        //   final extraIndex = index - messages.length;
-                        //   if (isLoadingMoreState && extraIndex == 0) {
-                        //     return const Padding(
-                        //       padding: EdgeInsets.all(16),
-                        //       child: Center(
-                        //         child: SizedBox(
-                        //           width: 24,
-                        //           height: 24,
-                        //           child: CircularProgressIndicator(
-                        //             strokeWidth: 2,
-                        //           ),
-                        //         ),
-                        //       ),
-                        //     );
-                        //   }
-                        //   if (isTyping) {
-                        //     return TypingIndicator(
-                        //       userName: room.participantName,
-                        //     );
-                        //   }
-                        // }
-
-                        // // typing indicator ที่ index 0 (ข้อความล่าสุด)
-                        // if (index == 0 && isTyping && !isLoadingMoreState) {
-                        //   return TypingIndicator(
-                        //     userName: room.participantName,
-                        //   );
-                        // }
-
                         final messageIndex = index;
                         if (messageIndex < 0 ||
                             messageIndex >= messages.length) {

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/widgets.dart';
 import 'package:test_wpa/core/constants/print_logger.dart';
 import 'package:test_wpa/core/services/notification_websocket_service.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -29,7 +30,7 @@ class MessageUpdatedEvent {
   });
 }
 
-class ChatWebSocketService {
+class ChatWebSocketService with WidgetsBindingObserver {
   WebSocketChannel? _channel;
   final _messageController = StreamController<ChatMessage>.broadcast();
   final _connectionController = StreamController<bool>.broadcast();
@@ -42,6 +43,9 @@ class ChatWebSocketService {
 
   bool _isConnected = false;
   bool get isConnected => _isConnected;
+
+  // ✅ เพิ่ม: ติดตามว่าแอพอยู่ foreground หรือเปล่า
+  bool _isAppInForeground = true;
 
   String? _chatChannelIdentifier;
   String? _notificationChannelIdentifier;
@@ -60,7 +64,10 @@ class ChatWebSocketService {
   static const Duration _watchdogTimeout = Duration(seconds: 65);
   DateTime? _lastPingReceived;
 
-  ChatWebSocketService();
+  // ✅ ลงทะเบียน lifecycle observer ตอน constructor
+  ChatWebSocketService() {
+    WidgetsBinding.instance.addObserver(this);
+  }
 
   Stream<ChatMessage> get messageStream => _messageController.stream;
   Stream<bool> get connectionStream => _connectionController.stream;
@@ -71,6 +78,35 @@ class ChatWebSocketService {
   Stream<MessageUpdatedEvent> get messageUpdatedStream =>
       _messageUpdatedController.stream;
   Stream<TypingEvent> get typingStream => _typingController.stream;
+
+  // ─── AppLifecycle ─────────────────────────────────────────────────────────
+  //
+  // ✅ จุดสำคัญ: ป้องกัน reconnect ตอน FCM ปลุกแอพ background
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        // user เปิดแอพจริงๆ → reconnect ได้
+        _isAppInForeground = true;
+        log.i('[Lifecycle] App resumed → foreground');
+        if (!_isConnected && _lastToken != null) {
+          _reconnectAttempts = 0;
+          connect(_lastToken!);
+        }
+
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+        // แอพเข้า background (รวมถึงตอน FCM ปลุก) → หยุด timer ทั้งหมด
+        _isAppInForeground = false;
+        log.i('[Lifecycle] App backgrounded → cancel timers');
+        _cancelTimers();
+        _reconnectTimer?.cancel();
+
+      default:
+        break;
+    }
+  }
 
   // ─── Connect ─────────────────────────────────────────────────────────────
 
@@ -88,7 +124,6 @@ class ChatWebSocketService {
         await _channel!.sink.close();
         _channel = null;
       }
-      //มาลอง 192.
       final wsUrl = 'wss://wpa-docker.onrender.com/cable?token=$token';
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
       _channel!.stream.listen(
@@ -110,7 +145,6 @@ class ChatWebSocketService {
       await Future.delayed(const Duration(milliseconds: 500));
       await _subscribeChannels();
 
-      // ✅ เริ่ม heartbeat หลัง subscribe เสร็จ
       _startHeartbeat();
       _startWatchdog();
     } catch (e) {
@@ -127,16 +161,12 @@ class ChatWebSocketService {
   }
 
   // ─── Heartbeat ────────────────────────────────────────────────────────────
-  //
-  // ActionCable server ส่ง ping ทุก ~3 วิ ให้เราตอบกลับเพื่อ keep-alive
-  // ในที่นี้เราจะส่ง subscribe ซ้ำ (ถ้า channel หลุด) หรือส่ง noop message
 
   void _startHeartbeat() {
     _heartbeatTimer?.cancel();
     _heartbeatTimer = Timer.periodic(_heartbeatInterval, (_) {
       if (!_isConnected || _channel == null) return;
       try {
-        // ActionCable-style keepalive: ส่ง ping ไปที่ server
         _channel!.sink.add(jsonEncode({'type': 'ping'}));
         log.v('[Heartbeat] ping sent');
       } catch (e) {
@@ -176,14 +206,20 @@ class ChatWebSocketService {
       return;
     }
 
+    // ✅ ถ้าอยู่ background → ไม่ schedule เลย รอ resumed แทน
+    if (!_isAppInForeground) {
+      log.i('[Reconnect] App in background → skip, will reconnect on resume');
+      return;
+    }
+
     _reconnectAttempts++;
-    // exponential backoff: 2s, 4s, 6s, ...max 30s
     final delay = Duration(seconds: (_reconnectAttempts * 2).clamp(2, 30));
     log.i('Reconnect attempt $_reconnectAttempts in ${delay.inSeconds}s');
 
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(delay, () {
-      if (!_isConnected && _lastToken != null) {
+      // ✅ เช็คซ้ำตอน Timer ยิง เผื่อแอพ background ไปแล้วระหว่างรอ
+      if (!_isConnected && _lastToken != null && _isAppInForeground) {
         connect(_lastToken!);
       }
     });
@@ -221,7 +257,6 @@ class ChatWebSocketService {
   // ─── Handle incoming messages ─────────────────────────────────────────────
 
   void _handleMessage(dynamic rawData) {
-    // log.wtf('[ChatWS RAW] $rawData');
     try {
       final data = jsonDecode(rawData.toString());
       final type = data['type'] as String?;
@@ -232,9 +267,7 @@ class ChatWebSocketService {
           break;
 
         case 'ping':
-          // รีเซ็ต watchdog ทุกครั้งที่ได้รับ ping จาก server
           _lastPingReceived = DateTime.now();
-          // log.v('[Ping] received from server ✓');
           break;
 
         case 'confirm_subscription':
@@ -263,7 +296,6 @@ class ChatWebSocketService {
   void _handleActionCableDataMessage(Map<String, dynamic> message) {
     final type = message['type'] as String?;
 
-    //  Notifications → forward ทันที ไม่ต้องเข้า switch
     if (type == 'new_notification') {
       log.i('[ChatWS] → NotificationWS: ${message['notification']?['type']}');
       NotificationWebSocketService.instance.handleIncomingEvent(message);
@@ -343,7 +375,6 @@ class ChatWebSocketService {
           );
         }
       } else {
-        // FIX: ไม่มี message_ids → ส่ง '0' เป็น signal ว่า bulk read ทั้งหมด
         _readReceiptController.add(
           ReadReceiptEvent(messageId: '0', readAt: readAt),
         );
@@ -444,17 +475,14 @@ class ChatWebSocketService {
   // ─── Message action handlers ──────────────────────────────────────────────
 
   void _handleMessageDeleted(Map<String, dynamic> data) {
-    //1
     try {
-      final msgData = data['message']; //2
+      final msgData = data['message'];
       String? messageId;
       if (msgData is Map) {
         messageId = (msgData['id'] ?? msgData['message_id'])?.toString();
-      } //ถ้าmessage เป็น map ลองหา id || message_id //3
-
+      }
       messageId ??= (data['message_id'] ?? data['id'])?.toString();
       if (messageId != null) {
-        //ถ้าเจอยิง event เข้า controller()
         _messageDeletedController.add(
           MessageDeletedEvent(messageId: messageId),
         );
@@ -463,8 +491,6 @@ class ChatWebSocketService {
       log.e('Error handling message_deleted', error: e);
     }
   }
-
-  ///รับdata (Map) ==> ดึง messageId ==> แปลงค่า ==> ยิง event เข้า controller() ==> state listener เอาไป update
 
   void _handleMessageUpdated(Map<String, dynamic> data) {
     try {
@@ -609,7 +635,9 @@ class ChatWebSocketService {
     log.i('WebSocket disconnected intentionally');
   }
 
+  // ✅ dispose ต้อง removeObserver ด้วยเสมอ
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _lastToken = null;
     _cancelTimers();
     _reconnectTimer?.cancel();

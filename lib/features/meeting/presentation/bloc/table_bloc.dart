@@ -1,5 +1,4 @@
-// lib/features/meeting/presentation/bloc/table_bloc.dart
-
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:meta/meta.dart';
 
@@ -13,28 +12,24 @@ class TableBloc extends Bloc<TableEvent, TableState> {
   final TableRepository tableRepository;
 
   TableBloc({required this.tableRepository}) : super(TableInitial()) {
-    on<LoadTableView>(_onLoadTableView);
-    on<ChangeTimeSlot>(_onChangeTimeSlot);
-    on<ChangeDate>(_onChangeDate);
+    on<LoadTableView>(_onLoadTableView, transformer: droppable());
+    on<ChangeTimeSlot>(_onChangeTimeSlot, transformer: droppable());
+    on<ChangeDate>(_onChangeDate, transformer: droppable());
   }
 
   Future<void> _onLoadTableView(
     LoadTableView event,
     Emitter<TableState> emit,
   ) async {
-    print('📥 TableBloc: Loading with date=${event.date}, time=${event.time}');
     emit(TableLoading());
     try {
       final response = await tableRepository.getTableView(
         date: event.date,
         time: event.time,
       );
-      print('✅ TableBloc: Loaded ${response.tables.length} tables');
-      print('✅ TableBloc: myTable = ${response.myTable}');
-      print('✅ TableBloc: Emitting TableLoaded state');
       emit(TableLoaded(response));
-    } catch (e) {
-      print('❌ TableBloc error: $e');
+    } catch (e, stackTrace) {
+      addError(e, stackTrace);
       emit(TableError('Cannot load table view: $e'));
     }
   }
@@ -53,7 +48,8 @@ class TableBloc extends Bloc<TableEvent, TableState> {
         time: event.time,
       );
       emit(TableLoaded(response));
-    } catch (e) {
+    } catch (e, stackTrace) {
+      addError(e, stackTrace);
       emit(TableError('Cannot change time slot: $e'));
     }
   }
@@ -63,7 +59,8 @@ class TableBloc extends Bloc<TableEvent, TableState> {
     try {
       final response = await tableRepository.getTableView(date: event.date);
       emit(TableLoaded(response));
-    } catch (e) {
+    } catch (e, stackTrace) {
+      addError(e, stackTrace);
       emit(TableError('Cannot change date: $e'));
     }
   }

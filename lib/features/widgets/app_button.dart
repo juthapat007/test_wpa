@@ -10,7 +10,7 @@ class AppButton extends StatelessWidget {
   final double borderRadius;
   final double width;
   final bool isLoading;
-
+  final double height;
   const AppButton({
     super.key,
     required this.text,
@@ -21,6 +21,7 @@ class AppButton extends StatelessWidget {
     this.borderRadius = 6,
     this.width = double.infinity,
     this.isLoading = false,
+    this.height = 50,
   });
 
   @override
@@ -28,7 +29,7 @@ class AppButton extends StatelessWidget {
     final bool isDisabled = onPressed == null || isLoading;
 
     return SizedBox(
-      height: height.m,
+      height: height,
       width: width,
       child: ElevatedButton(
         onPressed: isDisabled ? null : onPressed,
@@ -52,8 +53,8 @@ class AppButton extends StatelessWidget {
                 text,
                 style: TextStyle(
                   color: textColor,
-                  fontSize: 14,
-                  // fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
       ),

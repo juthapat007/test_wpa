@@ -30,21 +30,6 @@ class DelegateModel {
     this.connectionStatus = 'none',
   });
 
-  // factory DelegateModel.fromJson(Map<String, dynamic> json) {
-  //   return DelegateModel(
-  //     id: json['id'] ?? 0,
-  //     name: json['name'] ?? '',
-  //     title: json['title'],
-  //     email: json['email'] ?? '',
-  //     companyName: json['company_name'] ?? '',
-  //     avatarUrl: json['avatar_url'] ?? '',
-  //     countryCode: json['country_code'] ?? '',
-  //     isConnected: json['is_connected'] ?? false,
-  //     teamId: json['team_id'],
-  //     firstLogin: json['first_login'],
-  //     connectionStatus: json['connection_status'] ?? 'none',
-  //   );
-  // }
   factory DelegateModel.fromJson(Map<String, dynamic> json) {
     return DelegateModel(
       id: json['id'] ?? 0,

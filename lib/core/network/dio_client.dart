@@ -22,7 +22,6 @@ class DioClient {
   );
   //dio ตัวนี้จะถูกใช้ทั้งแอป
 
-
   Future<void> init() async {
     dio.interceptors.clear();
     dio.interceptors.add(setupLogger());

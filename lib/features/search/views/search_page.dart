@@ -61,6 +61,7 @@ class _SearchPageState extends State<SearchPage> {
             icon: Icons.search,
             label: 'Search by name',
             onSearch: _onSearch,
+            debounceDuration: const Duration(milliseconds: 300),
           ),
 
           SizedBox(height: space.s),

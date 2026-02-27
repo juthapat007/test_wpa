@@ -18,13 +18,23 @@ class DelegateListTile extends StatelessWidget {
       ),
       contentPadding: EdgeInsets.zero,
       leading: CircleAvatar(
-        backgroundImage: delegate.avatarUrl.isNotEmpty
-            ? NetworkImage(delegate.avatarUrl)
-            : null,
-        child: delegate.avatarUrl.isEmpty
-            ? Text(delegate.delegateName[0].toUpperCase())
-            : null,
-      ),
+  backgroundColor: color.AppColors.primary.withOpacity(0.1),
+  foregroundImage: delegate.avatarUrl.isNotEmpty
+      ? NetworkImage(delegate.avatarUrl)
+      : null,
+  onForegroundImageError: delegate.avatarUrl.isNotEmpty
+      ? (_, __) {} // ← กัน exception ไม่ให้ throw
+      : null,
+  child: Text(
+    delegate.delegateName.isNotEmpty
+        ? delegate.delegateName[0].toUpperCase()
+        : '?',
+    style: const TextStyle(
+      color: color.AppColors.primary,
+      fontWeight: FontWeight.w600,
+    ),
+  ),
+),
       title: Text(
         delegate.delegateName,
         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
