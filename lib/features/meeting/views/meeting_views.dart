@@ -50,10 +50,9 @@ class _MeetingWidgetState extends State<MeetingWidget> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final state = ReadContext(context).read<ScheduleBloc>().state;
-      if (state is ScheduleLoaded && _selectedDateStr.isEmpty) {
-        // ✅ ถ้า data โหลดไว้แล้ว ใช้เลย ไม่ต้องยิง API ซ้ำ
+      if (state is ScheduleLoaded) {
         _onFirstScheduleLoaded(state.scheduleResponse);
-      } else {
+      } else if (state is! ScheduleLoading) {
         ReadContext(context).read<ScheduleBloc>().add(LoadSchedules());
       }
     });
@@ -187,7 +186,6 @@ class _MeetingWidgetState extends State<MeetingWidget> {
   }
 
   // ─── Build ────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
@@ -195,152 +193,174 @@ class _MeetingWidgetState extends State<MeetingWidget> {
       currentIndex: 0,
       appBarStyle: AppBarStyle.elegant,
       backgroundColor: color.AppColors.background,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const DateHeader(),
-            _buildDateTabBar(),
-            _buildTableGridSection(),
-            _buildScheduleSection(),
-          ],
-        ),
+      // ✅ BlocBuilder ครอบทั้งหมดที่เดียว
+      body: BlocConsumer<ScheduleBloc, ScheduleState>(
+        listener: (context, state) {
+          if (state is ScheduleLoaded && _selectedDateStr.isEmpty) {
+            _onFirstScheduleLoaded(state.scheduleResponse);
+          }
+        },
+        builder: (context, scheduleState) {
+          // ✅ Loading ที่เดียว — เต็มหน้าจอ
+          if (scheduleState is ScheduleLoading ||
+              scheduleState is ScheduleInitial) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (scheduleState is ScheduleError) {
+            return Center(child: Text(scheduleState.message));
+          }
+
+          // ✅ Loaded — render ทุกอย่างปกติ
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                const DateHeader(), //ไอ้เวลาปัจจุบันน่ะ
+                _buildDateTabBar(scheduleState),
+                _buildTableGridSection(scheduleState),
+                _buildScheduleSection(scheduleState),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
   // ─── Date Tab Bar ─────────────────────────────────────────────────────────
 
-  Widget _buildDateTabBar() {
-    return BlocBuilder<ScheduleBloc, ScheduleState>(
-      buildWhen: (prev, curr) =>
-          curr is ScheduleLoaded && prev is! ScheduleLoaded ||
-          curr is ScheduleLoading && prev is! ScheduleLoading,
-      builder: (context, state) {
-        if (state is ScheduleLoaded) {
-          return DateTabBar(
-            availableDates: state.scheduleResponse.availableDates,
-            selectedDate: _selectedDateStr.isNotEmpty
-                ? _selectedDateStr
-                : state.scheduleResponse.date,
-            onDateSelected: _onDateSelected,
+  Widget _buildDateTabBar(ScheduleState scheduleState) {
+    if (scheduleState is! ScheduleLoaded) return const SizedBox(height: 16);
+    return DateTabBar(
+      availableDates: scheduleState.scheduleResponse.availableDates,
+      selectedDate: _selectedDateStr.isNotEmpty
+          ? _selectedDateStr
+          : scheduleState.scheduleResponse.date,
+      onDateSelected: _onDateSelected,
+    );
+  }
+
+  Widget _buildScheduleSection(ScheduleState scheduleState) {
+    if (scheduleState is! ScheduleLoaded) return const SizedBox.shrink();
+    final schedules = scheduleState.scheduleResponse.schedules;
+    if (schedules.isEmpty) return _buildNoDataView();
+
+    final statuses = _getSchedulesWithStatus(schedules);
+    final current = _findByStatus(statuses, ScheduleStatus.now);
+    final next = _findByStatus(statuses, ScheduleStatus.next);
+    final toShow = [if (current != null) current, if (next != null) next];
+    if (toShow.isEmpty) return const SizedBox.shrink();
+
+    return _buildCompactScheduleList(toShow, hasCurrent: current != null);
+  }
+
+  Widget _buildTableGridSection(ScheduleState scheduleState) {
+    // ScheduleLoaded check สำหรับ leave banner
+    if (scheduleState is ScheduleLoaded) {
+      final statuses = _getSchedulesWithStatus(
+        scheduleState.scheduleResponse.schedules,
+      );
+      final current =
+          _findByStatus(statuses, ScheduleStatus.now)?.schedule ??
+          _findByStatus(statuses, ScheduleStatus.next)?.schedule;
+      if (current?.leave != null) return _buildLeaveBanner(current!);
+      if (current != null &&
+          (current.type == 'event' ||
+              current.tableNumber == null ||
+              current.tableNumber!.isEmpty)) {
+        // return _buildEventBanner(current);
+      }
+    }
+
+    // ✅ TableBloc Builder เดียว ไม่มี spinner ซ้อน
+    return BlocBuilder<TableBloc, TableState>(
+      builder: (context, tableState) {
+        if (tableState is TableLoading) return const _LoadingBox();
+        if (tableState is TableLoaded) {
+          final schedules = scheduleState is ScheduleLoaded
+              ? scheduleState.scheduleResponse.schedules
+              : <Schedule>[];
+          final viewTime = _normalizeTime(tableState.response.time);
+          final currentSchedule = schedules.cast<Schedule?>().firstWhere(
+            (s) =>
+                _normalizeTime(DateTimeHelper.formatApiTime12(s!.startAt)) ==
+                viewTime,
+            orElse: () => null,
+          );
+          return TableGridWidget(
+            response: tableState.response,
+            slotTypeMap: scheduleState is ScheduleLoaded
+                ? _buildSlotTypeMap(schedules)
+                : {},
+            currentSchedule: currentSchedule,
+            schedules: schedules,
+            onTimeSlotChanged: (time) =>
+                Modular.get<TableBloc>().add(ChangeTimeSlot(time)),
           );
         }
-        if (state is ScheduleLoading) {
-          return DateTabBar(
-            availableDates: const [],
-            selectedDate: _selectedDateStr,
-            onDateSelected: _onDateSelected,
-          );
-        }
-        return const SizedBox(height: 16);
+        if (tableState is TableError)
+          return _ErrorBox(message: tableState.message);
+        return _buildNoDataView();
       },
+    );
+  }
+
+  Widget _buildEventBanner(Schedule schedule) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        decoration: BoxDecoration(
+          color: color.AppColors.warning.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.AppColors.warning.withOpacity(0.4)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.AppColors.warning.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.event_note,
+                color: color.AppColors.warning,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    schedule.title ?? 'Event / Break',
+                    style: TextStyle(
+                      color: color.AppColors.textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'No table assignment for this time slot',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: color.AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   // ─── Table Grid ───────────────────────────────────────────────────────────
-
-  Widget _buildTableGridSection() {
-    return BlocBuilder<ScheduleBloc, ScheduleState>(
-      builder: (context, scheduleState) {
-        if (scheduleState is ScheduleLoaded) {
-          final statuses = _getSchedulesWithStatus(
-            scheduleState.scheduleResponse.schedules,
-          );
-          final current =
-              _findByStatus(statuses, ScheduleStatus.now)?.schedule ??
-              _findByStatus(statuses, ScheduleStatus.next)?.schedule;
-
-          if (current?.leave != null) return _buildLeaveBanner(current!);
-          if (current != null &&
-              (current.type == 'event' ||
-                  current.tableNumber == null ||
-                  current.tableNumber!.isEmpty)) {
-            return const SizedBox.shrink();
-          }
-        }
-
-        return BlocBuilder<TableBloc, TableState>(
-          builder: (context, tableState) {
-            if (tableState is TableLoading) return const _LoadingBox();
-
-            if (tableState is TableLoaded) {
-              // Sync date: backend is source of truth
-              if (_selectedDateStr != tableState.response.date) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted)
-                    setState(() => _selectedDateStr = tableState.response.date);
-                });
-              }
-
-              final schedules = scheduleState is ScheduleLoaded
-                  ? scheduleState.scheduleResponse.schedules
-                  : <Schedule>[];
-
-              final viewTime = _normalizeTime(tableState.response.time);
-              final currentSchedule = schedules.cast<Schedule?>().firstWhere(
-                (s) =>
-                    _normalizeTime(
-                      DateTimeHelper.formatApiTime12(s!.startAt),
-                    ) ==
-                    viewTime,
-                orElse: () => null,
-              );
-
-              return TableGridWidget(
-                response: tableState.response,
-                slotTypeMap: scheduleState is ScheduleLoaded
-                    ? _buildSlotTypeMap(schedules)
-                    : {},
-                currentSchedule: currentSchedule,
-                schedules: schedules,
-                onTimeSlotChanged: (time) =>
-                    Modular.get<TableBloc>().add(ChangeTimeSlot(time)),
-              );
-            }
-
-            if (tableState is TableError) {
-              return _ErrorBox(message: tableState.message);
-            }
-
-            return _buildNoDataView();
-          },
-        );
-      },
-    );
-  }
-
-  // ─── Schedule Section ─────────────────────────────────────────────────────
-
-  Widget _buildScheduleSection() {
-    return BlocBuilder<ScheduleBloc, ScheduleState>(
-      builder: (context, state) {
-        if (state is ScheduleLoading) {
-          return const SizedBox(
-            height: 400,
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        if (state is ScheduleLoaded) {
-          final schedules = state.scheduleResponse.schedules;
-          if (schedules.isEmpty) return _buildNoDataView();
-
-          final statuses = _getSchedulesWithStatus(schedules);
-
-          final current = _findByStatus(statuses, ScheduleStatus.now);
-          final next = _findByStatus(statuses, ScheduleStatus.next);
-          final toShow = [if (current != null) current, if (next != null) next];
-          if (toShow.isEmpty) return const SizedBox.shrink();
-
-          return _buildCompactScheduleList(toShow, hasCurrent: current != null);
-        }
-
-        if (state is ScheduleError) return _buildScheduleError(state.message);
-
-        return const SizedBox.shrink();
-      },
-    );
-  }
 
   Widget _buildScheduleError(String message) {
     return SizedBox(

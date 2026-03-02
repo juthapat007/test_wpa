@@ -1,11 +1,12 @@
 import 'package:dio/dio.dart';
+import 'package:test_wpa/features/search/data/models/delegate_model.dart';
 
 class DelegateApi {
   final Dio dio;
 
   DelegateApi(this.dio);
 
-  Future<Map<String, dynamic>> searchDelegates({
+  Future<DelegateResponseModel> searchDelegates({
     String? keyword,
     int page = 1,
     int perPage = 50,
@@ -16,6 +17,8 @@ class DelegateApi {
     if (friendsOnly) queryParams['friends_only'] = true;
 
     final response = await dio.get('/delegates', queryParameters: queryParams);
-    return response.data as Map<String, dynamic>;
+    return DelegateResponseModel.fromJson(
+      response.data as Map<String, dynamic>,
+    );
   }
 }

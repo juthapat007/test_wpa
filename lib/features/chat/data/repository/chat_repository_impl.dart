@@ -238,8 +238,9 @@ class ChatRepositoryImpl implements ChatRepository {
     await webSocketService.sendTypingIndicator(recipientId, isTyping);
   }
 
-  Future<void> enterRoom(String userId) async {
-    await webSocketService.enterRoom(userId);
+  Future<void> enterRoom(String roomId) async {
+    // await webSocketService.enterRoom(userId);
+    await webSocketService.enterRoom(roomId);
   }
 
   Future<void> leaveRoom(String userId) async {

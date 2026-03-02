@@ -13,7 +13,7 @@ class DioClient {
 
   final Dio dio = Dio(
     BaseOptions(
-      baseUrl: 'https://wpa-docker.onrender.com/api/v1',
+      baseUrl: 'https://wpa-docker-8aer.onrender.com/api/v1',
       // baseUrl: 'http://192.168.1.30:3000/api/v1',
       connectTimeout: const Duration(seconds: 60),
       receiveTimeout: const Duration(seconds: 60),
@@ -33,7 +33,7 @@ class DioClient {
   static Dio createDio() {
     final dio = Dio(
       BaseOptions(
-        baseUrl: 'https://wpa-docker.onrender.com/api/v1',
+        baseUrl: 'https://wpa-docker-8aer.onrender.com/api/v1',
         // baseUrl: 'http://192.168.1.30:3000/api/v1',
         connectTimeout: const Duration(seconds: 60),
         receiveTimeout: const Duration(seconds: 60),

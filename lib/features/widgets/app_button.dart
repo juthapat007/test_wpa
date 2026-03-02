@@ -21,7 +21,7 @@ class AppButton extends StatelessWidget {
     this.borderRadius = 6,
     this.width = double.infinity,
     this.isLoading = false,
-    this.height = 50,
+    this.height = 40,
   });
 
   @override
@@ -53,7 +53,7 @@ class AppButton extends StatelessWidget {
                 text,
                 style: TextStyle(
                   color: textColor,
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
               ),

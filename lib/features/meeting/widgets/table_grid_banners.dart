@@ -307,3 +307,52 @@ class NoTableCard extends StatelessWidget {
     );
   }
 }
+
+//==============================================================================================
+class BreakTimeBanner extends StatelessWidget {
+  final String? title;
+  const BreakTimeBanner({super.key, this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.amber[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.amber[300]!),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.amber[100],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.coffee_outlined,
+              size: 16,
+              color: Colors.amber[800],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              title != null && title!.isNotEmpty
+                  ? 'This slot is: $title — no table assigned'
+                  : 'This slot is a break — no table assigned',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: Colors.amber[900],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

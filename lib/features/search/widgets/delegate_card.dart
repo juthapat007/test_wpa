@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_modular/flutter_modular.dart';
+import 'package:test_wpa/core/theme/app_colors.dart';
 import 'package:test_wpa/features/search/domain/entities/delegate.dart';
 import 'package:test_wpa/features/search/presentation/bloc/search_bloc.dart';
 
@@ -11,13 +12,15 @@ class DelegateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasAvatar = delegate.avatarUrl.isNotEmpty;
+    final hasTitle = delegate.title.isNotEmpty;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 1,
       child: InkWell(
         onTap: () async {
-          // ✅ await การเปิดหน้า แล้ว refresh เพื่ออัปเดต badge
           await Modular.to.pushNamed(
             '/other_profile',
             arguments: {'delegate_id': delegate.id},
@@ -34,11 +37,11 @@ class DelegateCard extends StatelessWidget {
               // ── Avatar ────────────────────────────────────────────────
               CircleAvatar(
                 radius: 26,
-                backgroundImage: delegate.avatarUrl.isNotEmpty
-                    ? NetworkImage(delegate.avatarUrl)
+                backgroundImage: hasAvatar
+                    ? NetworkImage(delegate.avatarUrl) // ✅ non-null guaranteed
                     : null,
-                backgroundColor: const Color(0xFF4A90D9).withOpacity(0.15),
-                child: delegate.avatarUrl.isEmpty
+                backgroundColor: const Color(0xFF4A90D9).withValues(alpha: 0.15), // ✅ withValues แทน withOpacity
+                child: !hasAvatar
                     ? Text(
                         delegate.name.substring(0, 1).toUpperCase(),
                         style: const TextStyle(
@@ -65,10 +68,10 @@ class DelegateCard extends StatelessWidget {
                         color: Color(0xFF1A2340),
                       ),
                     ),
-                    if (delegate.title.isNotEmpty) ...[
+                    if (hasTitle) ...[                     // ✅ ใช้ตัวแปรที่ตรวจแล้ว
                       const SizedBox(height: 2),
                       Text(
-                        delegate.title,
+                        delegate.title,                   // ✅ non-null guaranteed
                         style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                       ),
                     ],
@@ -98,7 +101,7 @@ class DelegateCard extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: const Color(0xFF5DC98A).withOpacity(0.12),
+            color: AppColors.success.withValues(alpha: 0.12), // ✅
             borderRadius: BorderRadius.circular(20),
           ),
           child: const Text(
@@ -106,7 +109,7 @@ class DelegateCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF5DC98A),
+              color: AppColors.success,
             ),
           ),
         );
@@ -114,7 +117,7 @@ class DelegateCard extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: Colors.grey.withOpacity(0.12),
+            color: Colors.grey.withValues(alpha: 0.12), // ✅
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
@@ -130,7 +133,7 @@ class DelegateCard extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: const Color(0xFFD4A843).withOpacity(0.12),
+            color: const Color(0xFFD4A843).withValues(alpha: 0.12), // ✅
             borderRadius: BorderRadius.circular(20),
           ),
           child: const Text(
@@ -142,7 +145,7 @@ class DelegateCard extends StatelessWidget {
             ),
           ),
         );
-      default: // none
+      default:
         return const Icon(
           Icons.chevron_right,
           color: Color(0xFF8A94A6),

@@ -81,7 +81,7 @@ class ChatWebSocketService with WidgetsBindingObserver {
 
   // ─── AppLifecycle ─────────────────────────────────────────────────────────
   //
-  // ✅ จุดสำคัญ: ป้องกัน reconnect ตอน FCM ปลุกแอพ background
+  // จุดสำคัญ: ป้องกัน reconnect ตอน FCM ปลุกแอพ background
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -124,7 +124,7 @@ class ChatWebSocketService with WidgetsBindingObserver {
         await _channel!.sink.close();
         _channel = null;
       }
-      final wsUrl = 'wss://wpa-docker.onrender.com/cable?token=$token';
+      final wsUrl = 'wss://wpa-docker-8aer.onrender.com/cable?token=$token';
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
       _channel!.stream.listen(
         _handleMessage,
@@ -144,9 +144,8 @@ class ChatWebSocketService with WidgetsBindingObserver {
 
       await Future.delayed(const Duration(milliseconds: 500));
       await _subscribeChannels();
-
-      _startHeartbeat();
-      _startWatchdog();
+      _startHeartbeat(); // ทุก 25 วิ
+      _startWatchdog(); // เฝ้าดู connection
     } catch (e) {
       log.e('Failed to connect WebSocket', error: e);
       _onDisconnected();
@@ -196,6 +195,8 @@ class ChatWebSocketService with WidgetsBindingObserver {
     _heartbeatTimer = null;
     _watchdogTimer?.cancel();
     _watchdogTimer = null;
+    _presenceTimer?.cancel();
+    _presenceTimer = null;
   }
 
   // ─── Reconnect ────────────────────────────────────────────────────────────
@@ -604,23 +605,46 @@ class ChatWebSocketService with WidgetsBindingObserver {
     );
   }
 
-  Future<void> enterRoom(String userId) async {
-    if (!_isConnected || _chatChannelIdentifier == null) return;
-    _sendCommand(
-      'message',
-      _chatChannelIdentifier!,
-      data: {'action': 'enter_room', 'user_id': int.parse(userId)},
-    );
+  String? _roomChannelIdentifier; // เพิ่ม field นี้
+  Timer? _presenceTimer;
+  
+  Future<void> enterRoom(String roomId) async {
+    log.i('[Presence] enterRoom called with roomId=$roomId'); // ✅ เพิ่ม
+    if (!_isConnected || _chatChannelIdentifier == null) {
+      log.w('[Presence] skip — not connected'); // ✅ เพิ่ม
+      return;
+    }
+
+    _roomChannelIdentifier = jsonEncode({
+      'channel': 'ChatRoomChannel',
+      'room_id': int.tryParse(roomId) ?? roomId,
+    });
+    _sendCommand('subscribe', _roomChannelIdentifier!);
+    log.i('[Presence] subscribed ChatRoomChannel room=$roomId'); // ✅ เพิ่ม
+
+    _presenceTimer?.cancel();
+    _presenceTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+      if (_roomChannelIdentifier == null) return;
+      _sendCommand(
+        'message',
+        _roomChannelIdentifier!,
+        data: {'action': 'ping'},
+      );
+      log.v('[Presence] ping sent room=$roomId'); // ✅ เพิ่ม
+    });
   }
 
-  Future<void> leaveRoom(String userId) async {
-    if (!_isConnected || _chatChannelIdentifier == null) return;
-    _sendCommand(
-      'message',
-      _chatChannelIdentifier!,
-      data: {'action': 'leave_room', 'user_id': int.parse(userId)},
-    );
+  Future<void> leaveRoom(String roomId) async {
+    // 3. หยุด timer และ unsubscribe
+    _presenceTimer?.cancel();
+    _presenceTimer = null;
+
+    if (_roomChannelIdentifier != null) {
+      _sendCommand('unsubscribe', _roomChannelIdentifier!);
+      _roomChannelIdentifier = null;
+    }
   }
+ 
 
   Future<void> disconnect() async {
     _reconnectAttempts = _maxReconnectAttempts; // หยุด auto-reconnect

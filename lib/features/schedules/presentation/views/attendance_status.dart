@@ -299,8 +299,8 @@ class _ScheduleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final start = DateFormat('h:mm a').format(schedule.startAt);
-    final end = DateFormat('h:mm a').format(schedule.endAt);
+    final start = DateFormat('h:mm a').format(schedule.startAt.toLocal());
+    final end = DateFormat('h:mm a').format(schedule.endAt.toLocal());
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),

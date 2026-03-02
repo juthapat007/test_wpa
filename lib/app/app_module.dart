@@ -268,7 +268,8 @@ class AppModule extends Module {
       '/schedule',
       child: (_) => AppShell(
         child: BlocProvider.value(
-          value: Modular.get<ScheduleBloc>()..add(LoadSchedules()),
+          value: Modular.get<ScheduleBloc>(),
+          // value: Modular.get<ScheduleBloc>()..add(LoadSchedules()),
           child: const ScheduleWidget(),
         ),
       ),

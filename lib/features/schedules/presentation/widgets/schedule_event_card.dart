@@ -59,24 +59,21 @@ class MeetingCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              // ✅ ครอบด้วย Flexible กัน overflow
-              // Flexible(
-              // child:
-              Text(
-                '$startTime - $endTime',
-                // overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+              Flexible(
+                // ✅ เปลี่ยนจาก Text ธรรมดา
+                child: Text(
+                  '$startTime - $endTime',
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
-              // ),
-              SizedBox(width: 20),
-
-              ///มันทำให้โหลดข้อมูลช้าไม่ต้องเอามาก็ได้
+              SizedBox(width: 10),
               if (schedule.tableNumber != null) ...[
-                const SizedBox(width: space.xs),
+                const SizedBox(width: 8),
                 Text(
                   '${schedule.tableNumber}',
                   style: TextStyle(
@@ -90,8 +87,7 @@ class MeetingCard extends StatelessWidget {
               _buildBadge(helper),
             ],
           ),
-          SizedBox(height: 10),
-          //บอกรายละเอียดแผน
+
           Text(
             _buildSubtitleText(helper),
             style: TextStyle(
@@ -99,6 +95,8 @@ class MeetingCard extends StatelessWidget {
               fontWeight: FontWeight.w500,
               color: helper.statusColor,
             ),
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -117,7 +115,7 @@ class MeetingCard extends StatelessWidget {
 
   Widget _buildBadge(ScheduleCardHelper helper) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
       decoration: BoxDecoration(
         color: helper.statusColor.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20),
@@ -125,7 +123,7 @@ class MeetingCard extends StatelessWidget {
       child: Text(
         helper.statusText.toLowerCase(),
         style: TextStyle(
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: FontWeight.w600,
           color: helper.statusColor,
         ),
@@ -167,7 +165,7 @@ class EmptySlotCard extends StatelessWidget {
               Text(
                 startTime != null ? '$startTime - $endTime' : 'No Meeting',
                 style: const TextStyle(
-                  fontSize: 13,
+                  fontSize: 10,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
                 ),
@@ -185,7 +183,7 @@ class EmptySlotCard extends StatelessWidget {
                 child: Text(
                   'free',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 10,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textSecondary,
                   ),
@@ -198,7 +196,7 @@ class EmptySlotCard extends StatelessWidget {
           Text(
             'No Meeting',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 10,
               fontWeight: FontWeight.w500,
               color: AppColors.textSecondary,
             ),

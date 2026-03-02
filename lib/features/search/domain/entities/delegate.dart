@@ -1,25 +1,27 @@
+// delegate.dart — entity
+
 class Delegate {
   final int id;
   final String name;
-  final String title; // ✅ non-nullable ตามโค้ดเดิม
+  final String title;
   final String email;
   final String companyName;
   final String avatarUrl;
   final String countryCode;
-  final int teamId;
+  final int? teamId; // ✅ nullable
   final bool firstLogin;
   final bool isConnected;
-  final String connectionStatus; 
+  final String connectionStatus;
 
   Delegate({
     required this.id,
     required this.name,
-    required this.title,
+    this.title = '',
     required this.email,
-    required this.companyName,
-    required this.avatarUrl,
+    this.companyName = '',
+    this.avatarUrl = '',
     required this.countryCode,
-    required this.teamId,
+    this.teamId, // ✅ optional
     required this.firstLogin,
     required this.isConnected,
     this.connectionStatus = 'none',

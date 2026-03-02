@@ -32,10 +32,12 @@ class _SchedulePageState extends State<SchedulePage> {
   @override
   void initState() {
     super.initState();
-    // ✅ ยิง LoadSchedules ครั้งเดียวตอน init เท่านั้น
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        ReadContext(context).read<ScheduleBloc>().add(LoadSchedules());
+      if (!mounted) return;
+      final bloc = ReadContext(context).read<ScheduleBloc>();
+      //ไม่โหลดซ้ำถ้า loaded แล้ว
+      if (bloc.state is! ScheduleLoaded) {
+        bloc.add(LoadSchedules());
       }
     });
   }
@@ -259,7 +261,7 @@ class _SchedulePageState extends State<SchedulePage> {
           if (schedules.isEmpty) return const EmptyScheduleView();
 
           return ListView.separated(
-            padding: EdgeInsets.only(left: 16, right: 16, bottom: height.l),
+            padding: EdgeInsets.only(left: 16, right: 16, bottom: height.m),
             itemCount: schedules.length,
             separatorBuilder: (_, __) => const SizedBox(height: space.s),
             itemBuilder: (context, index) {

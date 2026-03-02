@@ -268,7 +268,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
       try {
         await (chatRepository as ChatRepositoryImpl).enterRoom(
-          event.room.participantId,
+          event.room.id,
+          // event.room.participantId,
         );
       } catch (e) {
         log.w('Failed to enter room', error: e);
@@ -700,7 +701,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     if (_selectedRoom == null) return;
     try {
       await (chatRepository as ChatRepositoryImpl).leaveRoom(
-        _selectedRoom!.participantId,
+        // _selectedRoom!.participantId,
+        _selectedRoom!.id,
       );
     } catch (e) {
       log.w('Failed to leave room', error: e);

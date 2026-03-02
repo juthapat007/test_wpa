@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
+import 'package:test_wpa/core/theme/app_colors.dart' as color;
 import 'package:test_wpa/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:test_wpa/features/other_profile/domain/entities/profile_detail.dart';
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_bloc.dart';
@@ -161,7 +162,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
             child: Row(
               children: [
                 _buildAvatar(profile),
@@ -265,23 +266,93 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
 
   // ─── Action Buttons ───────────────────────────────────────────────────────
 
+  // Widget _buildActionButtons(
+  //   ProfileDetail profile,
+  //   BuildContext context,
+  //   bool isSending,
+  // ) {
+  //   return Row(
+  //     children: [
+  //       Expanded(child: _buildConnectButton(profile, context, isSending)),
+  //       SizedBox(width: 4),
+  //       Expanded(
+  //         child: AppButton(
+  //           text: 'Chat',
+  //           // icon: Icons.chat_bubble_outline,
+  //           onPressed: () => ReadContext(context).read<ChatBloc>().add(
+  //             CreateChatRoom(profile.id.toString(), profile.name),
+  //           ),
+  //           isLoading: false,
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
   Widget _buildActionButtons(
     ProfileDetail profile,
     BuildContext context,
     bool isSending,
   ) {
+    // ✅ กรณี requestedToMe — แสดง 3 ปุ่มเท่ากัน
+    if (profile.connectionStatus == ConnectionStatus.requestedToMe) {
+      final requestId = profile.connectionRequestId;
+      if (requestId != null) {
+        return Row(
+          children: [
+            Expanded(
+              child: AppButton(
+                text: 'Reject',
+                backgroundColor: AppColors.warning,
+                textColor: AppColors.background,
+                isLoading: isSending,
+                onPressed: isSending
+                    ? null
+                    : () => ReadContext(context).read<ProfileDetailBloc>().add(
+                        RejectFriendRequest(requestId),
+                      ),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              child: AppButton(
+                text: 'Accept',
+                backgroundColor: AppColors.primary,
+                textColor: AppColors.background,
+                isLoading: isSending,
+                onPressed: isSending
+                    ? null
+                    : () => ReadContext(context).read<ProfileDetailBloc>().add(
+                        AcceptFriendRequest(requestId),
+                      ),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              child: AppButton(
+                text: 'Chat',
+                isLoading: false,
+                onPressed: () => ReadContext(context).read<ChatBloc>().add(
+                  CreateChatRoom(profile.id.toString(), profile.name),
+                ),
+              ),
+            ),
+          ],
+        );
+      }
+    }
+
+    // ✅ กรณีอื่น — Connect + Chat
     return Row(
       children: [
         Expanded(child: _buildConnectButton(profile, context, isSending)),
-        const SizedBox(width: 10),
+        const SizedBox(width: 4),
         Expanded(
           child: AppButton(
             text: 'Chat',
-            // icon: Icons.chat_bubble_outline,
+            isLoading: false,
             onPressed: () => ReadContext(context).read<ChatBloc>().add(
               CreateChatRoom(profile.id.toString(), profile.name),
             ),
-            isLoading: false,
           ),
         ),
       ],
@@ -319,50 +390,56 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
               ? null
               : () => _showCancelRequestDialog(context, profile),
         );
-
+      // case ConnectionStatus.requestedToMe:
+      // case ConnectionStatus.requestedToMe:
+      // final requestId = profile.connectionRequestId;
+      // if (requestId == null) {
+      //   return AppButton(
+      //     text: 'Loading...',
+      //     backgroundColor: Colors.grey[300]!,
+      //     textColor: Colors.grey,
+      //     onPressed: null,
+      //   );
+      // }
       case ConnectionStatus.requestedToMe:
-        final requestId = profile.connectionRequestId;
-        if (requestId == null) {
-          return AppButton(
-            text: 'Loading...',
-            backgroundColor: Colors.grey[300]!,
-            textColor: Colors.grey,
-            onPressed: null,
-          );
-        }
-        return Row(
-          children: [
-            Expanded(
-              //ค่อยมาแก้
-              child: AppButton(
-                text: 'Reject',
-
-                backgroundColor: AppColors.warning,
-                textColor: AppColors.background,
-                isLoading: isSending,
-                onPressed: isSending
-                    ? null
-                    : () => ReadContext(context).read<ProfileDetailBloc>().add(
-                        RejectFriendRequest(requestId),
-                      ),
-              ),
-            ),
-            const SizedBox(width: 5),
-            Expanded(
-              child: AppButton(
-                text: 'Accept',
-                backgroundColor: AppColors.primary,
-                textColor: AppColors.background,
-                isLoading: isSending,
-                onPressed: isSending
-                    ? null
-                    : () => ReadContext(context).read<ProfileDetailBloc>().add(
-                        AcceptFriendRequest(requestId),
-                      ),
-              ),
-            ),
-          ],
+        return AppButton(
+          text: 'Pending...',
+          backgroundColor: Colors.grey[300]!,
+          textColor: Colors.grey,
+          onPressed: null,
         );
+      // return Row(
+      //   // ✅ return Row แทน
+      //   children: [
+      //     Expanded(
+      //       child: AppButton(
+      //         text: 'Reject',
+      //         backgroundColor: AppColors.warning,
+      //         textColor: AppColors.background,
+      //         isLoading: isSending,
+      //         onPressed: isSending
+      //             ? null
+      //             : () => ReadContext(context).read<ProfileDetailBloc>().add(
+      //                 RejectFriendRequest(requestId),
+      //               ),
+      //       ),
+      //     ),
+      //     const SizedBox(width: 6),
+      //     Expanded(
+      //       child: AppButton(
+      //         text: 'Accept',
+      //         backgroundColor: AppColors.primary,
+      //         textColor: AppColors.background,
+      //         isLoading: isSending,
+      //         onPressed: isSending
+      //             ? null
+      //             : () => ReadContext(context).read<ProfileDetailBloc>().add(
+      //                 AcceptFriendRequest(requestId),
+      //               ),
+      //       ),
+      //     ),
+      //   ],
+      // );
 
       case ConnectionStatus.connected:
         return AppButton(

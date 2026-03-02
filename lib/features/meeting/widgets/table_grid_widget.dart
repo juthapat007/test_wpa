@@ -9,8 +9,7 @@ import 'package:test_wpa/features/meeting/widgets/table_slot_header.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/time_slot_chip.dart';
 import 'package:test_wpa/features/widgets/add_button_outline.dart';
-import 'package:test_wpa/features/widgets/app_button.dart';
-import 'package:test_wpa/features/widgets/app_dialog.dart';
+
 import 'package:test_wpa/features/meeting/views/team_schedule_sheet.dart';
 
 class TableGridWidget extends StatefulWidget {
@@ -74,6 +73,9 @@ class _TableGridWidgetState extends State<TableGridWidget> {
               onTimeSlotChanged: widget.onTimeSlotChanged,
             )
           else ...[
+            if (widget.currentSchedule?.type == 'event')
+              BreakTimeBanner(title: widget.currentSchedule?.title),
+
             if (!hasNoAssignment) MyTableBanner(response: widget.response),
             if (hasNoAssignment) const NoAssignmentBanner(),
             const SizedBox(height: 12),

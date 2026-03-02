@@ -890,12 +890,26 @@ class _FriendRequestCard extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
+                  // Expanded(
+                  //   child: OutlinedButton(
+                  //     onPressed: onNotNow,
+                  //     style: OutlinedButton.styleFrom(
+                  //       foregroundColor: color.AppColors.warning,
+                  //       side: BorderSide(color: color.AppColors.warning),
+                  //       shape: RoundedRectangleBorder(
+                  //         borderRadius: BorderRadius.circular(8),
+                  //       ),
+                  //     ),
+                  //     child: const Text('Reject'),
+                  //   ),
+                  // ),
+                  // const SizedBox(width: 6),
                   Expanded(
-                    child: OutlinedButton(
+                    child: ElevatedButton(
                       onPressed: onNotNow,
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: color.AppColors.warning,
-                        side: BorderSide(color: color.AppColors.warning),
+                        backgroundColor: color.AppColors.warning,
+                        foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -903,11 +917,12 @@ class _FriendRequestCard extends StatelessWidget {
                       child: const Text('Reject'),
                     ),
                   ),
-                  const SizedBox(width: 8),
+
+                  const SizedBox(width: 6),
                   Expanded(
                     child: ElevatedButton(
                       onPressed: onConfirm,
-                      style: ElevatedButton.styleFrom(
+                      style: OutlinedButton.styleFrom(
                         backgroundColor: color.AppColors.primary,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
