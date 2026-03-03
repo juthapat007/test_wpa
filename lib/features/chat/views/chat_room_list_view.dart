@@ -13,7 +13,6 @@ class ChatRoomListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<ChatBloc, ChatState>(
-      // ✅ FIX: listenWhen — ฟัง error เท่านั้น
       listenWhen: (_, curr) => curr is ChatError,
       listener: (context, state) {
         if (state is ChatError) {

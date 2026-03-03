@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 
 /// Reusable chat input field with send button
@@ -31,6 +32,25 @@ class ChatInputField extends StatelessWidget {
       child: SafeArea(
         child: Row(
           children: [
+            Container(
+              decoration: const BoxDecoration(shape: BoxShape.circle),
+              child: IconButton(
+                icon: const Icon(Icons.image, color: AppColors.primary),
+                onPressed: () {},
+              ),
+            ),
+            SizedBox(width: 4),
+            Container(
+              decoration: const BoxDecoration(shape: BoxShape.circle),
+              child: IconButton(
+                icon: const Icon(
+                  Icons.camera_alt_sharp,
+                  color: AppColors.primary,
+                ),
+                onPressed: () {},
+              ),
+            ),
+            SizedBox(width: 4),
             Expanded(
               child: TextField(
                 controller: controller,
@@ -41,7 +61,7 @@ class ChatInputField extends StatelessWidget {
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
-                  fillColor: AppColors.background,
+                  fillColor: AppColors.border,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 10,
@@ -52,7 +72,7 @@ class ChatInputField extends StatelessWidget {
                 onSubmitted: (_) => onSend(),
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Container(
               decoration: const BoxDecoration(
                 color: AppColors.primary,

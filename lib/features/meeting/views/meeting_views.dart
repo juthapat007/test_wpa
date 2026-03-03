@@ -37,6 +37,8 @@ class _MeetingWidgetState extends State<MeetingWidget> {
   bool _showFullList = false;
   bool _shownNoTodayDialog = false;
   String _selectedDateStr = '';
+  List<String> _tableDays = [];
+
   // ─── Lifecycle ────────────────────────────────────────────────────────────
 
   @override
@@ -231,11 +233,13 @@ class _MeetingWidgetState extends State<MeetingWidget> {
 
   Widget _buildDateTabBar(ScheduleState scheduleState) {
     if (scheduleState is! ScheduleLoaded) return const SizedBox(height: 16);
+    if (_tableDays.isEmpty) return const SizedBox(height: 16);
+
     return DateTabBar(
-      availableDates: scheduleState.scheduleResponse.availableDates,
+      availableDates: _tableDays,
       selectedDate: _selectedDateStr.isNotEmpty
           ? _selectedDateStr
-          : scheduleState.scheduleResponse.date,
+          : _tableDays.first,
       onDateSelected: _onDateSelected,
     );
   }
@@ -255,53 +259,48 @@ class _MeetingWidgetState extends State<MeetingWidget> {
   }
 
   Widget _buildTableGridSection(ScheduleState scheduleState) {
-    // ScheduleLoaded check สำหรับ leave banner
-    if (scheduleState is ScheduleLoaded) {
-      final statuses = _getSchedulesWithStatus(
-        scheduleState.scheduleResponse.schedules,
-      );
-      final current =
-          _findByStatus(statuses, ScheduleStatus.now)?.schedule ??
-          _findByStatus(statuses, ScheduleStatus.next)?.schedule;
-      if (current?.leave != null) return _buildLeaveBanner(current!);
-      if (current != null &&
-          (current.type == 'event' ||
-              current.tableNumber == null ||
-              current.tableNumber!.isEmpty)) {
-        // return _buildEventBanner(current);
-      }
-    }
-
-    // ✅ TableBloc Builder เดียว ไม่มี spinner ซ้อน
-    return BlocBuilder<TableBloc, TableState>(
-      builder: (context, tableState) {
-        if (tableState is TableLoading) return const _LoadingBox();
-        if (tableState is TableLoaded) {
-          final schedules = scheduleState is ScheduleLoaded
-              ? scheduleState.scheduleResponse.schedules
-              : <Schedule>[];
-          final viewTime = _normalizeTime(tableState.response.time);
-          final currentSchedule = schedules.cast<Schedule?>().firstWhere(
-            (s) =>
-                _normalizeTime(DateTimeHelper.formatApiTime12(s!.startAt)) ==
-                viewTime,
-            orElse: () => null,
-          );
-          return TableGridWidget(
-            response: tableState.response,
-            slotTypeMap: scheduleState is ScheduleLoaded
-                ? _buildSlotTypeMap(schedules)
-                : {},
-            currentSchedule: currentSchedule,
-            schedules: schedules,
-            onTimeSlotChanged: (time) =>
-                Modular.get<TableBloc>().add(ChangeTimeSlot(time)),
-          );
+    return BlocListener<TableBloc, TableState>(
+      // ✅ แยก listener ออกมา
+      listener: (context, tableState) {
+        if (tableState is TableLoaded && tableState.response.days.isNotEmpty) {
+          setState(() {
+            _tableDays = tableState.response.days;
+            if (!_tableDays.contains(_selectedDateStr)) {
+              _selectedDateStr = _tableDays.first;
+            }
+          });
         }
-        if (tableState is TableError)
-          return _ErrorBox(message: tableState.message);
-        return _buildNoDataView();
       },
+      child: BlocBuilder<TableBloc, TableState>(
+        builder: (context, tableState) {
+          if (tableState is TableLoading) return const _LoadingBox();
+          if (tableState is TableLoaded) {
+            final schedules = scheduleState is ScheduleLoaded
+                ? scheduleState.scheduleResponse.schedules
+                : <Schedule>[];
+            final viewTime = _normalizeTime(tableState.response.time);
+            final currentSchedule = schedules.cast<Schedule?>().firstWhere(
+              (s) =>
+                  _normalizeTime(DateTimeHelper.formatApiTime12(s!.startAt)) ==
+                  viewTime,
+              orElse: () => null,
+            );
+            return TableGridWidget(
+              response: tableState.response,
+              slotTypeMap: scheduleState is ScheduleLoaded
+                  ? _buildSlotTypeMap(schedules)
+                  : {},
+              currentSchedule: currentSchedule,
+              schedules: schedules,
+              onTimeSlotChanged: (time) =>
+                  Modular.get<TableBloc>().add(ChangeTimeSlot(time)),
+            );
+          }
+          if (tableState is TableError)
+            return _ErrorBox(message: tableState.message);
+          return _buildNoDataView();
+        },
+      ),
     );
   }
 
@@ -556,13 +555,15 @@ class _MeetingWidgetState extends State<MeetingWidget> {
     final dates = scheduleResponse.availableDates;
     if (dates.isEmpty) return;
 
-    // ✅ ถ้ามีวันนี้ใช้วันนี้ ถ้าไม่มีก็ใช้วันแรกที่มีเลย — ไม่ต้องกดปุ่ม
     final targetDate = dates.contains(today) ? today : dates.first;
 
-    setState(() => _selectedDateStr = targetDate);
+    setState(() {
+      _selectedDateStr = targetDate;
+      // ❌ ลบ _tableDays = dates; ออก — อย่า pre-fill จาก schedule
+    });
+
     Modular.get<TableBloc>().add(LoadTableView(date: targetDate));
 
-    // แสดง dialog เฉพาะตอนที่ต้องสลับวันเท่านั้น
     if (targetDate != today && !_shownNoTodayDialog) {
       _shownNoTodayDialog = true;
       _maybeShowNoTodayDialog(targetDate);

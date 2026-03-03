@@ -40,7 +40,9 @@ class DelegateCard extends StatelessWidget {
                 backgroundImage: hasAvatar
                     ? NetworkImage(delegate.avatarUrl) // ✅ non-null guaranteed
                     : null,
-                backgroundColor: const Color(0xFF4A90D9).withValues(alpha: 0.15), // ✅ withValues แทน withOpacity
+                backgroundColor: const Color(
+                  0xFF4A90D9,
+                ).withValues(alpha: 0.15), // ✅ withValues แทน withOpacity
                 child: !hasAvatar
                     ? Text(
                         delegate.name.substring(0, 1).toUpperCase(),
@@ -68,10 +70,11 @@ class DelegateCard extends StatelessWidget {
                         color: Color(0xFF1A2340),
                       ),
                     ),
-                    if (hasTitle) ...[                     // ✅ ใช้ตัวแปรที่ตรวจแล้ว
+                    if (hasTitle) ...[
+                      // ✅ ใช้ตัวแปรที่ตรวจแล้ว
                       const SizedBox(height: 2),
                       Text(
-                        delegate.title,                   // ✅ non-null guaranteed
+                        delegate.title, // ✅ non-null guaranteed
                         style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                       ),
                     ],
@@ -101,7 +104,7 @@ class DelegateCard extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: AppColors.success.withValues(alpha: 0.12), // ✅
+            // color: AppColors.success.withValues(alpha: 0.12), // ✅
             borderRadius: BorderRadius.circular(20),
           ),
           child: const Text(

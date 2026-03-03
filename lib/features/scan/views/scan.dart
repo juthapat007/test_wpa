@@ -5,9 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
+import 'package:test_wpa/core/network/dio_client.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 import 'package:test_wpa/features/scan/presentation/bloc/scan_bloc.dart';
-import 'package:test_wpa/features/scan/views/qr_scanner_screen.dart';
+import 'package:test_wpa/features/scan/views/scanner_screen.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:share_plus/share_plus.dart';
@@ -86,7 +87,7 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
 
     final result = await Navigator.push<String>(
       context,
-      MaterialPageRoute(builder: (context) => const QrScannerScreen()),
+      MaterialPageRoute(builder: (context) => const ScannerScreen()),
     );
 
     if (result != null && mounted) {
@@ -114,6 +115,33 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
 
       if (delegateId == null) {
         throw Exception('Cannot parse delegate_id from QR data: $qrData');
+      }
+
+      // ตรวจว่า scan QR ตัวเองหรือเปล่า
+      if (delegateId.toString() == _delegateId) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: const [
+                Icon(Icons.info_outline, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'This is your own QR Code!',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.secondary,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+        return; //หยุดไม่ให้ navigate ไป other_profile
       }
 
       Modular.to.pushNamed(
@@ -193,12 +221,12 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             if (_userName != null) ...[
+              SizedBox(height: height.l),
               Text(
                 '$_userName',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(color: AppColors.textPrimary),
               ),
               if (_userTitle != null) ...[
                 const SizedBox(height: 4),
@@ -214,10 +242,8 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
             ],
 
             Container(
-              padding: const EdgeInsets.all(space.l),
               decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.textPrimary.withOpacity(0.08),
@@ -226,22 +252,7 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
                   ),
                 ],
               ),
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(space.l),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: AppColors.border.withOpacity(0.5),
-                        width: 2,
-                      ),
-                    ),
-                    child: _buildQrCodeImage(qrCodeBase64),
-                  ),
-                ],
-              ),
+              child: _buildQrCodeImage(qrCodeBase64),
             ),
             const SizedBox(height: space.l),
 
@@ -258,13 +269,13 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
                 _buildActionButton(
                   icon: Icons.download_rounded,
                   label: 'Save QR',
-                  color: AppColors.primary,
+                  color: AppColors.primaryDark,
                   onTap: _saveQrCode,
                 ),
                 _buildActionButton(
                   icon: Icons.share,
                   label: 'Share',
-                  color: AppColors.primaryLight,
+                  color: AppColors.primary,
                   onTap: _shareQrCode,
                 ),
               ],
@@ -315,25 +326,6 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
     );
   }
 
-  // ========== Save QR ==========
-  // Future<void> _saveQrCode() async {
-  //   // TODO: implement save to gallery
-  //   ScaffoldMessenger.of(context).showSnackBar(
-  //     SnackBar(
-  //       content: const Row(
-  //         children: [
-  //           Icon(Icons.check_circle, color: Colors.white),
-  //           SizedBox(width: 8),
-  //           Text('QR Code saved to gallery'),
-  //         ],
-  //       ),
-  //       backgroundColor: AppColors.primary,
-  //       behavior: SnackBarBehavior.floating,
-  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-  //       duration: const Duration(seconds: 2),
-  //     ),
-  //   );
-  // }
   // ========== Save QR to Gallery ==========
   Future<void> _saveQrCode() async {
     if (_currentQrBase64 == null) return;
@@ -389,31 +381,20 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
 
   // ========== Share QR ==========
   Future<void> _shareQrCode() async {
-    if (_currentQrBase64 == null) return;
+    if (_delegateId == null) return;
 
-    try {
-      final base64String = _currentQrBase64!.contains(',')
-          ? _currentQrBase64!.split(',').last
-          : _currentQrBase64!;
-      final bytes = base64Decode(base64String);
+    final profileLink = '${DioClient.appBaseUrl}/#/other_profile/$_delegateId';
+    final shareText = StringBuffer();
 
-      // เขียนไฟล์ชั่วคราว
-      final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/qr_${_delegateId ?? 'code'}.png');
-      await file.writeAsBytes(bytes);
+    shareText.write(' ${_userName ?? 'Delegate Profile'}\n');
+    if (_userTitle != null) shareText.write('$_userTitle\n');
+    if (_userCompany != null) shareText.write(' $_userCompany\n');
+    shareText.write('\n$profileLink');
 
-      await Share.shareXFiles([
-        XFile(file.path),
-      ], text: 'QR Code${_userName != null ? " ของ $_userName" : ""}');
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('เกิดข้อผิดพลาด: $e'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-    }
+    await Share.share(
+      shareText.toString(),
+      subject: 'Profile${_userName != null ? "  $_userName" : ""}',
+    );
   }
 
   // ========== Search Dialog ==========

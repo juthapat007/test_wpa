@@ -159,24 +159,14 @@ class ChatRoomCard extends StatelessWidget {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }
 
-  // String _formatTime(DateTime dateTime) {
-  //   final now = DateTime.now();
-  //   final diff = now.difference(dateTime);
-
-  //   if (diff.inDays == 0) return DateFormat('HH:mm').format(dateTime);
-  //   if (diff.inDays == 1) return 'Yesterday';
-  //   if (diff.inDays < 7) return DateFormat('EEE').format(dateTime);
-  //   return DateFormat('MMM dd').format(dateTime);
-  // }
   String _formatTime(DateTime dateTime) {
     final now = DateTime.now();
     final diff = now.difference(dateTime);
     if (diff.inDays == 0)
-      return DateFormat('HH:mm').format(dateTime.toLocal()); // ✅
+      return DateFormat('h:mm a').format(dateTime.toLocal());
     if (diff.inDays == 1) return 'Yesterday';
-    if (diff.inDays < 7)
-      return DateFormat('EEE').format(dateTime.toLocal()); // ✅
-    return DateFormat('MMM dd').format(dateTime.toLocal()); // ✅
+    if (diff.inDays < 7) return DateFormat('EEE').format(dateTime.toLocal());
+    return DateFormat('MMM dd').format(dateTime.toLocal());
   }
 }
 

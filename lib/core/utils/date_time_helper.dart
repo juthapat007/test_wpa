@@ -59,18 +59,16 @@ class DateTimeHelper {
 
   /// Parse ISO datetime string → local DateTime
   /// รองรับ "2026-02-05T09:00:00.000Z" (UTC) หรือ "2026-02-05T09:00:00" (local)
-  static DateTime parseFlexibleDateTime(
-    String timeString,
-    String? conferenceDate,
-  ) {
-    final isoResult = DateTime.tryParse(timeString);
+  static DateTime parseFlexibleDateTime(String time, String date) {
+    final isoResult = DateTime.tryParse(time);
     if (isoResult != null) {
       return isoResult.toLocal();
     }
 
-    // Fallback: ถ้ายังมี human time หลุดมา
-    print('⚠️ DateTimeHelper: Unexpected non-ISO time "$timeString"');
-    return DateTime.now();
+    // Fallback: รวม date + time แล้ว parse
+    print('⚠️ DateTimeHelper: Unexpected non-ISO time "$time"');
+    final fallback = DateTime.tryParse('${date}T$time');
+    return (fallback ?? DateTime.now()).toLocal();
   }
 
   /// Parse date string → DateTime ("2026-02-05" หรือ "05/02/2026")

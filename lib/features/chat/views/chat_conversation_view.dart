@@ -222,7 +222,7 @@ class _ChatConversationViewState extends State<ChatConversationView> {
               controller: _messageController,
               onSend: _sendMessage,
             ),
-            SizedBox(height: height.l),
+            SizedBox(height: space_bottom.l),
           ],
         );
       },
@@ -231,7 +231,6 @@ class _ChatConversationViewState extends State<ChatConversationView> {
 
   // ─── Type-safe State Helpers ──────────────────────────────────────────────
 
-  /// ✅ ดึง room จาก state อย่าง type-safe — ไม่ใช้ dynamic แล้ว
   ChatRoom? _extractRoom(ChatState state) => switch (state) {
     ChatRoomSelected(:final room) => room,
     LoadingMoreMessages(:final room) => room,
@@ -249,12 +248,6 @@ class _ChatConversationViewState extends State<ChatConversationView> {
     NewMessageReceived(:final messages) => messages,
     _ => [],
   };
-
-  // bool _extractIsTyping(ChatState state) => switch (state) {
-  //   ChatRoomSelected(:final isTyping) => isTyping,
-  //   LoadingMoreMessages(:final isTyping) => isTyping,
-  //   _ => false,
-  // };
 
   bool _extractHasMore(ChatState state) => switch (state) {
     ChatRoomSelected(:final hasMoreMessages) => hasMoreMessages,

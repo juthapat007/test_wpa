@@ -368,8 +368,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       case ConnectionStatus.none:
         return AppButton(
           text: 'Add Friend',
-          // height: space_bottom.l,
-          // borderRadius: 12,
           backgroundColor: const Color(0xFF4A90D9),
           textColor: Colors.white,
           isLoading: isSending,
@@ -390,17 +388,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
               ? null
               : () => _showCancelRequestDialog(context, profile),
         );
-      // case ConnectionStatus.requestedToMe:
-      // case ConnectionStatus.requestedToMe:
-      // final requestId = profile.connectionRequestId;
-      // if (requestId == null) {
-      //   return AppButton(
-      //     text: 'Loading...',
-      //     backgroundColor: Colors.grey[300]!,
-      //     textColor: Colors.grey,
-      //     onPressed: null,
-      //   );
-      // }
+
       case ConnectionStatus.requestedToMe:
         return AppButton(
           text: 'Pending...',
@@ -408,44 +396,12 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           textColor: Colors.grey,
           onPressed: null,
         );
-      // return Row(
-      //   // ✅ return Row แทน
-      //   children: [
-      //     Expanded(
-      //       child: AppButton(
-      //         text: 'Reject',
-      //         backgroundColor: AppColors.warning,
-      //         textColor: AppColors.background,
-      //         isLoading: isSending,
-      //         onPressed: isSending
-      //             ? null
-      //             : () => ReadContext(context).read<ProfileDetailBloc>().add(
-      //                 RejectFriendRequest(requestId),
-      //               ),
-      //       ),
-      //     ),
-      //     const SizedBox(width: 6),
-      //     Expanded(
-      //       child: AppButton(
-      //         text: 'Accept',
-      //         backgroundColor: AppColors.primary,
-      //         textColor: AppColors.background,
-      //         isLoading: isSending,
-      //         onPressed: isSending
-      //             ? null
-      //             : () => ReadContext(context).read<ProfileDetailBloc>().add(
-      //                 AcceptFriendRequest(requestId),
-      //               ),
-      //       ),
-      //     ),
-      //   ],
-      // );
 
       case ConnectionStatus.connected:
         return AppButton(
           text: 'Connected ',
-          backgroundColor: const Color(0xFF5DC98A),
-          textColor: Colors.white,
+          backgroundColor: color.AppColors.success,
+          textColor: color.AppColors.background,
           onPressed: null,
         );
     }

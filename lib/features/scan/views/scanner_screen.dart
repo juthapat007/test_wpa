@@ -5,14 +5,14 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 
-class QrScannerScreen extends StatefulWidget {
-  const QrScannerScreen({super.key});
+class ScannerScreen extends StatefulWidget {
+  const ScannerScreen({super.key});
 
   @override
-  State<QrScannerScreen> createState() => _QrScannerScreenState();
+  State<ScannerScreen> createState() => _QrScannerScreenState();
 }
 
-class _QrScannerScreenState extends State<QrScannerScreen> {
+class _QrScannerScreenState extends State<ScannerScreen> {
   final MobileScannerController _controller = MobileScannerController(
     detectionSpeed: DetectionSpeed.noDuplicates,
     facing: CameraFacing.back,
@@ -36,11 +36,16 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
   }
 
   void _onDetect(BarcodeCapture capture) {
+    //เอาภาพมาจากกล้องไง
     if (_isProcessing) return;
+    //เอาไวกันการ pop หน้าซ้ำๆได้ค่าเดิมหลายรอบ ถ้าถูกมันจะยิงค่าไป setstate เลย
 
     final List<Barcode> barcodes = capture.barcodes;
+    //1ภาพอาจจะมีหลาย QR code เลยให้คืนค่า List<Barcode>
     for (final barcode in barcodes) {
+      //วนดู loop barcode 
       if (barcode.rawValue != null) {
+        
         setState(() {
           _isProcessing = true;
         });

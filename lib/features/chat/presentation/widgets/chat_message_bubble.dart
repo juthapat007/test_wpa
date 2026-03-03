@@ -38,7 +38,7 @@ class ChatMessageBubble extends StatelessWidget {
                 name: message.senderName,
                 radius: 16,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 4),
             ],
             Flexible(
               child: Container(
@@ -68,17 +68,6 @@ class ChatMessageBubble extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // if (!isMe && message.senderName.isNotEmpty) ...[
-                    //   Text(
-                    //     message.senderName,
-                    //     style: const TextStyle(
-                    //       color: AppColors.primary,
-                    //       fontSize: 12,
-                    //       fontWeight: FontWeight.w600,
-                    //     ),
-                    //   ),
-                    //   const SizedBox(height: 4),
-                    // ],
                     Text(
                       message.content,
                       style: TextStyle(
@@ -186,25 +175,15 @@ class ChatMessageBubble extends StatelessWidget {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }
 
-  // String _formatTime(DateTime dateTime) {
-  //   final now = DateTime.now();
-  //   final diff = now.difference(dateTime);
-  //   if (diff.inDays == 0) return DateFormat('HH:mm').format(dateTime);
-  //   if (diff.inDays == 1) {
-  //     return 'Yesterday ${DateFormat('HH:mm').format(dateTime)}';
-  //   }
-  //   return DateFormat('MMM dd, HH:mm').format(dateTime);
-  // }
+  // chat_message_bubble.dart
   String _formatTime(DateTime dateTime) {
     final now = DateTime.now();
     final diff = now.difference(dateTime);
     if (diff.inDays == 0)
-      return DateFormat(
-        'HH:mm',
-      ).format(dateTime.toLocal()); // ✅ เพิ่ม .toLocal()
+      return DateFormat('h:mm a').format(dateTime.toLocal()); // ✅ 4:50 PM
     if (diff.inDays == 1)
-      return 'Yesterday ${DateFormat('HH:mm').format(dateTime.toLocal())}'; // ✅
-    return DateFormat('MMM dd, HH:mm').format(dateTime.toLocal()); // ✅
+      return 'Yesterday ${DateFormat('h:mm a').format(dateTime.toLocal())}';
+    return DateFormat('MMM dd, h:mm a').format(dateTime.toLocal());
   }
 }
 

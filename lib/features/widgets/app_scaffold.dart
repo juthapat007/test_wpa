@@ -144,7 +144,7 @@ class AppScaffold extends StatelessWidget {
 
   Widget _buildBottomNavBar() {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 50),
+      padding: const EdgeInsets.only(bottom: 30),
       child: Container(
         decoration: const BoxDecoration(),
         child: AppBottomNavigationBar(currentIndex: currentIndex),

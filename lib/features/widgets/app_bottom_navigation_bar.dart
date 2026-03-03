@@ -58,7 +58,7 @@ class _ChatBadgeIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ChatBloc, ChatState>(
-      // ✅ rebuild เฉพาะเมื่อ rooms เปลี่ยน (unread count อาจเปลี่ยน)
+      // rebuild เฉพาะเมื่อ rooms เปลี่ยน (unread count อาจเปลี่ยน)
       buildWhen: (prev, curr) =>
           curr is ChatRoomsLoaded ||
           curr is ChatInitial ||

@@ -102,12 +102,16 @@ class ChatRepositoryImpl implements ChatRepository {
                   receiverId: '',
                   chatRoomId: json['id'] as int? ?? 0,
                   content: lastMessageText,
-                  createdAt: DateTime.parse(lastMessageAt),
+                  createdAt: DateTime.parse(lastMessageAt).toLocal(),
+                  // createdAt: DateTime.parse(json['created_at']).toLocal(),
+                  editedAt: json['edited_at'] != null
+                      ? DateTime.parse(json['edited_at']).toLocal()
+                      : null,
                 )
               : null,
           unreadCount: json['unread_count'] ?? 0,
           lastActiveAt: lastMessageAt != null
-              ? DateTime.parse(lastMessageAt)
+              ? DateTime.parse(lastMessageAt).toLocal()
               : null,
         );
       }).toList();
@@ -156,10 +160,11 @@ class ChatRepositoryImpl implements ChatRepository {
           receiverId: json['recipient']['id'].toString(),
           chatRoomId: json['chat_room_id'] as int? ?? 0,
           content: json['content'] ?? '',
-          createdAt: DateTime.parse(json['created_at']),
-          isRead: json['read_at'] != null,
+          createdAt: json['created_at'] != null
+              ? DateTime.parse(json['created_at']).toLocal()
+              : DateTime.now(),
           editedAt: json['edited_at'] != null
-              ? DateTime.parse(json['edited_at'])
+              ? DateTime.parse(json['edited_at']).toLocal()
               : null,
           isDeleted: json['is_deleted'] ?? false,
         );

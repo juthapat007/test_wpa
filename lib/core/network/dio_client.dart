@@ -4,6 +4,7 @@ import 'package:test_wpa/core/constants/setup_Logger.dart';
 import 'package:test_wpa/core/interceptors/auth_interceptor.dart';
 
 class DioClient {
+  static const String appBaseUrl = 'https://wpa-docker-8aer.onrender.com';
   static final DioClient _instance = DioClient._internal();
   factory DioClient() => _instance;
   DioClient._internal();
