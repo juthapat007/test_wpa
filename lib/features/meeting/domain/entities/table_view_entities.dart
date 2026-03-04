@@ -23,13 +23,15 @@ class TableInfo {
   final int tableId;
   final String tableNumber;
   final List<TableDelegate> delegates;
-  final List<String> nearTables; // เพิ่ม field นี้
+  final List<String> nearTables; 
+  final List<TableMeeting> meetings;
 
   TableInfo({
     required this.tableId,
     required this.tableNumber,
     required this.delegates,
     this.nearTables = const [],
+    this.meetings = const [], 
   });
 
   bool get isOccupied => delegates.isNotEmpty;
@@ -71,4 +73,64 @@ class ScheduleWithStatus {
   final ScheduleStatus status;
 
   ScheduleWithStatus({required this.schedule, required this.status});
+}
+
+class MeetingMember {
+  final int id;
+  final String name;
+  final String? title;
+  final String avatarUrl;
+
+  MeetingMember({
+    required this.id,
+    required this.name,
+    this.title,
+    required this.avatarUrl,
+  });
+}
+
+class MeetingSideA {
+  final int delegateId;
+  final String name;
+  final String? title;
+  final String company;
+  final String avatarUrl;
+
+  MeetingSideA({
+    required this.delegateId,
+    required this.name,
+    this.title,
+    required this.company,
+    required this.avatarUrl,
+  });
+}
+
+class MeetingSideB {
+  final int teamId;
+  final String teamName;
+  final String company;
+  final List<MeetingMember> members;
+
+  MeetingSideB({
+    required this.teamId,
+    required this.teamName,
+    required this.company,
+    required this.members,
+  });
+}
+
+class TableMeeting {
+  final int scheduleId;
+  final DateTime startAt;
+  final DateTime endAt;
+  final MeetingSideA sideA;
+  final MeetingSideB sideB;
+
+  TableMeeting({
+    required this.scheduleId,
+    required this.startAt,
+    required this.endAt,
+    required this.sideA,
+    required this.sideB,
+  });
 }

@@ -40,7 +40,6 @@ import 'package:test_wpa/features/schedules/data/services/schedule_api.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/domain/repositories/schedule_repository.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
-import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
 import 'package:test_wpa/features/schedules/presentation/page/schedule_widget.dart';
 
 // ✅ Schedule Others (เพิ่มใหม่)
@@ -76,7 +75,7 @@ import 'package:test_wpa/features/notification/data/services/notification_api.da
 import 'package:test_wpa/features/notification/domain/repositories/notification_repository.dart';
 import 'package:test_wpa/features/notification/presentation/bloc/notification_bloc.dart';
 import 'package:test_wpa/features/notification/presentation/page/notification.dart';
-
+import 'package:test_wpa/features/notification/presentation/bloc/friends_cubit.dart';
 // other Profile
 import 'package:test_wpa/features/other_profile/data/repository/profile_detail_repository_impl.dart';
 import 'package:test_wpa/features/other_profile/data/services/profile_detail_api.dart';
@@ -204,6 +203,11 @@ class AppModule extends Module {
       () => ScanBloc(qrRepository: Modular.get<QrRepository>()),
     );
 
+    /// ================= Friends =================
+    i.addLazySingleton<FriendsCubit>(
+      () => FriendsCubit(delegateRepository: Modular.get<DelegateRepository>()),
+    );
+
     /// ================= other Profile =================
     i.addLazySingleton<ProfileDetailApi>(
       () => ProfileDetailApi(Modular.get<Dio>()),
@@ -246,6 +250,7 @@ class AppModule extends Module {
           providers: [
             BlocProvider.value(value: Modular.get<ScheduleBloc>()),
             BlocProvider.value(value: Modular.get<TableBloc>()),
+            BlocProvider.value(value: Modular.get<FriendsCubit>()),
           ],
           child: const MeetingPage(),
         ),

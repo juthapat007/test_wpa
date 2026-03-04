@@ -127,6 +127,34 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     }
   }
 
+  // Future<void> _onMarkRead(
+  //   MarkNotificationRead event,
+  //   Emitter<NotificationState> emit,
+  // ) async {
+  //   try {
+  //     await notificationRepository.markAsRead(event.id);
+  //     final freshCount = await notificationRepository.getUnreadCount();
+  //     final currentState = state;
+  //     if (currentState is NotificationLoaded) {
+  //       final updated = currentState.notifications.map((n) {
+  //         if (n.id != event.id) return n;
+  //         return NotificationItem(
+  //           id: n.id,
+  //           type: n.type,
+  //           readAt: DateTime.now(),
+  //           createdAt: n.createdAt,
+  //           isUnread: false,
+  //           notifiable: n.notifiable,
+  //         );
+  //       }).toList();
+  //       emit(
+  //         NotificationLoaded(notifications: updated, unreadCount: freshCount),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     emit(NotificationError('Failed to mark as read: $e'));
+  //   }
+  // }
   Future<void> _onMarkRead(
     MarkNotificationRead event,
     Emitter<NotificationState> emit,
@@ -152,7 +180,9 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
         );
       }
     } catch (e) {
-      emit(NotificationError('Failed to mark as read: $e'));
+      // ✅ silently fail — ไม่ emit error ให้ list หาย
+      // แค่ log ไว้
+      print('⚠️ markAsRead failed: $e');
     }
   }
 

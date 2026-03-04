@@ -19,3 +19,8 @@ class WsFriendRequestReceived extends ConnectionEvent {
   final WsEvent event;
   WsFriendRequestReceived(this.event);
 }
+
+class SendConnectionRequest extends ConnectionEvent {
+  final int delegateId;
+  SendConnectionRequest(this.delegateId);
+}

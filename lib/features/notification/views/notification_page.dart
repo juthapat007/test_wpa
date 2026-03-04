@@ -122,10 +122,6 @@ class _TabBar extends StatelessWidget {
                 const Text('FRIENDS REQUESTS'),
                 const SizedBox(width: 4),
                 _PendingBadgeDot(),
-                // Padding(
-                //   padding: const EdgeInsets.only(bottom: 15),
-                //   child: _PendingBadgeDot(),
-                // ),
               ],
             ),
           ),
@@ -227,14 +223,13 @@ class _SystemNotificationsTab extends StatelessWidget {
     );
   }
 
+  // _handleTap → dispatch MarkNotificationRead
   void _handleTap(BuildContext context, NotificationItem item) {
-    // ✅ mark as read เมื่อกด
     if (item.isUnread) {
       ReadContext(
         context,
       ).read<NotificationBloc>().add(MarkNotificationRead(item.id));
     }
-    // ✅ เปิด detail sheet เพื่ออ่านเนื้อหาเต็ม (โดยเฉพาะ admin message)
     _showDetailSheet(context, item);
   }
 
@@ -890,20 +885,6 @@ class _FriendRequestCard extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  // Expanded(
-                  //   child: OutlinedButton(
-                  //     onPressed: onNotNow,
-                  //     style: OutlinedButton.styleFrom(
-                  //       foregroundColor: color.AppColors.warning,
-                  //       side: BorderSide(color: color.AppColors.warning),
-                  //       shape: RoundedRectangleBorder(
-                  //         borderRadius: BorderRadius.circular(8),
-                  //       ),
-                  //     ),
-                  //     child: const Text('Reject'),
-                  //   ),
-                  // ),
-                  // const SizedBox(width: 6),
                   Expanded(
                     child: ElevatedButton(
                       onPressed: onNotNow,

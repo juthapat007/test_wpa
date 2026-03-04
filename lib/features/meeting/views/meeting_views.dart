@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_modular/flutter_modular.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
 import 'package:test_wpa/core/utils/date_time_helper.dart';
 import 'package:test_wpa/features/meeting/domain/entities/table_view_entities.dart';
 import 'package:test_wpa/features/meeting/presentation/bloc/table_bloc.dart';
 import 'package:test_wpa/features/meeting/widgets/table_grid_widget.dart';
+import 'package:test_wpa/features/notification/presentation/bloc/friends_cubit.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
@@ -38,13 +40,15 @@ class _MeetingWidgetState extends State<MeetingWidget> {
   bool _shownNoTodayDialog = false;
   String _selectedDateStr = '';
   List<String> _tableDays = [];
+  String? _delegateId;
 
   // ─── Lifecycle ────────────────────────────────────────────────────────────
 
   @override
   void initState() {
     super.initState();
-    //นับเวลาที่เริ่มและ
+    _loadDelegateId();
+    Modular.get<FriendsCubit>().loadFriends();
     _timer = Timer.periodic(
       const Duration(minutes: 1),
       (_) => setState(() => _currentTime = DateTime.now()),
@@ -74,7 +78,14 @@ class _MeetingWidgetState extends State<MeetingWidget> {
       _showFullList = true;
     });
     ReadContext(context).read<ScheduleBloc>().add(LoadSchedules(date: date));
-    Modular.get<TableBloc>().add(LoadTableView(date: date));
+
+    final tableState = Modular.get<TableBloc>().state;
+    String? timeToLoad;
+    if (tableState is TableLoaded &&
+        tableState.response.timesToday.isNotEmpty) {
+      timeToLoad = _findCurrentTimeSlot(tableState.response.timesToday, date);
+    }
+    Modular.get<TableBloc>().add(LoadTableView(date: date, time: timeToLoad));
   }
 
   void _onScheduleTap(Schedule schedule) {
@@ -103,6 +114,32 @@ class _MeetingWidgetState extends State<MeetingWidget> {
       _normalizeTime(DateTimeHelper.formatApiTime12(s.startAt)):
           _resolveSlotType(s),
   };
+
+  int _toMinutes(String isoTime, String date) {
+    final dt = DateTimeHelper.parseFlexibleDateTime(isoTime, date).toLocal();
+    return dt.hour * 60 + dt.minute;
+  }
+
+  String? _findCurrentTimeSlot(List<String> timesToday, String date) {
+    if (timesToday.isEmpty) return null;
+
+    final nowMinutes = DateTime.now().hour * 60 + DateTime.now().minute;
+    final firstSlotMin = _toMinutes(timesToday[0], date);
+
+    if (nowMinutes < firstSlotMin) return timesToday[0];
+
+    for (int i = 0; i < timesToday.length; i++) {
+      final slotStartMin = _toMinutes(timesToday[i], date);
+      final slotEndMin = i + 1 < timesToday.length
+          ? _toMinutes(timesToday[i + 1], date)
+          : slotStartMin + 60;
+
+      if (nowMinutes >= slotStartMin && nowMinutes < slotEndMin) {
+        return timesToday[i];
+      }
+    }
+    return null;
+  }
 
   TimeSlotType _resolveSlotType(Schedule s) {
     if (s.leave != null) return TimeSlotType.leave;
@@ -146,17 +183,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
     }
   }
 
-  // ─── Initial date / dialog ────────────────────────────────────────────────
-  // วันเริ่มต้นซิงค์
-
-  void _syncInitialDate(String responseDate) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      setState(() => _selectedDateStr = responseDate);
-      Modular.get<TableBloc>().add(LoadTableView(date: responseDate));
-      _maybeShowNoTodayDialog(responseDate);
-    });
-  }
+  // ─── Dialog ───────────────────────────────────────────────────────────────
 
   void _maybeShowNoTodayDialog(String responseDate) {
     if (_shownNoTodayDialog) return;
@@ -188,6 +215,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
   }
 
   // ─── Build ────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
@@ -195,7 +223,6 @@ class _MeetingWidgetState extends State<MeetingWidget> {
       currentIndex: 0,
       appBarStyle: AppBarStyle.elegant,
       backgroundColor: color.AppColors.background,
-      // ✅ BlocBuilder ครอบทั้งหมดที่เดียว
       body: BlocConsumer<ScheduleBloc, ScheduleState>(
         listener: (context, state) {
           if (state is ScheduleLoaded && _selectedDateStr.isEmpty) {
@@ -203,21 +230,17 @@ class _MeetingWidgetState extends State<MeetingWidget> {
           }
         },
         builder: (context, scheduleState) {
-          // ✅ Loading ที่เดียว — เต็มหน้าจอ
           if (scheduleState is ScheduleLoading ||
               scheduleState is ScheduleInitial) {
             return const Center(child: CircularProgressIndicator());
           }
-
           if (scheduleState is ScheduleError) {
             return Center(child: Text(scheduleState.message));
           }
-
-          // ✅ Loaded — render ทุกอย่างปกติ
           return SingleChildScrollView(
             child: Column(
               children: [
-                const DateHeader(), //ไอ้เวลาปัจจุบันน่ะ
+                const DateHeader(),
                 _buildDateTabBar(scheduleState),
                 _buildTableGridSection(scheduleState),
                 _buildScheduleSection(scheduleState),
@@ -229,7 +252,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
     );
   }
 
-  // ─── Date Tab Bar ─────────────────────────────────────────────────────────
+  // ─── Sections ─────────────────────────────────────────────────────────────
 
   Widget _buildDateTabBar(ScheduleState scheduleState) {
     if (scheduleState is! ScheduleLoaded) return const SizedBox(height: 16);
@@ -260,7 +283,6 @@ class _MeetingWidgetState extends State<MeetingWidget> {
 
   Widget _buildTableGridSection(ScheduleState scheduleState) {
     return BlocListener<TableBloc, TableState>(
-      // ✅ แยก listener ออกมา
       listener: (context, tableState) {
         if (tableState is TableLoaded && tableState.response.days.isNotEmpty) {
           setState(() {
@@ -269,6 +291,14 @@ class _MeetingWidgetState extends State<MeetingWidget> {
               _selectedDateStr = _tableDays.first;
             }
           });
+
+          final currentSlot = _findCurrentTimeSlot(
+            tableState.response.timesToday,
+            tableState.response.date,
+          );
+          if (currentSlot != null && currentSlot != tableState.response.time) {
+            Modular.get<TableBloc>().add(ChangeTimeSlot(currentSlot));
+          }
         }
       },
       child: BlocBuilder<TableBloc, TableState>(
@@ -287,6 +317,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
             );
             return TableGridWidget(
               response: tableState.response,
+              myDelegateId: int.tryParse(_delegateId ?? '0') ?? 0,
               slotTypeMap: scheduleState is ScheduleLoaded
                   ? _buildSlotTypeMap(schedules)
                   : {},
@@ -300,92 +331,6 @@ class _MeetingWidgetState extends State<MeetingWidget> {
             return _ErrorBox(message: tableState.message);
           return _buildNoDataView();
         },
-      ),
-    );
-  }
-
-  Widget _buildEventBanner(Schedule schedule) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-        decoration: BoxDecoration(
-          color: color.AppColors.warning.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.AppColors.warning.withOpacity(0.4)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.AppColors.warning.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                Icons.event_note,
-                color: color.AppColors.warning,
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    schedule.title ?? 'Event / Break',
-                    style: TextStyle(
-                      color: color.AppColors.textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'No table assignment for this time slot',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: color.AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ─── Table Grid ───────────────────────────────────────────────────────────
-
-  Widget _buildScheduleError(String message) {
-    return SizedBox(
-      height: 300,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: color.AppColors.error),
-            SizedBox(height: space.m),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: color.AppColors.error),
-            ),
-            SizedBox(height: space.m),
-            ElevatedButton(
-              onPressed: () => ReadContext(context).read<ScheduleBloc>().add(
-                LoadSchedules(
-                  date: _selectedDateStr.isNotEmpty ? _selectedDateStr : null,
-                ),
-              ),
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -438,86 +383,6 @@ class _MeetingWidgetState extends State<MeetingWidget> {
     );
   }
 
-  Widget _buildLeaveBanner(Schedule schedule) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFE53935), Color(0xFFB71C1C)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.red.withOpacity(0.3),
-              blurRadius: 14,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.event_busy,
-                color: Colors.white,
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    schedule.leave ?? 'Leave',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.schedule,
-                        color: Colors.white60,
-                        size: 13,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        DateTimeHelper.formatTimeRange12(
-                          schedule.startAt,
-                          schedule.endAt,
-                        ),
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildCompactScheduleList(
     List<ScheduleWithStatus> toShow, {
     required bool hasCurrent,
@@ -556,18 +421,18 @@ class _MeetingWidgetState extends State<MeetingWidget> {
     if (dates.isEmpty) return;
 
     final targetDate = dates.contains(today) ? today : dates.first;
-
-    setState(() {
-      _selectedDateStr = targetDate;
-      // ❌ ลบ _tableDays = dates; ออก — อย่า pre-fill จาก schedule
-    });
-
+    setState(() => _selectedDateStr = targetDate);
     Modular.get<TableBloc>().add(LoadTableView(date: targetDate));
 
     if (targetDate != today && !_shownNoTodayDialog) {
       _shownNoTodayDialog = true;
       _maybeShowNoTodayDialog(targetDate);
     }
+  }
+
+  Future<void> _loadDelegateId() async {
+    final id = await const FlutterSecureStorage().read(key: 'delegate_id');
+    if (mounted) setState(() => _delegateId = id);
   }
 }
 
@@ -590,19 +455,4 @@ class _ErrorBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       SizedBox(height: 300, child: Center(child: Text(message)));
-}
-
-class _NoTodayDialog extends StatelessWidget {
-  const _NoTodayDialog();
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(mainAxisSize: MainAxisSize.min),
-      ),
-    );
-  }
 }

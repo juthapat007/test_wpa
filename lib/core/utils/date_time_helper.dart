@@ -58,17 +58,33 @@ class DateTimeHelper {
   // ========================================
 
   /// Parse ISO datetime string → local DateTime
-  /// รองรับ "2026-02-05T09:00:00.000Z" (UTC) หรือ "2026-02-05T09:00:00" (local)
   static DateTime parseFlexibleDateTime(String time, String date) {
+    // 1. ISO format — "2026-02-05T09:00:00.000Z"
     final isoResult = DateTime.tryParse(time);
-    if (isoResult != null) {
-      return isoResult.toLocal();
-    }
+    if (isoResult != null) return isoResult.toLocal();
 
-    // Fallback: รวม date + time แล้ว parse
-    print('⚠️ DateTimeHelper: Unexpected non-ISO time "$time"');
-    final fallback = DateTime.tryParse('${date}T$time');
-    return (fallback ?? DateTime.now()).toLocal();
+    // 2. ✅ 12-hour format — "9:30 AM" / "02:00 PM"
+    try {
+      final combined = '$date $time'; // "2026-02-05 9:30 AM"
+      final result = DateFormat('yyyy-MM-dd h:mm a').parse(combined);
+      return result;
+    } catch (_) {}
+
+    // 3. ✅ 12-hour zero-padded — "09:30 AM"
+    try {
+      final combined = '$date $time';
+      final result = DateFormat('yyyy-MM-dd hh:mm a').parse(combined);
+      return result;
+    } catch (_) {}
+
+    // 4. 24-hour fallback — "09:30"
+    try {
+      final result = DateFormat('yyyy-MM-dd HH:mm').parse('${date}T$time');
+      return result;
+    } catch (_) {}
+
+    print('⚠️ DateTimeHelper: Cannot parse time "$time" with date "$date"');
+    return DateTime.now();
   }
 
   /// Parse date string → DateTime ("2026-02-05" หรือ "05/02/2026")

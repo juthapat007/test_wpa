@@ -41,12 +41,14 @@ class TableInfoModel {
   final String tableNumber;
   final List<TableDelegateModel> delegates;
   final List<String> nearTables;
+  final List<TableMeetingModel> meetings;
 
   TableInfoModel({
     required this.tableId,
     required this.tableNumber,
     required this.delegates,
     this.nearTables = const [],
+    required this.meetings,
   });
 
   factory TableInfoModel.fromJson(Map<String, dynamic> json) {
@@ -61,6 +63,11 @@ class TableInfoModel {
       nearTables:
           (json['near_tables'] as List?)?.map((e) => e.toString()).toList() ??
           [],
+      meetings:
+          (json['meetings'] as List?)
+              ?.map((e) => TableMeetingModel.fromJson(e))
+              .toList() ??
+          [], // ✅
     );
   }
 
@@ -70,6 +77,7 @@ class TableInfoModel {
       tableNumber: tableNumber,
       delegates: delegates.map((d) => d.toEntity()).toList(),
       nearTables: nearTables,
+      meetings: meetings.map((m) => m.toEntity()).toList(),
     );
   }
 }
@@ -150,4 +158,130 @@ class TableViewResponseModel {
       layout: layout?.toEntity(),
     );
   }
+}
+
+class MeetingMemberModel {
+  final int id;
+  final String name;
+  final String? title;
+  final String avatarUrl;
+
+  MeetingMemberModel({
+    required this.id,
+    required this.name,
+    this.title,
+    required this.avatarUrl,
+  });
+  factory MeetingMemberModel.fromJson(Map<String, dynamic> json) {
+    return MeetingMemberModel(
+      id: json['id'],
+      name: json['name'] ?? '',
+      title: json['title'],
+      avatarUrl: json['avatar_url'] ?? '',
+    );
+  }
+  MeetingMember toEntity() =>
+      MeetingMember(id: id, name: name, title: title, avatarUrl: avatarUrl);
+}
+
+class MeetingSideAModel {
+  final int delegateId;
+  final String name;
+  final String? title;
+  final String company;
+  final String avatarUrl;
+
+  MeetingSideAModel({
+    required this.delegateId,
+    required this.name,
+    this.title,
+    required this.company,
+    required this.avatarUrl,
+  });
+
+  factory MeetingSideAModel.fromJson(Map<String, dynamic> json) {
+    return MeetingSideAModel(
+      delegateId: json['delegate_id'],
+      name: json['name'] ?? '',
+      title: json['title'],
+      company: json['company'] ?? '',
+      avatarUrl: json['avatar_url'] ?? '',
+    );
+  }
+
+  MeetingSideA toEntity() => MeetingSideA(
+    delegateId: delegateId,
+    name: name,
+    title: title,
+    company: company,
+    avatarUrl: avatarUrl,
+  );
+}
+
+class MeetingSideBModel {
+  final int teamId;
+  final String teamName;
+  final String company;
+  final List<MeetingMemberModel> members;
+
+  MeetingSideBModel({
+    required this.teamId,
+    required this.teamName,
+    required this.company,
+    required this.members,
+  });
+
+  factory MeetingSideBModel.fromJson(Map<String, dynamic> json) {
+    return MeetingSideBModel(
+      teamId: json['team_id'],
+      teamName: json['team_name'] ?? '',
+      company: json['company'] ?? '',
+      members:
+          (json['members'] as List?)
+              ?.map((e) => MeetingMemberModel.fromJson(e))
+              .toList() ??
+          [],
+    );
+  }
+
+  MeetingSideB toEntity() => MeetingSideB(
+    teamId: teamId,
+    teamName: teamName,
+    company: company,
+    members: members.map((m) => m.toEntity()).toList(),
+  );
+}
+
+class TableMeetingModel {
+  final int scheduleId;
+  final DateTime startAt;
+  final DateTime endAt;
+  final MeetingSideAModel sideA;
+  final MeetingSideBModel sideB;
+
+  TableMeetingModel({
+    required this.scheduleId,
+    required this.startAt,
+    required this.endAt,
+    required this.sideA,
+    required this.sideB,
+  });
+
+  factory TableMeetingModel.fromJson(Map<String, dynamic> json) {
+    return TableMeetingModel(
+      scheduleId: json['schedule_id'],
+      startAt: DateTime.parse(json['start_at']),
+      endAt: DateTime.parse(json['end_at']),
+      sideA: MeetingSideAModel.fromJson(json['side_a']),
+      sideB: MeetingSideBModel.fromJson(json['side_b']),
+    );
+  }
+
+  TableMeeting toEntity() => TableMeeting(
+    scheduleId: scheduleId,
+    startAt: startAt,
+    endAt: endAt,
+    sideA: sideA.toEntity(),
+    sideB: sideB.toEntity(),
+  );
 }

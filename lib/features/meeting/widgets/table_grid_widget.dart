@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 import 'package:test_wpa/features/meeting/domain/entities/table_view_entities.dart';
 import 'package:test_wpa/features/meeting/widgets/table_cell_widget.dart';
@@ -6,10 +7,11 @@ import 'package:test_wpa/features/meeting/widgets/table_detail_sheet.dart';
 import 'package:test_wpa/features/meeting/widgets/table_grid_banners.dart';
 import 'package:test_wpa/features/meeting/widgets/table_legend_widget.dart';
 import 'package:test_wpa/features/meeting/widgets/table_slot_header.dart';
+import 'package:test_wpa/features/notification/presentation/bloc/friends_cubit.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/time_slot_chip.dart';
 import 'package:test_wpa/features/widgets/add_button_outline.dart';
-
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_wpa/features/meeting/views/team_schedule_sheet.dart';
 
 class TableGridWidget extends StatefulWidget {
@@ -18,6 +20,7 @@ class TableGridWidget extends StatefulWidget {
   final ValueChanged<String>? onTimeSlotChanged;
   final Map<String, TimeSlotType> slotTypeMap;
   final List<Schedule> schedules;
+  final int myDelegateId;
 
   const TableGridWidget({
     super.key,
@@ -26,6 +29,7 @@ class TableGridWidget extends StatefulWidget {
     this.onTimeSlotChanged,
     this.slotTypeMap = const {},
     this.schedules = const [],
+    required this.myDelegateId,
   });
 
   @override
@@ -95,7 +99,20 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                 shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                 ),
-                builder: (_) => TeamScheduleSheet(response: widget.response),
+                // builder: (_) => TeamScheduleSheet(
+                //   response: widget.response,
+                //   myDelegateId: widget.myDelegateId,
+                // ),
+                builder: (_) => BlocProvider.value(
+                  value:
+                      Modular.get<
+                        FriendsCubit
+                      >(), // ✅ ส่ง FriendsCubit เข้าไปใน sheet
+                  child: TeamScheduleSheet(
+                    response: widget.response,
+                    myDelegateId: widget.myDelegateId,
+                  ),
+                ),
               ),
               isLoading: false,
             ),
