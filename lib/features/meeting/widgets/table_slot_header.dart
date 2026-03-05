@@ -226,16 +226,13 @@ class TableSlotHeader extends StatelessWidget {
         time: label,
         isSelected: time == currentTime,
         type: slotType,
-        onTap: () {
-          Navigator.of(ctx).pop();
-          // แปลง ISO → "9:00 AM" format ก่อนส่ง เพราะ API รับ 12h format
-          final parsed = DateTimeHelper.parseFlexibleDateTime(
-            time,
-            response.date,
-          );
-          final formatted = DateTimeHelper.formatApiTime12(parsed);
-          onTimeSlotChanged?.call(formatted);
-        },
+    onTap: () {
+  Navigator.of(ctx).pop();
+  // ✅ แปลง ISO → "HH:mm" ที่ backend รับได้
+  final parsed = DateTimeHelper.parseFlexibleDateTime(time, response.date);
+  final formatted = '${parsed.toLocal().hour.toString().padLeft(2, '0')}:${parsed.toLocal().minute.toString().padLeft(2, '0')}';
+  onTimeSlotChanged?.call(formatted);
+},
       );
     });
   }

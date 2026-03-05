@@ -241,7 +241,15 @@ class NoTableCard extends StatelessWidget {
             const Divider(height: 1),
             const SizedBox(height: 16),
             GestureDetector(
-              onTap: () => onTimeSlotChanged?.call(nextSlot!),
+              onTap: () {
+                final parsed = DateTimeHelper.parseFlexibleDateTime(
+                  nextSlot!,
+                  date,
+                );
+                final formatted =
+                    '${parsed.toLocal().hour.toString().padLeft(2, '0')}:${parsed.toLocal().minute.toString().padLeft(2, '0')}';
+                onTimeSlotChanged?.call(formatted);
+              },
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,

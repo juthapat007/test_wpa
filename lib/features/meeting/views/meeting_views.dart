@@ -32,7 +32,6 @@ class MeetingWidget extends StatefulWidget {
 }
 
 class _MeetingWidgetState extends State<MeetingWidget> {
-  // ─── State ───────────────────────────────────────────────────────────────
   Timer? _timer;
   DateTime _currentTime = DateTime.now();
   bool _showFullList = false;
@@ -41,8 +40,9 @@ class _MeetingWidgetState extends State<MeetingWidget> {
   bool _userSelectedTime = false;
   List<String> _tableDays = [];
   String? _delegateId;
+  bool _tableInitialized = false; // ✅ guard init ครั้งเดียว
 
-  // ─── Lifecycle ────────────────────────────────────────────────────────────
+  // ─── Lifecycle ──────────────────────────────────────────────────────────
 
   @override
   void initState() {
@@ -70,30 +70,17 @@ class _MeetingWidgetState extends State<MeetingWidget> {
     super.dispose();
   }
 
-  // ─── Actions ──────────────────────────────────────────────────────────────
+  // ─── Actions ────────────────────────────────────────────────────────────
 
   void _onDateSelected(String date) {
     setState(() {
       _selectedDateStr = date;
       _showFullList = true;
+      _userSelectedTime = false;
     });
     ReadContext(context).read<ScheduleBloc>().add(LoadSchedules(date: date));
-    
-    final tableState = Modular.get<TableBloc>().state;
-    String? timeToLoad;
-    if (tableState is TableLoaded &&
-        tableState.response.timesToday.isNotEmpty) {
-      final rawSlot = _findCurrentTimeSlot(
-        tableState.response.timesToday,
-        date,
-      );
-      // ✅ แปลง ISO → 12h format ก่อนส่ง
-      if (rawSlot != null) {
-        final parsed = DateTimeHelper.parseFlexibleDateTime(rawSlot, date);
-        timeToLoad = DateTimeHelper.formatApiTime12(parsed);
-      }
-    }
-    Modular.get<TableBloc>().add(LoadTableView(date: date, time: timeToLoad));
+    // ✅ ส่งแค่ date ไป ไม่ส่ง time → backend จะ return time ปัจจุบันมาเอง
+    Modular.get<TableBloc>().add(LoadTableView(date: date));
   }
 
   void _onScheduleTap(Schedule schedule) {
@@ -106,7 +93,17 @@ class _MeetingWidgetState extends State<MeetingWidget> {
     );
   }
 
-  // ─── Helpers ──────────────────────────────────────────────────────────────
+  void _onFirstScheduleLoaded(scheduleResponse) {
+    final today = DateTimeHelper.formatApiDate(DateTime.now());
+    final dates = scheduleResponse.availableDates;
+    if (dates.isEmpty) return;
+
+    // ✅ ไม่ส่ง date → backend จะเลือกวันที่เหมาะสมมาให้เอง
+    // listener จะ sync _selectedDateStr จาก response.date
+    Modular.get<TableBloc>().add(LoadTableView());
+  }
+
+  // ─── Helpers ────────────────────────────────────────────────────────────
 
   bool _isSelectableSchedule(Schedule s) =>
       s.type != 'event' &&
@@ -123,32 +120,6 @@ class _MeetingWidgetState extends State<MeetingWidget> {
           _resolveSlotType(s),
   };
 
-  int _toMinutes(String isoTime, String date) {
-    final dt = DateTimeHelper.parseFlexibleDateTime(isoTime, date).toLocal();
-    return dt.hour * 60 + dt.minute;
-  }
-
-  String? _findCurrentTimeSlot(List<String> timesToday, String date) {
-    if (timesToday.isEmpty) return null;
-
-    final nowMinutes = DateTime.now().hour * 60 + DateTime.now().minute;
-    final firstSlotMin = _toMinutes(timesToday[0], date);
-
-    if (nowMinutes < firstSlotMin) return timesToday[0];
-
-    for (int i = 0; i < timesToday.length; i++) {
-      final slotStartMin = _toMinutes(timesToday[i], date);
-      final slotEndMin = i + 1 < timesToday.length
-          ? _toMinutes(timesToday[i + 1], date)
-          : slotStartMin + 60;
-
-      if (nowMinutes >= slotStartMin && nowMinutes < slotEndMin) {
-        return timesToday[i];
-      }
-    }
-    return null;
-  }
-
   TimeSlotType _resolveSlotType(Schedule s) {
     if (s.leave != null) return TimeSlotType.leave;
     switch (s.type) {
@@ -164,7 +135,6 @@ class _MeetingWidgetState extends State<MeetingWidget> {
   List<ScheduleWithStatus> _getSchedulesWithStatus(List<Schedule> schedules) {
     final result = <ScheduleWithStatus>[];
     bool nextAssigned = false;
-
     for (final s in schedules) {
       late ScheduleStatus status;
       if (_currentTime.isBefore(s.startAt)) {
@@ -191,38 +161,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
     }
   }
 
-  // ─── Dialog ───────────────────────────────────────────────────────────────
-
-  void _maybeShowNoTodayDialog(String responseDate) {
-    if (_shownNoTodayDialog) return;
-    final today = DateTimeHelper.formatApiDate(DateTime.now());
-    if (responseDate == today) return;
-
-    _shownNoTodayDialog = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      showDialog(
-        context: context,
-        builder: (_) => AppDialog(
-          icon: Icons.event_note_outlined,
-          iconColor: color.AppColors.warning,
-          title: 'No meetings today',
-          description:
-              'You have no meetings scheduled for today.\nShowing the nearest available date instead.',
-          actions: [
-            AppDialogAction(
-              label: 'Got it',
-              isPrimary: true,
-              onPressed: () => Navigator.of(context).pop(),
-              backgroundColor: null,
-            ),
-          ],
-        ),
-      );
-    });
-  }
-
-  // ─── Build ────────────────────────────────────────────────────────────────
+  // ─── Build ──────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -260,12 +199,11 @@ class _MeetingWidgetState extends State<MeetingWidget> {
     );
   }
 
-  // ─── Sections ─────────────────────────────────────────────────────────────
+  // ─── Sections ───────────────────────────────────────────────────────────
 
   Widget _buildDateTabBar(ScheduleState scheduleState) {
     if (scheduleState is! ScheduleLoaded) return const SizedBox(height: 16);
     if (_tableDays.isEmpty) return const SizedBox(height: 16);
-
     return DateTabBar(
       availableDates: _tableDays,
       selectedDate: _selectedDateStr.isNotEmpty
@@ -279,60 +217,79 @@ class _MeetingWidgetState extends State<MeetingWidget> {
     if (scheduleState is! ScheduleLoaded) return const SizedBox.shrink();
     final schedules = scheduleState.scheduleResponse.schedules;
     if (schedules.isEmpty) return _buildNoDataView();
-
     final statuses = _getSchedulesWithStatus(schedules);
     final current = _findByStatus(statuses, ScheduleStatus.now);
     final next = _findByStatus(statuses, ScheduleStatus.next);
     final toShow = [if (current != null) current, if (next != null) next];
     if (toShow.isEmpty) return const SizedBox.shrink();
-
     return _buildCompactScheduleList(toShow, hasCurrent: current != null);
   }
 
   Widget _buildTableGridSection(ScheduleState scheduleState) {
     return BlocListener<TableBloc, TableState>(
       listener: (context, tableState) {
-        if (tableState is TableLoaded && tableState.response.days.isNotEmpty) {
+        if (tableState is! TableLoaded) return;
+
+        final responseDate = tableState.response.date;
+
+        // ✅ ครั้งแรก: sync วันและแสดงผลเลย ไม่ต้อง load ซ้ำ
+        if (!_tableInitialized) {
+          _tableInitialized = true;
           setState(() {
             _tableDays = tableState.response.days;
-            if (!_tableDays.contains(_selectedDateStr)) {
-              _selectedDateStr = _tableDays.first;
-            }
+            _selectedDateStr = responseDate;
           });
+          // load schedule ให้ตรงกับวันที่ backend return
+          ReadContext(
+            context,
+          ).read<ScheduleBloc>().add(LoadSchedules(date: responseDate));
+          return; // ✅ หยุดเลย ไม่ต้องทำอะไรเพิ่ม
+        }
 
-          if (!_userSelectedTime) {
-            final currentSlot = _findCurrentTimeSlot(
-              tableState.response.timesToday,
-              tableState.response.date,
+        // ✅ หลังจากนั้น: update days เฉยๆ
+        if (tableState.response.days.isNotEmpty) {
+          setState(() {
+            _tableDays = tableState.response.days;
+          });
+        }
+
+        // ✅ detect mismatch เมื่อ user กด tabbar แล้ว backend fallback
+        if (responseDate != _selectedDateStr && !_shownNoTodayDialog) {
+          _shownNoTodayDialog = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => AppDialog(
+                icon: Icons.calendar_month_outlined,
+                iconColor: color.AppColors.warning,
+                title: 'No data for this date',
+                description:
+                    'No meeting data found for the selected date.\n'
+                    'Nearest available date is $responseDate.',
+                actions: [
+                  AppDialogAction(
+                    label: 'Go to $responseDate',
+                    isPrimary: true,
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      setState(() {
+                        _selectedDateStr = responseDate;
+                        _shownNoTodayDialog = false;
+                        _userSelectedTime = false;
+                      });
+                      // ✅ load ใหม่พร้อม time ปัจจุบัน
+                      Modular.get<TableBloc>().add(
+                        LoadTableView(date: responseDate),
+                      );
+                    },
+                    backgroundColor: null,
+                  ),
+                ],
+              ),
             );
-            if (currentSlot != null) {
-              final parsed = DateTimeHelper.parseFlexibleDateTime(
-                currentSlot,
-                tableState.response.date,
-              );
-              final formatted = DateTimeHelper.formatApiTime12(parsed);
-
-              final currentFormatted = _normalizeTime(formatted);
-              final responseFormatted = _normalizeTime(
-                DateTimeHelper.formatApiTime12(
-                  DateTimeHelper.parseFlexibleDateTime(
-                    tableState.response.time,
-                    tableState.response.date,
-                  ),
-                ),
-              );
-
-              if (currentFormatted != responseFormatted) {
-                Modular.get<TableBloc>().add(
-                  LoadTableView(
-                    date: tableState.response.date,
-                    time: formatted,
-                  ),
-                );
-              }
-            }
-          }
-          _userSelectedTime = false;
+          });
         }
       },
       child: BlocBuilder<TableBloc, TableState>(
@@ -358,16 +315,19 @@ class _MeetingWidgetState extends State<MeetingWidget> {
               currentSchedule: currentSchedule,
               schedules: schedules,
               onTimeSlotChanged: (time) {
+                print(
+                  '⏰ onTimeSlotChanged: time=$time date=${tableState.response.date}',
+                );
                 _userSelectedTime = true;
+                // ✅ time เป็น ISO แล้ว ส่งตรงๆ ได้เลย
                 Modular.get<TableBloc>().add(
-                  ChangeTimeSlot(time, date: _selectedDateStr),
+                  ChangeTimeSlot(time, date: tableState.response.date),
                 );
               },
             );
           }
-          if (tableState is TableError) {
+          if (tableState is TableError)
             return _ErrorBox(message: tableState.message);
-          }
           return _buildNoDataView();
         },
       ),
@@ -454,27 +414,11 @@ class _MeetingWidgetState extends State<MeetingWidget> {
     );
   }
 
-  void _onFirstScheduleLoaded(scheduleResponse) {
-    final today = DateTimeHelper.formatApiDate(DateTime.now());
-    final dates = scheduleResponse.availableDates;
-    if (dates.isEmpty) return;
-
-    final targetDate = dates.contains(today) ? today : dates.first;
-    setState(() => _selectedDateStr = targetDate);
-    Modular.get<TableBloc>().add(LoadTableView(date: targetDate));
-
-    if (targetDate != today && !_shownNoTodayDialog) {
-      _shownNoTodayDialog = true;
-      _maybeShowNoTodayDialog(targetDate);
-    }
-  }
-
   Future<void> _loadDelegateId() async {
     final id = await const FlutterSecureStorage().read(key: 'delegate_id');
     if (mounted) setState(() => _delegateId = id);
   }
 }
-
 // ─── Private helper widgets ───────────────────────────────────────────────────
 
 class _LoadingBox extends StatelessWidget {
