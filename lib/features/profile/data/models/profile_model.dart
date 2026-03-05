@@ -65,8 +65,8 @@ class ProfileModel extends Equatable {
   static String _resolveUrl(String? url) {
     if (url == null || url.isEmpty) return '';
     if (url.startsWith('http')) return url;
-    final resolved = 'https://wpa-docker.onrender.com$url';
-    print('=== avatarUrl resolved: $resolved'); // ✅ เพิ่ม print
+    final resolved = 'https://wpa-docker-8aer.onrender.com$url';
+    print('=== avatarUrl resolved: $resolved');
     return resolved;
   }
 

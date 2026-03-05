@@ -5,10 +5,10 @@ sealed class ConnectionEvent {}
 
 class LoadConnectionRequests extends ConnectionEvent {}
 
-class AcceptConnectionRequest extends ConnectionEvent {
-  final int id;
-  AcceptConnectionRequest(this.id);
-}
+// class AcceptConnectionRequest extends ConnectionEvent {
+//   final int id;
+//   AcceptConnectionRequest(this.id);
+// }
 
 class RejectConnectionRequest extends ConnectionEvent {
   final int id;
@@ -23,4 +23,14 @@ class WsFriendRequestReceived extends ConnectionEvent {
 class SendConnectionRequest extends ConnectionEvent {
   final int delegateId;
   SendConnectionRequest(this.delegateId);
+}
+
+class AcceptConnectionRequest extends ConnectionEvent {
+  final int requestId;
+  AcceptConnectionRequest(this.requestId);
+}
+
+class CancelConnectionRequest extends ConnectionEvent {
+  final int delegateId;
+  CancelConnectionRequest(this.delegateId);
 }

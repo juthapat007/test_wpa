@@ -116,7 +116,7 @@ class NotificationSenderModel {
   static String? _resolveUrl(String? url) {
     if (url == null || url.isEmpty) return null;
     if (url.startsWith('http')) return url;
-    return 'https://wpa-docker.onrender.com$url';
+    return 'https://wpa-docker-8aer.onrender.com$url';
   }
 
   NotificationSender toEntity() {

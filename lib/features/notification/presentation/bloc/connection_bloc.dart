@@ -92,7 +92,7 @@ class ConnectionBloc extends Bloc<ConnectionEvent, ConnectionRequestState> {
     Emitter<ConnectionRequestState> emit,
   ) async {
     try {
-      await connectionRepository.acceptRequest(event.id);
+      await connectionRepository.acceptRequest(event.requestId);
       final requests = await connectionRepository.getReceivedRequests();
       emit(ConnectionRequestLoaded(requests: requests));
       emit(ConnectionRequestActionSuccess('Connection accepted'));

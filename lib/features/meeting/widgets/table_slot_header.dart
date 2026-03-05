@@ -5,6 +5,7 @@ import 'package:test_wpa/core/utils/date_time_helper.dart';
 import 'package:test_wpa/features/meeting/domain/entities/table_view_entities.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/time_slot_chip.dart';
+import 'package:test_wpa/features/widgets/app_button.dart';
 
 class TableSlotHeader extends StatelessWidget {
   final TableViewResponse response;
@@ -76,20 +77,21 @@ class TableSlotHeader extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.08),
+                    border: Border.all(color: AppColors.primary),
+                    color: AppColors.primary,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.schedule, size: 16, color: AppColors.primary),
+                      Icon(Icons.schedule, size: 16, color: AppColors.border),
                       SizedBox(width: space.xs),
                       Text(
                         'Slots time',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
+                          color: AppColors.border,
                         ),
                       ),
                     ],
@@ -220,13 +222,28 @@ class TableSlotHeader extends StatelessWidget {
       ).replaceAll(' ', '').toLowerCase();
       final slotType = slotTypeMap[lookupKey] ?? TimeSlotType.unknown;
 
+      // return TimeSlotChip(
+      //   time: label,
+      //   isSelected: time == currentTime,
+      //   type: slotType,
+      //   onTap: () {
+      //     Navigator.of(ctx).pop();
+      //     onTimeSlotChanged?.call(time);
+      //   },
+      // );
       return TimeSlotChip(
         time: label,
         isSelected: time == currentTime,
         type: slotType,
         onTap: () {
           Navigator.of(ctx).pop();
-          onTimeSlotChanged?.call(time);
+          // แปลง ISO → "9:00 AM" format ก่อนส่ง เพราะ API รับ 12h format
+          final parsed = DateTimeHelper.parseFlexibleDateTime(
+            time,
+            response.date,
+          );
+          final formatted = DateTimeHelper.formatApiTime12(parsed);
+          onTimeSlotChanged?.call(formatted);
         },
       );
     });

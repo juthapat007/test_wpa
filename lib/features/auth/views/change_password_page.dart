@@ -34,7 +34,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   void _handleChange() {
     if (!_formKey.currentState!.validate()) return;
 
-    // ✅ capture bloc ก่อนเปิด dialog เพราะ dialog context ไม่มี AuthBloc
+    //capture bloc ก่อนเปิด dialog เพราะ dialog context ไม่มี AuthBloc
     final bloc = BlocProvider.of<AuthBloc>(context);
 
     // showDialog เอาไว้แสดง pop_up

@@ -13,6 +13,7 @@ import 'package:test_wpa/features/schedules/presentation/widgets/time_slot_chip.
 import 'package:test_wpa/features/widgets/add_button_outline.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_wpa/features/meeting/views/team_schedule_sheet.dart';
+import 'package:test_wpa/features/widgets/app_button.dart';
 
 class TableGridWidget extends StatefulWidget {
   final TableViewResponse response;
@@ -89,20 +90,20 @@ class _TableGridWidgetState extends State<TableGridWidget> {
             const TableLegend(showLeave: true),
             const SizedBox(height: 12),
 
-            AddButtonOutline(
+            AppButton(
               text: 'View team schedule',
-              icon: Icons.people_outline,
-              color: AppColors.primary,
+              textColor: AppColors.textOnPrimary,
+              backgroundColor: AppColors.primary,
+
+              // icon: Icons.people_outline,
+              // color: AppColors.primary,
               onPressed: () => showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,
                 shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                 ),
-                // builder: (_) => TeamScheduleSheet(
-                //   response: widget.response,
-                //   myDelegateId: widget.myDelegateId,
-                // ),
+
                 builder: (_) => BlocProvider.value(
                   value:
                       Modular.get<

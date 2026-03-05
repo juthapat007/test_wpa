@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
 import 'package:test_wpa/core/utils/date_time_helper.dart';
 import 'package:test_wpa/features/meeting/domain/entities/table_view_entities.dart';
@@ -39,6 +38,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
   bool _showFullList = false;
   bool _shownNoTodayDialog = false;
   String _selectedDateStr = '';
+  bool _userSelectedTime = false;
   List<String> _tableDays = [];
   String? _delegateId;
 
@@ -283,6 +283,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
 
   Widget _buildTableGridSection(ScheduleState scheduleState) {
     return BlocListener<TableBloc, TableState>(
+
       listener: (context, tableState) {
         if (tableState is TableLoaded && tableState.response.days.isNotEmpty) {
           setState(() {
@@ -292,13 +293,17 @@ class _MeetingWidgetState extends State<MeetingWidget> {
             }
           });
 
-          final currentSlot = _findCurrentTimeSlot(
-            tableState.response.timesToday,
-            tableState.response.date,
-          );
-          if (currentSlot != null && currentSlot != tableState.response.time) {
-            Modular.get<TableBloc>().add(ChangeTimeSlot(currentSlot));
+          if (!_userSelectedTime) {
+            final currentSlot = _findCurrentTimeSlot(
+              tableState.response.timesToday,
+              tableState.response.date,
+            );
+            if (currentSlot != null &&
+                currentSlot != tableState.response.time) {
+              Modular.get<TableBloc>().add(ChangeTimeSlot(currentSlot));
+            }
           }
+          _userSelectedTime = false;
         }
       },
       child: BlocBuilder<TableBloc, TableState>(
@@ -323,8 +328,10 @@ class _MeetingWidgetState extends State<MeetingWidget> {
                   : {},
               currentSchedule: currentSchedule,
               schedules: schedules,
-              onTimeSlotChanged: (time) =>
-                  Modular.get<TableBloc>().add(ChangeTimeSlot(time)),
+              onTimeSlotChanged: (time) {
+                _userSelectedTime = true; 
+                Modular.get<TableBloc>().add(ChangeTimeSlot(time));
+              },
             );
           }
           if (tableState is TableError)

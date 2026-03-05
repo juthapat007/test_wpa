@@ -64,9 +64,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Future<void> _onLogout(AuthLogout event, Emitter<AuthState> emit) async {
     try {
-      // NotificationWebSocketService.instance.disconnect();
       await Modular.get<ChatWebSocketService>().disconnect();
-      // ✅ เพิ่มตรงนี้ — ส่ง empty string ก่อน logout
+      //ส่ง empty string ก่อน logout
       await authRepository.registerDeviceToken("");
       await authRepository.logout();
       emit(AuthUnauthenticated());

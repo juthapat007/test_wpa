@@ -229,7 +229,6 @@ class AppModule extends Module {
     r.child(
       '/',
       child: (_) => BlocProvider.value(
-        //  .value จะไม่ dispose bloc
         value: Modular.get<AuthBloc>(),
         child: const SplashPage(),
       ),
@@ -251,13 +250,13 @@ class AppModule extends Module {
             BlocProvider.value(value: Modular.get<ScheduleBloc>()),
             BlocProvider.value(value: Modular.get<TableBloc>()),
             BlocProvider.value(value: Modular.get<FriendsCubit>()),
+            BlocProvider.value(value: Modular.get<ConnectionBloc>()), //
           ],
           child: const MeetingPage(),
         ),
       ),
     );
 
-    // /search
     r.child(
       '/search',
       child: (_) => AppShell(
@@ -268,7 +267,6 @@ class AppModule extends Module {
       ),
     );
 
-    // /schedule
     r.child(
       '/schedule',
       child: (_) => AppShell(
@@ -280,7 +278,6 @@ class AppModule extends Module {
       ),
     );
 
-    // /scan
     r.child(
       '/scan',
       child: (_) => AppShell(
@@ -291,7 +288,6 @@ class AppModule extends Module {
       ),
     );
 
-    // /profile
     r.child(
       '/profile',
       child: (_) => AppShell(
@@ -302,13 +298,11 @@ class AppModule extends Module {
       ),
     );
 
-    // /notification — AppShell already provides NotificationBloc + ConnectionBloc + ChatBloc
     r.child(
       '/notification',
       child: (_) => AppShell(child: const Notification()),
     );
 
-    // /chat
     r.child('/chat', child: (_) => AppShell(child: const ConnectedChat()));
 
     r.child(
@@ -327,7 +321,7 @@ class AppModule extends Module {
           );
         }
 
-        // ✅ ครอบด้วย AppShell ก่อน เพื่อให้ได้ ChatBloc, NotificationBloc, ConnectionBloc
+        // ครอบด้วย AppShell ก่อน เพื่อให้ได้ ChatBloc, NotificationBloc, ConnectionBloc
         return AppShell(
           child: BlocProvider(
             create: (_) =>

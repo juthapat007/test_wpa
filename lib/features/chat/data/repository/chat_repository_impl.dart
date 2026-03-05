@@ -63,11 +63,10 @@ class ChatRepositoryImpl implements ChatRepository {
   @override
   Future<void> sendMessage(ChatMessage message) async {
     try {
-      // ✅ FIX: ส่ง recipientId ไปด้วย เพราะ backend ต้องการ recipient_id
       await api.sendMessage(
         chatRoomId: message.chatRoomId,
         content: message.content,
-        recipientId: message.receiverId, // ✅ เพิ่มตรงนี้
+        recipientId: message.receiverId,
       );
     } catch (e) {
       debugPrint('REST send failed, falling back to WebSocket: $e');
@@ -91,9 +90,7 @@ class ChatRepositoryImpl implements ChatRepository {
           participantId: delegate['id'].toString(),
           participantName: delegate['name'] ?? 'Unknown',
 
-          participantAvatar: _resolveAvatarUrl(
-            delegate['avatar_url'],
-          ), // ✅ แก้ตรงนี้
+          participantAvatar: _resolveAvatarUrl(delegate['avatar_url']),
           lastMessage: lastMessageText != null && lastMessageAt != null
               ? ChatMessage(
                   id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -252,11 +249,9 @@ class ChatRepositoryImpl implements ChatRepository {
     await webSocketService.leaveRoom(userId);
   }
 
-  // ✅ เพิ่มตรงนี้ — ก่อนปิด } ของ class
   static String? _resolveAvatarUrl(String? url) {
     if (url == null || url.isEmpty) return null;
     if (url.startsWith('http')) return url;
-    return 'https://wpa-docker.onrender.com$url';
+    return 'https://wpa-docker-8aer.onrender.com$url';
   }
-}  // ← ปิด class
-
+}

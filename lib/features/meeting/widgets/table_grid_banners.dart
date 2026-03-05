@@ -95,17 +95,11 @@ class MyTableBanner extends StatelessWidget {
 
           // ─── Time pill ────────────────────────────────────────────────────
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.06),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.primary.withOpacity(0.15)),
-            ),
             child: Text(
               timeRange,
               style: const TextStyle(
                 color: AppColors.primary,
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
             ),

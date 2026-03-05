@@ -140,15 +140,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         backgroundColor: AppColors.background,
                         elevation: 0,
                       ),
-
-                      // const Text(
-                      //   'Create a secure password',
-                      //   style: TextStyle(
-                      //     fontSize: 22,
-                      //     fontWeight: FontWeight.bold,
-                      //     color: AppColors.textPrimary,
-                      //   ),
-                      // ),
                       SizedBox(height: space.xs),
 
                       const Text(
