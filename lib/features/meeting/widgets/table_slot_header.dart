@@ -222,15 +222,6 @@ class TableSlotHeader extends StatelessWidget {
       ).replaceAll(' ', '').toLowerCase();
       final slotType = slotTypeMap[lookupKey] ?? TimeSlotType.unknown;
 
-      // return TimeSlotChip(
-      //   time: label,
-      //   isSelected: time == currentTime,
-      //   type: slotType,
-      //   onTap: () {
-      //     Navigator.of(ctx).pop();
-      //     onTimeSlotChanged?.call(time);
-      //   },
-      // );
       return TimeSlotChip(
         time: label,
         isSelected: time == currentTime,

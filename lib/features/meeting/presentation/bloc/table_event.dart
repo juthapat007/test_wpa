@@ -13,9 +13,10 @@ class LoadTableView extends TableEvent {
 }
 
 class ChangeTimeSlot extends TableEvent {
+  final String date;
   final String time;
 
-  ChangeTimeSlot(this.time);
+  ChangeTimeSlot(this.time, {required this.date});
 }
 
 class ChangeDate extends TableEvent {

@@ -31,7 +31,7 @@ class ChatRoomCard extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              _buildAvatar(), // ไม่ต้องห่ออะไร
+              _buildAvatar(),
               const SizedBox(width: 12),
               Expanded(child: _buildContent()),
             ],
@@ -41,26 +41,92 @@ class ChatRoomCard extends StatelessWidget {
     );
   }
 
+  Widget _buildAvatar() {
+    return Stack(
+      children: [
+        // ── Group avatar: ซ้อน 2 วง ─────────────────────────
+        if (room.isGroup)
+          _GroupAvatar(participantIds: room.participantIds)
+        else
+          _AuthenticatedAvatar(
+            imageUrl: room.participantAvatar,
+            name: room.participantName,
+            radius: 28,
+          ),
+
+        // online dot — แสดงเฉพาะ 1-on-1
+        if (!room.isGroup &&
+            room.lastActiveAt != null &&
+            DateTime.now().difference(room.lastActiveAt!).inMinutes < 5)
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(
+                color: AppColors.success,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   Widget _buildContent() {
+    // ชื่อที่แสดง: ถ้ากลุ่ม → groupName, ถ้า 1-on-1 → participantName เดิม
+    final displayName = room.isGroup
+        ? (room.groupName ?? 'Group Chat')
+        : room.participantName;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Name & Time
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Expanded(
-              child: Text(
-                room.participantName,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: room.unreadCount > 0
-                      ? FontWeight.bold
-                      : FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              child: Row(
+                children: [
+                  // badge "กลุ่ม" เล็กๆ
+                  if (room.isGroup) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Group',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  Expanded(
+                    child: Text(
+                      displayName,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: room.unreadCount > 0
+                            ? FontWeight.bold
+                            : FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(width: 8),
@@ -79,10 +145,7 @@ class ChatRoomCard extends StatelessWidget {
               ),
           ],
         ),
-
         const SizedBox(height: 4),
-
-        // Last Message & Unread Badge
         Row(
           children: [
             Expanded(
@@ -121,33 +184,6 @@ class ChatRoomCard extends StatelessWidget {
             ],
           ],
         ),
-      ],
-    );
-  }
-
-  Widget _buildAvatar() {
-    return Stack(
-      children: [
-        _AuthenticatedAvatar(
-          imageUrl: room.participantAvatar,
-          name: room.participantName,
-          radius: 28,
-        ),
-        if (room.lastActiveAt != null &&
-            DateTime.now().difference(room.lastActiveAt!).inMinutes < 5)
-          Positioned(
-            right: 0,
-            bottom: 0,
-            child: Container(
-              width: 14,
-              height: 14,
-              decoration: BoxDecoration(
-                color: AppColors.success,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-              ),
-            ),
-          ),
       ],
     );
   }
@@ -260,6 +296,31 @@ class _AuthenticatedAvatarState extends State<_AuthenticatedAvatar> {
             return _buildFallback();
           },
         ),
+      ),
+    );
+  }
+}
+/// Group avatar — ซ้อน 2 วงเล็ก แทน avatar คนเดียว
+class _GroupAvatar extends StatelessWidget {
+  final List<String> participantIds;
+
+  const _GroupAvatar({required this.participantIds});
+
+  @override
+  Widget build(BuildContext context) {
+    // ตอนนี้ยังไม่มี avatar URL → แสดง icon กลุ่มไปก่อน
+    // พอ backend พร้อมค่อยเปลี่ยนมาซ้อน avatar จริง
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.12),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        Icons.group,
+        color: AppColors.primary,
+        size: 28,
       ),
     );
   }

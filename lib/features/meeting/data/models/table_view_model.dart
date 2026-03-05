@@ -17,8 +17,10 @@ class TableDelegateModel {
 
   factory TableDelegateModel.fromJson(Map<String, dynamic> json) {
     return TableDelegateModel(
-      delegateId: json['delegate_id'],
-      delegateName: json['delegate_name'] ?? '',
+      // delegateId: json['delegate_id'],
+      // delegateName: json['delegate_name'] ?? '',
+      delegateId: json['id'],
+      delegateName: json['name'],
       company: json['company'],
       avatarUrl: json['avatar_url'] ?? '',
       title: json['title'],
@@ -61,13 +63,15 @@ class TableInfoModel {
               .toList() ??
           [],
       nearTables:
-          (json['near_tables'] as List?)?.map((e) => e.toString()).toList() ??
+          (json['adjacent_tables'] as List?)
+              ?.map((e) => e.toString())
+              .toList() ??
           [],
       meetings:
           (json['meetings'] as List?)
               ?.map((e) => TableMeetingModel.fromJson(e))
               .toList() ??
-          [], // ✅
+          [],
     );
   }
 
@@ -201,7 +205,8 @@ class MeetingSideAModel {
 
   factory MeetingSideAModel.fromJson(Map<String, dynamic> json) {
     return MeetingSideAModel(
-      delegateId: json['delegate_id'],
+      // delegateId: json['delegate_id'],
+      delegateId: json['id'],
       name: json['name'] ?? '',
       title: json['title'],
       company: json['company'] ?? '',
@@ -230,7 +235,6 @@ class MeetingSideBModel {
     required this.company,
     required this.members,
   });
-
   factory MeetingSideBModel.fromJson(Map<String, dynamic> json) {
     return MeetingSideBModel(
       teamId: json['team_id'],
@@ -272,8 +276,10 @@ class TableMeetingModel {
       scheduleId: json['schedule_id'],
       startAt: DateTime.parse(json['start_at']),
       endAt: DateTime.parse(json['end_at']),
-      sideA: MeetingSideAModel.fromJson(json['side_a']),
-      sideB: MeetingSideBModel.fromJson(json['side_b']),
+      // sideA: MeetingSideAModel.fromJson(json['side_a']),
+      // sideB: MeetingSideBModel.fromJson(json['side_b']),
+      sideA: MeetingSideAModel.fromJson(json['booker']),
+      sideB: MeetingSideBModel.fromJson(json['target_team']),
     );
   }
 

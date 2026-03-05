@@ -38,13 +38,10 @@ class TableBloc extends Bloc<TableEvent, TableState> {
     ChangeTimeSlot event,
     Emitter<TableState> emit,
   ) async {
-    final currentState = state;
-    if (currentState is! TableLoaded) return;
-
     emit(TableLoading());
     try {
       final response = await tableRepository.getTableView(
-        date: currentState.response.date,
+        date: event.date,
         time: event.time,
       );
       emit(TableLoaded(response));

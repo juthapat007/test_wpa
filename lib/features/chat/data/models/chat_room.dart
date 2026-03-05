@@ -8,6 +8,10 @@ class ChatRoom {
   final ChatMessage? lastMessage;
   final int unreadCount;
   final DateTime? lastActiveAt;
+  //ทำแชทกลุ่ม-เพิ่ม
+  final bool isGroup;
+  final String? groupName;
+  final List<String> participantIds;
 
   ChatRoom({
     required this.id,
@@ -17,30 +21,31 @@ class ChatRoom {
     this.lastMessage,
     this.unreadCount = 0,
     this.lastActiveAt,
+    required this.isGroup,
+    this.groupName,
+    required this.participantIds,
   });
 
   factory ChatRoom.fromJson(Map<String, dynamic> json) {
     return ChatRoom(
       id: json['id']?.toString() ?? '',
-      participantId:
-          json['participant_id']?.toString() ??
-          json['participantId']?.toString() ??
-          '',
-      participantName:
-          json['participant_name'] ?? json['participantName'] ?? 'Unknown',
-      participantAvatar:
-          json['participant_avatar'] ?? json['participantAvatar'],
+      participantId: json['participant_id']?.toString() ?? '',
+      participantName: json['participant_name'] ?? 'Unknown',
+      participantAvatar: json['participant_avatar'],
       lastMessage: json['last_message'] != null
           ? ChatMessage.fromJson(json['last_message'])
-          : json['lastMessage'] != null
-          ? ChatMessage.fromJson(json['lastMessage'])
           : null,
-      unreadCount: json['unread_count'] ?? json['unreadCount'] ?? 0,
+      unreadCount: json['unread_count'] ?? 0,
       lastActiveAt: json['last_active_at'] != null
           ? DateTime.parse(json['last_active_at'])
-          : json['lastActiveAt'] != null
-          ? DateTime.parse(json['lastActiveAt'])
           : null,
+
+      // ── field ใหม่ ──────────────────────────────────
+      isGroup: json['is_group'] ?? json['isGroup'] ?? false,
+      groupName: json['group_name'] ?? json['groupName'],
+      participantIds: (json['participant_ids'] ?? json['participantIds'] ?? [])
+          .map<String>((e) => e.toString())
+          .toList(),
     );
   }
 
@@ -52,6 +57,11 @@ class ChatRoom {
     'last_message': lastMessage?.toJson(),
     'unread_count': unreadCount,
     'last_active_at': lastActiveAt?.toIso8601String(),
+
+    // ── field ใหม่ ──────────────────────────────────
+    'is_group': isGroup,
+    'group_name': groupName,
+    'participant_ids': participantIds,
   };
 
   ChatRoom copyWith({
@@ -62,6 +72,11 @@ class ChatRoom {
     ChatMessage? lastMessage,
     int? unreadCount,
     DateTime? lastActiveAt,
+
+    // ── field ใหม่ ──────────────────────────────────
+    bool? isGroup,
+    String? groupName,
+    List<String>? participantIds,
   }) {
     return ChatRoom(
       id: id ?? this.id,
@@ -71,6 +86,9 @@ class ChatRoom {
       lastMessage: lastMessage ?? this.lastMessage,
       unreadCount: unreadCount ?? this.unreadCount,
       lastActiveAt: lastActiveAt ?? this.lastActiveAt,
+      isGroup: isGroup ?? this.isGroup,
+      groupName: groupName ?? this.groupName,
+      participantIds: participantIds ?? this.participantIds,
     );
   }
 }

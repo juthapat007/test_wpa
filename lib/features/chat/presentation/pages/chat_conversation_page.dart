@@ -64,6 +64,69 @@ class ChatConversationPage extends StatelessWidget {
   };
 }
 
+// class _AppBarTitle extends StatelessWidget {
+//   final ChatRoom room;
+
+//   const _AppBarTitle({required this.room});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     // final isOnline =
+//     //     room.lastActiveAt != null &&
+//     //     DateTime.now().difference(room.lastActiveAt!).inMinutes < 5;
+
+//     return GestureDetector(
+//       onTap: () {
+//         final participantId = int.tryParse(room.participantId);
+//         if (participantId != null) {
+//           Modular.to.pushNamed(
+//             '/other_profile/$participantId',
+//             arguments: participantId,
+//           );
+//         }
+//       },
+//       child: Row(
+//         children: [
+//           _ParticipantAvatar(room: room),
+//           const SizedBox(width: 12),
+//           Expanded(
+//             child: Column(
+//               crossAxisAlignment: CrossAxisAlignment.start,
+//               mainAxisSize: MainAxisSize.min,
+//               children: [
+//                 Row(
+//                   children: [
+//                     Flexible(
+//                       child: Text(
+//                         room.participantName,
+//                         style: const TextStyle(
+//                           fontSize: 16,
+//                           fontWeight: FontWeight.w600,
+//                         ),
+//                         overflow: TextOverflow.ellipsis,
+//                       ),
+//                     ),
+//                     const SizedBox(width: 4),
+//                     Icon(
+//                       Icons.chevron_right,
+//                       size: 16,
+//                       color: AppColors.textSecondary,
+//                     ),
+//                   ],
+//                 ),
+//                 // if (isOnline)
+//                 //   const Text(
+//                 //     'Online',
+//                 //     style: TextStyle(fontSize: 12, color: AppColors.success),
+//                 //   ),
+//               ],
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
 class _AppBarTitle extends StatelessWidget {
   final ChatRoom room;
 
@@ -71,23 +134,34 @@ class _AppBarTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final isOnline =
-    //     room.lastActiveAt != null &&
-    //     DateTime.now().difference(room.lastActiveAt!).inMinutes < 5;
+    // ชื่อที่แสดง
+    final displayName = room.isGroup
+        ? (room.groupName ?? 'Group Chat')
+        : room.participantName;
+
+    // subtitle — กลุ่มแสดงจำนวนสมาชิก, 1-on-1 ไม่แสดง
+    final subtitle = room.isGroup
+        ? '${room.participantIds.length} members'
+        : null;
 
     return GestureDetector(
       onTap: () {
-        final participantId = int.tryParse(room.participantId);
-        if (participantId != null) {
-          Modular.to.pushNamed(
-            '/other_profile/$participantId',
-            arguments: participantId,
-          );
+        // 1-on-1 → ไป profile เหมือนเดิม
+        // group → ไป group info (ทำทีหลังได้)
+        if (!room.isGroup) {
+          final participantId = int.tryParse(room.participantId);
+          if (participantId != null) {
+            Modular.to.pushNamed(
+              '/other_profile/$participantId',
+              arguments: participantId,
+            );
+          }
         }
       },
       child: Row(
         children: [
-          _ParticipantAvatar(room: room),
+          // avatar
+          room.isGroup ? _GroupAvatarSmall() : _ParticipantAvatar(room: room),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -98,7 +172,7 @@ class _AppBarTitle extends StatelessWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        room.participantName,
+                        displayName,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -107,23 +181,44 @@ class _AppBarTitle extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 4),
-                    Icon(
-                      Icons.chevron_right,
-                      size: 16,
-                      color: AppColors.textSecondary,
-                    ),
+                    // arrow เฉพาะ 1-on-1
+                    if (!room.isGroup)
+                      Icon(
+                        Icons.chevron_right,
+                        size: 16,
+                        color: AppColors.textSecondary,
+                      ),
                   ],
                 ),
-                // if (isOnline)
-                //   const Text(
-                //     'Online',
-                //     style: TextStyle(fontSize: 12, color: AppColors.success),
-                //   ),
+                // subtitle สำหรับกลุ่ม
+                if (subtitle != null)
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Group avatar เล็กสำหรับ AppBar
+class _GroupAvatarSmall extends StatelessWidget {
+  const _GroupAvatarSmall();
+
+  @override
+  Widget build(BuildContext context) {
+    return CircleAvatar(
+      radius: 18,
+      backgroundColor: AppColors.primary.withOpacity(0.1),
+      child: Icon(Icons.group, color: AppColors.primary, size: 20),
     );
   }
 }

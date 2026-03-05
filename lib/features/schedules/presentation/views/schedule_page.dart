@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
+import 'package:test_wpa/features/meeting/presentation/bloc/table_bloc.dart';
 // import 'package:test_wpa/features/meeting/presentation/bloc/table_bloc.dart'
 //     hide ChangeDate;
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
@@ -49,7 +50,8 @@ class _SchedulePageState extends State<SchedulePage> {
       _selectedDateStr = date;
       _selectedScheduleIds.clear();
     });
-    ReadContext(context).read<ScheduleBloc>().add(ChangeDate(date));
+    ReadContext(context).read<ScheduleBloc>().add(LoadSchedules(date: date));
+    Modular.get<TableBloc>().add(LoadTableView(date: date));
   }
 
   // ─── Retry ───────────────────────────────────────────────────────────────────

@@ -84,12 +84,10 @@ class ChatRepositoryImpl implements ChatRepository {
         final delegate = json['delegate'];
         final lastMessageText = json['last_message'] as String?;
         final lastMessageAt = json['last_message_at'] as String?;
-
         return ChatRoom(
           id: json['id'].toString(),
           participantId: delegate['id'].toString(),
           participantName: delegate['name'] ?? 'Unknown',
-
           participantAvatar: _resolveAvatarUrl(delegate['avatar_url']),
           lastMessage: lastMessageText != null && lastMessageAt != null
               ? ChatMessage(
@@ -100,7 +98,6 @@ class ChatRepositoryImpl implements ChatRepository {
                   chatRoomId: json['id'] as int? ?? 0,
                   content: lastMessageText,
                   createdAt: DateTime.parse(lastMessageAt).toLocal(),
-                  // createdAt: DateTime.parse(json['created_at']).toLocal(),
                   editedAt: json['edited_at'] != null
                       ? DateTime.parse(json['edited_at']).toLocal()
                       : null,
@@ -110,6 +107,17 @@ class ChatRepositoryImpl implements ChatRepository {
           lastActiveAt: lastMessageAt != null
               ? DateTime.parse(lastMessageAt).toLocal()
               : null,
+
+          // ── field ใหม่ ──────────────────────────────────────────
+          isGroup: json['is_group'] ?? false,
+          groupName: json['group_name'],
+          participantIds: json['participant_ids'] != null
+              ? (json['participant_ids'] as List)
+                    .map<String>((e) => e.toString())
+                    .toList()
+              : [
+                  delegate['id'].toString(),
+                ], // 1-on-1 → ใส่ participantId เดิมไปก่อน
         );
       }).toList();
 
@@ -194,6 +202,9 @@ class ChatRepositoryImpl implements ChatRepository {
         participantId: participantId,
         participantName: data['title'] ?? '',
         unreadCount: 0,
+        //เพิ่มเพื่อทำchat group
+        isGroup: false,
+        participantIds: [participantId],
       );
     } catch (e) {
       throw Exception('Failed to create chat room: $e');

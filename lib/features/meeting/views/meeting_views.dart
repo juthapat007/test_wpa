@@ -78,12 +78,20 @@ class _MeetingWidgetState extends State<MeetingWidget> {
       _showFullList = true;
     });
     ReadContext(context).read<ScheduleBloc>().add(LoadSchedules(date: date));
-
+    
     final tableState = Modular.get<TableBloc>().state;
     String? timeToLoad;
     if (tableState is TableLoaded &&
         tableState.response.timesToday.isNotEmpty) {
-      timeToLoad = _findCurrentTimeSlot(tableState.response.timesToday, date);
+      final rawSlot = _findCurrentTimeSlot(
+        tableState.response.timesToday,
+        date,
+      );
+      // ✅ แปลง ISO → 12h format ก่อนส่ง
+      if (rawSlot != null) {
+        final parsed = DateTimeHelper.parseFlexibleDateTime(rawSlot, date);
+        timeToLoad = DateTimeHelper.formatApiTime12(parsed);
+      }
     }
     Modular.get<TableBloc>().add(LoadTableView(date: date, time: timeToLoad));
   }
@@ -283,7 +291,6 @@ class _MeetingWidgetState extends State<MeetingWidget> {
 
   Widget _buildTableGridSection(ScheduleState scheduleState) {
     return BlocListener<TableBloc, TableState>(
-
       listener: (context, tableState) {
         if (tableState is TableLoaded && tableState.response.days.isNotEmpty) {
           setState(() {
@@ -298,9 +305,31 @@ class _MeetingWidgetState extends State<MeetingWidget> {
               tableState.response.timesToday,
               tableState.response.date,
             );
-            if (currentSlot != null &&
-                currentSlot != tableState.response.time) {
-              Modular.get<TableBloc>().add(ChangeTimeSlot(currentSlot));
+            if (currentSlot != null) {
+              final parsed = DateTimeHelper.parseFlexibleDateTime(
+                currentSlot,
+                tableState.response.date,
+              );
+              final formatted = DateTimeHelper.formatApiTime12(parsed);
+
+              final currentFormatted = _normalizeTime(formatted);
+              final responseFormatted = _normalizeTime(
+                DateTimeHelper.formatApiTime12(
+                  DateTimeHelper.parseFlexibleDateTime(
+                    tableState.response.time,
+                    tableState.response.date,
+                  ),
+                ),
+              );
+
+              if (currentFormatted != responseFormatted) {
+                Modular.get<TableBloc>().add(
+                  LoadTableView(
+                    date: tableState.response.date,
+                    time: formatted,
+                  ),
+                );
+              }
             }
           }
           _userSelectedTime = false;
@@ -329,13 +358,16 @@ class _MeetingWidgetState extends State<MeetingWidget> {
               currentSchedule: currentSchedule,
               schedules: schedules,
               onTimeSlotChanged: (time) {
-                _userSelectedTime = true; 
-                Modular.get<TableBloc>().add(ChangeTimeSlot(time));
+                _userSelectedTime = true;
+                Modular.get<TableBloc>().add(
+                  ChangeTimeSlot(time, date: _selectedDateStr),
+                );
               },
             );
           }
-          if (tableState is TableError)
+          if (tableState is TableError) {
             return _ErrorBox(message: tableState.message);
+          }
           return _buildNoDataView();
         },
       ),
