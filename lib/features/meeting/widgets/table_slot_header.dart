@@ -64,7 +64,8 @@ class TableSlotHeader extends StatelessWidget {
               ),
             ),
           ),
-          if (timesToday.isNotEmpty)
+          // Show "Slots time" button only when there are slots available
+          if (_mergedTimes().isNotEmpty)
             Material(
               color: Colors.transparent,
               child: InkWell(
@@ -106,7 +107,7 @@ class TableSlotHeader extends StatelessWidget {
 
   void _showTimeSlotPopup(
     BuildContext context,
-    List<String> timesToday,
+    List<String> times,
     String currentTime,
   ) {
     showModalBottomSheet(
@@ -168,7 +169,7 @@ class TableSlotHeader extends StatelessWidget {
                       child: Wrap(
                         spacing: 8,
                         runSpacing: 8,
-                        children: _buildSlotChips(ctx, timesToday, currentTime),
+                        children: _buildSlotChips(ctx, times, currentTime),
                       ),
                     ),
                   ),
@@ -197,54 +198,82 @@ class TableSlotHeader extends StatelessWidget {
 
   List<Widget> _buildSlotChips(
     BuildContext ctx,
-    List<String> timesToday,
+    List<String> times,
     String currentTime,
   ) {
     final date = response.date;
+    // Normalize currentTime to HH:mm for comparison
+    final currentHHmm = _toHHmm(currentTime);
 
-    return List.generate(timesToday.length, (index) {
-      final time = timesToday[index];
-      final nextTime = index + 1 < timesToday.length
-          ? timesToday[index + 1]
-          : null;
+    return List.generate(times.length, (index) {
+      final time = times[index];
+      // Next time for range display — use next item in the list
+      final nextTime = index + 1 < times.length ? times[index + 1] : null;
+
+      final parsedStart = DateTimeHelper.parseFlexibleDateTime(time, date);
       final label = nextTime != null
           ? DateTimeHelper.formatTimeRange12(
-              DateTimeHelper.parseFlexibleDateTime(time, date),
+              parsedStart,
               DateTimeHelper.parseFlexibleDateTime(nextTime, date),
             )
-          : DateTimeHelper.formatTime12(
-              DateTimeHelper.parseFlexibleDateTime(time, date),
-            );
+          : DateTimeHelper.formatTime12(parsedStart);
 
-      final parsed = DateTimeHelper.parseFlexibleDateTime(time, date);
+      // Lookup slot type via normalized key
       final lookupKey = DateTimeHelper.formatApiTime12(
-        parsed,
+        parsedStart,
       ).replaceAll(' ', '').toLowerCase();
       final slotType = slotTypeMap[lookupKey] ?? TimeSlotType.unknown;
 
+      // ✅ Normalize both sides to HH:mm before comparing
+      final timeHHmm = _toHHmm(time);
+      final isSelected = timeHHmm == currentHHmm;
+
       return TimeSlotChip(
         time: label,
-        isSelected: time == currentTime,
+        isSelected: isSelected,
         type: slotType,
-    onTap: () {
-  Navigator.of(ctx).pop();
-  // ✅ แปลง ISO → "HH:mm" ที่ backend รับได้
-  final parsed = DateTimeHelper.parseFlexibleDateTime(time, response.date);
-  final formatted = '${parsed.toLocal().hour.toString().padLeft(2, '0')}:${parsed.toLocal().minute.toString().padLeft(2, '0')}';
-  onTimeSlotChanged?.call(formatted);
-},
+        onTap: () {
+          Navigator.of(ctx).pop();
+          // ✅ Always send HH:mm to backend
+          final formatted =
+              '${parsedStart.toLocal().hour.toString().padLeft(2, '0')}:'
+              '${parsedStart.toLocal().minute.toString().padLeft(2, '0')}';
+          onTimeSlotChanged?.call(formatted);
+        },
       );
     });
   }
 
-  List<String> _mergedTimes() {
-    final timesToday = response.timesToday;
-    final extraTimes = schedules
-        .where((s) => s.type == 'event')
-        .map((s) => s.startAt.toUtc().toIso8601String())
-        .where((t) => !timesToday.contains(t))
-        .toList();
+  // ─── Helpers ───────────────────────────────────────────────────────────────
 
-    return [...timesToday, ...extraTimes]..sort();
+  /// Normalize any time string (ISO / HH:mm / "9:20 AM") → "HH:mm" for comparison.
+  String _toHHmm(String timeStr) {
+    try {
+      final parsed = DateTimeHelper.parseFlexibleDateTime(
+        timeStr,
+        response.date,
+      );
+      final local = parsed.toLocal();
+      return '${local.hour.toString().padLeft(2, '0')}:'
+          '${local.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return timeStr;
+    }
+  }
+
+  /// Build slot list from my_schedule data (ALL types: meeting + event).
+  /// ✅ If user hasn't tapped any slot, backend already returns current time
+  ///    in response.time — no extra logic needed here.
+  /// Falls back to timesToday from table API if no schedules provided.
+  List<String> _mergedTimes() {
+    if (schedules.isNotEmpty) {
+      final seen = <String>{};
+      return schedules
+          .map((s) => s.startAt.toIso8601String())
+          .where((t) => seen.add(t))
+          .toList()
+        ..sort();
+    }
+    return response.timesToday;
   }
 }
