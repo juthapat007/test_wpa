@@ -172,7 +172,7 @@ class _AttendanceStatusState extends State<AttendanceStatus> {
   }
 
   Widget _buildLoadingOverlay() => Container(
-    color: Colors.black.withOpacity(0.3),
+    color: Colors.black.withValues(alpha: 0.3),
     child: Center(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -180,7 +180,10 @@ class _AttendanceStatusState extends State<AttendanceStatus> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 20,
+            ),
           ],
         ),
         child: const Column(
@@ -315,7 +318,7 @@ class _ScheduleCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.AppColors.primary.withOpacity(0.08),
+              color: color.AppColors.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(

@@ -63,14 +63,14 @@ class DateTimeHelper {
     final isoResult = DateTime.tryParse(time);
     if (isoResult != null) return isoResult.toLocal();
 
-    // 2. ✅ 12-hour format — "9:30 AM" / "02:00 PM"
+    // 2. 12-hour format — "9:30 AM" / "02:00 PM"
     try {
       final combined = '$date $time'; // "2026-02-05 9:30 AM"
       final result = DateFormat('yyyy-MM-dd h:mm a').parse(combined);
       return result;
     } catch (_) {}
 
-    // 3. ✅ 12-hour zero-padded — "09:30 AM"
+    // 3. 12-hour zero-padded — "09:30 AM"
     try {
       final combined = '$date $time';
       final result = DateFormat('yyyy-MM-dd hh:mm a').parse(combined);
@@ -83,7 +83,7 @@ class DateTimeHelper {
       return result;
     } catch (_) {}
 
-    print('⚠️ DateTimeHelper: Cannot parse time "$time" with date "$date"');
+    print('DateTimeHelper: Cannot parse time "$time" with date "$date"');
     return DateTime.now();
   }
 

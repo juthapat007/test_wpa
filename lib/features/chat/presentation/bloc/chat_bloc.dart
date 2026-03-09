@@ -77,7 +77,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     Emitter<ChatState> emit,
   ) async {
     try {
-      // ✅ ถ้า connect อยู่แล้ว ไม่ต้อง connect ซ้ำ
+      // ถ้า connect อยู่แล้ว ไม่ต้อง connect ซ้ำ
       final wsService = (chatRepository as ChatRepositoryImpl).webSocketService;
       if (wsService.isConnected) {
         log.i('WebSocket already connected, skipping');
@@ -98,13 +98,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     await _cancelAllSubscriptions();
     await chatRepository.disconnectWebSocket();
     _isWebSocketConnected = false;
-    // ✅ ไม่ emit WebSocketDisconnected แยก — อัปเดต flag แล้ว re-emit state ปัจจุบัน
     _emitCurrentState(emit);
   }
 
-  /// ✅ FIX: ไม่ emit WebSocketConnected/Disconnected แยกอีกต่อไป
-  /// เพราะมันทำให้ BlocBuilder ไม่รู้จัก state แล้ว UI พัง
-  /// แทนด้วยการอัปเดต flag แล้ว re-emit state ปัจจุบัน
   void _onWebSocketConnectionChanged(
     WebSocketConnectionChanged event,
     Emitter<ChatState> emit,

@@ -98,7 +98,7 @@ class ChatRoomCard extends StatelessWidget {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
+                        color: AppColors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -246,7 +246,7 @@ class _AuthenticatedAvatarState extends State<_AuthenticatedAvatar> {
   Widget _buildFallback() {
     return CircleAvatar(
       radius: widget.radius,
-      backgroundColor: AppColors.primary.withOpacity(0.1),
+      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
       child: Text(
         _getInitials(widget.name),
         style: TextStyle(
@@ -264,7 +264,7 @@ class _AuthenticatedAvatarState extends State<_AuthenticatedAvatar> {
 
     // ถ้าเป็น ui-avatars.com หรือ http อื่นๆ ที่ไม่ต้อง auth
     final needsAuth =
-        hasUrl && widget.imageUrl!.contains('wpa-docker.onrender.com');
+        hasUrl && widget.imageUrl!.contains('wpa-docker-8aer.onrender.com');
 
     if (!hasUrl) return _buildFallback();
 
@@ -272,7 +272,7 @@ class _AuthenticatedAvatarState extends State<_AuthenticatedAvatar> {
     if (!needsAuth) {
       return CircleAvatar(
         radius: widget.radius,
-        backgroundColor: AppColors.primary.withOpacity(0.1),
+        backgroundColor: AppColors.primary.withValues(alpha: 0.1),
         backgroundImage: NetworkImage(widget.imageUrl!),
         onBackgroundImageError: (_, __) {},
         child: null,
@@ -300,6 +300,7 @@ class _AuthenticatedAvatarState extends State<_AuthenticatedAvatar> {
     );
   }
 }
+
 /// Group avatar — ซ้อน 2 วงเล็ก แทน avatar คนเดียว
 class _GroupAvatar extends StatelessWidget {
   final List<String> participantIds;
@@ -314,14 +315,10 @@ class _GroupAvatar extends StatelessWidget {
       width: 56,
       height: 56,
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.12),
+        color: AppColors.primary.withValues(alpha: 0.12),
         shape: BoxShape.circle,
       ),
-      child: Icon(
-        Icons.group,
-        color: AppColors.primary,
-        size: 28,
-      ),
+      child: Icon(Icons.group, color: AppColors.primary, size: 28),
     );
   }
 }

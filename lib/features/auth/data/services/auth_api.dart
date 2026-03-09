@@ -36,9 +36,9 @@ class AuthApi {
           },
         },
       );
-      debugPrint('✅ Device token registered');
+      debugPrint('Device token registered');
     } catch (e) {
-      debugPrint('⚠️ Failed to register device token: $e');
+      debugPrint('Failed to register device token: $e');
     }
   }
 

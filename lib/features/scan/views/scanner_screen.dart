@@ -43,9 +43,8 @@ class _QrScannerScreenState extends State<ScannerScreen> {
     final List<Barcode> barcodes = capture.barcodes;
     //1ภาพอาจจะมีหลาย QR code เลยให้คืนค่า List<Barcode>
     for (final barcode in barcodes) {
-      //วนดู loop barcode 
+      //วนดู loop barcode
       if (barcode.rawValue != null) {
-        
         setState(() {
           _isProcessing = true;
         });
@@ -103,7 +102,7 @@ class _QrScannerScreenState extends State<ScannerScreen> {
             // Close Button
             Container(
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
               child: IconButton(
@@ -115,7 +114,7 @@ class _QrScannerScreenState extends State<ScannerScreen> {
             // Torch Button
             Container(
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
               child: IconButton(
@@ -144,7 +143,7 @@ class _QrScannerScreenState extends State<ScannerScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+            colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
           ),
         ),
         child: SafeArea(
@@ -229,7 +228,8 @@ class ScannerOverlayPainter extends CustomPainter {
     final Rect scanArea = Rect.fromLTWH(left, top, scanAreaSize, scanAreaSize);
 
     // Draw semi-transparent overlay
-    final Paint overlayPaint = Paint()..color = Colors.black.withOpacity(0.6);
+    final Paint overlayPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.6);
 
     canvas.drawPath(
       Path()
@@ -291,7 +291,7 @@ class ScannerOverlayPainter extends CustomPainter {
 
     // Draw scanning line animation (optional)
     final Paint linePaint = Paint()
-      ..color = AppColors.primary.withOpacity(0.5)
+      ..color = AppColors.primary.withValues(alpha: 0.5)
       ..strokeWidth = 2;
 
     canvas.drawLine(

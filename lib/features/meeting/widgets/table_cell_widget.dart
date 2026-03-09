@@ -42,7 +42,7 @@ class TableCellWidget extends StatelessWidget {
           boxShadow: isMyTable || isSelected
               ? [
                   BoxShadow(
-                    color: colors.border.withOpacity(0.4),
+                    color: colors.border.withValues(alpha: 0.4),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
@@ -81,7 +81,7 @@ class TableCellWidget extends StatelessWidget {
   ) {
     if (isOnLeave) {
       return _TableCellColors(
-        background: AppColors.error.withOpacity(0.08),
+        background: AppColors.error.withValues(alpha: 0.08),
         border: AppColors.error,
         text: AppColors.error,
       );

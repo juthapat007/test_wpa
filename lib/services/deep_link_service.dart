@@ -16,20 +16,24 @@ class DeepLinkService {
     });
   }
 
-  void _handleLink(Uri uri) {
-    print('Deep link received: $uri');
-    print('Path: ${uri.path}');
-    print('Query params: ${uri.queryParameters}');
+void _handleLink(Uri uri) {
+  print('Deep link received: $uri');
+  print('Host: ${uri.host}');
+  print('Path: ${uri.path}');
+  print('Query params: ${uri.queryParameters}');
 
-    if (uri.path == '/deeplink-reset-password') {
-      final token = uri.queryParameters['token'];
+  final isHttpsResetLink = uri.scheme == 'https' && uri.path == '/deeplink-reset-password';
+  final isCustomSchemeResetLink = uri.scheme == 'wpa' && uri.host == 'reset-password';
 
-      if (token != null && token.isNotEmpty) {
-        print('Reset token found: $token');
-        Modular.to.navigate('/reset_password', arguments: token);
-      } else {
-        print('Token not found in deep link');
-      }
+  if (isHttpsResetLink || isCustomSchemeResetLink) {
+    final token = uri.queryParameters['token'];
+
+    if (token != null && token.isNotEmpty) {
+      print('Reset token found: $token');
+      Modular.to.navigate('/reset-password?token=$token');
+    } else {
+      print('Token not found in deep link');
     }
   }
+}
 }

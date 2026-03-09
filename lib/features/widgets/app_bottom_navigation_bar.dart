@@ -109,12 +109,6 @@ class _ChatBadgeIcon extends StatelessWidget {
 }
 
 // ─── Notification badge icon (ใช้ใน AppScaffold AppBar) ─────────────────────
-//
-// เรียกใช้แบบนี้ใน AppBar ของ AppScaffold:
-//
-//   actions: [
-//     NotificationBellIcon(onTap: () => Modular.to.pushNamed('/notification')),
-//   ]
 
 class NotificationBellIcon extends StatelessWidget {
   final VoidCallback onTap;

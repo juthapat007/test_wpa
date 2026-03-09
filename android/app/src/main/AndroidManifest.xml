@@ -42,9 +42,18 @@
     <category android:name="android.intent.category.BROWSABLE"/>
     <data
         android:scheme="https"
-        android:host="wpa-docker.onrender.com"
+        android:host="wpa-docker-8aer.onrender.com"
         android:pathPrefix="/deeplink-reset-password"/>
 </intent-filter>
+<!-- เพิ่มใหม่: Custom Scheme -->
+<intent-filter>
+        <action android:name="android.intent.action.VIEW"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <data android:scheme="wpa"
+        android:host="reset-password"/>
+    </intent-filter>
+
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

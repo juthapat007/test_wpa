@@ -42,7 +42,7 @@ import 'package:test_wpa/features/schedules/domain/repositories/schedule_reposit
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/page/schedule_widget.dart';
 
-// ✅ Schedule Others (เพิ่มใหม่)
+// Schedule Others 
 import 'package:test_wpa/features/schedules/data/services/schedule_others_api.dart';
 import 'package:test_wpa/features/schedules/data/repository/schedule_others_repository_impl.dart';
 import 'package:test_wpa/features/schedules/domain/repositories/schedule_others_repository.dart';
@@ -101,10 +101,6 @@ class AppModule extends Module {
     i.addLazySingleton<AuthRepository>(
       () => AuthRepositoryImpl(Modular.get<AuthApi>()),
     );
-    // i.add<AuthBloc>(
-    //   () => AuthBloc(authRepository: Modular.get<AuthRepository>()),
-    // );
-    // ✅ addLazySingleton = instance เดิมทุกที่
     i.addLazySingleton<AuthBloc>(
       () => AuthBloc(authRepository: Modular.get<AuthRepository>()),
     );
@@ -363,13 +359,15 @@ class AppModule extends Module {
         child: ChangePasswordPage(),
       ),
     );
-    r.child(
-      '/reset_password',
-      child: (_) => BlocProvider<AuthBloc>(
-        create: (_) => Modular.get<AuthBloc>(),
-        child: ResetPasswordPage(token: r.args.data as String),
-      ),
-    );
+r.child(
+  '/reset-password', 
+  child: (_) => BlocProvider.value(
+    value: Modular.get<AuthBloc>(),
+    child: ResetPasswordPage(
+      token: r.args.queryParams['token'] ?? '', // รับจาก queryParams
+    ),
+  ),
+);
 
     r.child(
       '/attendance',
@@ -377,7 +375,6 @@ class AppModule extends Module {
         final schedules = r.args.data as List<Schedule>;
         return AppShell(
           child: BlocProvider.value(
-            // ✅ เพิ่มตรงนี้
             value: Modular.get<ScheduleBloc>(),
             child: AttendanceStatus(selectedSchedules: schedules),
           ),

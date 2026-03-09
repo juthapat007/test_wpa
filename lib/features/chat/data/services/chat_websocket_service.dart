@@ -44,7 +44,7 @@ class ChatWebSocketService with WidgetsBindingObserver {
   bool _isConnected = false;
   bool get isConnected => _isConnected;
 
-  // ✅ เพิ่ม: ติดตามว่าแอพอยู่ foreground หรือเปล่า
+  // เพิ่ม: ติดตามว่าแอพอยู่ foreground หรือเปล่า
   bool _isAppInForeground = true;
 
   String? _chatChannelIdentifier;
@@ -64,7 +64,7 @@ class ChatWebSocketService with WidgetsBindingObserver {
   static const Duration _watchdogTimeout = Duration(seconds: 65);
   DateTime? _lastPingReceived;
 
-  // ✅ ลงทะเบียน lifecycle observer ตอน constructor
+  // ลงทะเบียน lifecycle observer ตอน constructor
   ChatWebSocketService() {
     WidgetsBinding.instance.addObserver(this);
   }
@@ -81,7 +81,7 @@ class ChatWebSocketService with WidgetsBindingObserver {
 
   // ─── AppLifecycle ─────────────────────────────────────────────────────────
   //
-  // จุดสำคัญ: ป้องกัน reconnect ตอน FCM ปลุกแอพ background
+  // ป้องกัน reconnect ตอน FCM ปลุกแอพ background
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -140,7 +140,7 @@ class ChatWebSocketService with WidgetsBindingObserver {
 
       _isConnected = true;
       _connectionController.add(true);
-      log.i('WebSocket connected ✅');
+      log.i('WebSocket connected ');
 
       await Future.delayed(const Duration(milliseconds: 500));
       await _subscribeChannels();
@@ -207,7 +207,7 @@ class ChatWebSocketService with WidgetsBindingObserver {
       return;
     }
 
-    // ✅ ถ้าอยู่ background → ไม่ schedule เลย รอ resumed แทน
+    // ถ้าอยู่ background ==> ไม่ schedule เลย รอ resumed แทน
     if (!_isAppInForeground) {
       log.i('[Reconnect] App in background → skip, will reconnect on resume');
       return;
@@ -219,7 +219,7 @@ class ChatWebSocketService with WidgetsBindingObserver {
 
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(delay, () {
-      // ✅ เช็คซ้ำตอน Timer ยิง เผื่อแอพ background ไปแล้วระหว่างรอ
+      // เช็คซ้ำตอน Timer ยิง เผื่อแอพ background ไปแล้วระหว่างรอ
       if (!_isConnected && _lastToken != null && _isAppInForeground) {
         connect(_lastToken!);
       }
@@ -609,9 +609,9 @@ class ChatWebSocketService with WidgetsBindingObserver {
   Timer? _presenceTimer;
   
   Future<void> enterRoom(String roomId) async {
-    log.i('[Presence] enterRoom called with roomId=$roomId'); // ✅ เพิ่ม
+    log.i('[Presence] enterRoom called with roomId=$roomId'); 
     if (!_isConnected || _chatChannelIdentifier == null) {
-      log.w('[Presence] skip — not connected'); // ✅ เพิ่ม
+      log.w('[Presence] skip — not connected'); 
       return;
     }
 
@@ -620,7 +620,7 @@ class ChatWebSocketService with WidgetsBindingObserver {
       'room_id': int.tryParse(roomId) ?? roomId,
     });
     _sendCommand('subscribe', _roomChannelIdentifier!);
-    log.i('[Presence] subscribed ChatRoomChannel room=$roomId'); // ✅ เพิ่ม
+    log.i('[Presence] subscribed ChatRoomChannel room=$roomId'); 
 
     _presenceTimer?.cancel();
     _presenceTimer = Timer.periodic(const Duration(seconds: 20), (_) {
@@ -630,7 +630,7 @@ class ChatWebSocketService with WidgetsBindingObserver {
         _roomChannelIdentifier!,
         data: {'action': 'ping'},
       );
-      log.v('[Presence] ping sent room=$roomId'); // ✅ เพิ่ม
+      log.v('[Presence] ping sent room=$roomId'); 
     });
   }
 
@@ -659,7 +659,7 @@ class ChatWebSocketService with WidgetsBindingObserver {
     log.i('WebSocket disconnected intentionally');
   }
 
-  // ✅ dispose ต้อง removeObserver ด้วยเสมอ
+  // dispose ต้อง removeObserver เสมอ
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _lastToken = null;

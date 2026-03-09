@@ -40,8 +40,11 @@ class _MeetingWidgetState extends State<MeetingWidget> {
   bool _userSelectedTime = false;
   List<String> _tableDays = [];
   String? _delegateId;
-  bool _tableInitialized = false; // ✅ guard init ครั้งเดียว
-
+  bool _tableInitialized = false; //guard init ครั้งเดียว
+  String _nowHHmm() {
+    final now = DateTime.now();
+    return '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+  }
   // ─── Lifecycle ──────────────────────────────────────────────────────────
 
   @override
@@ -79,8 +82,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
       _userSelectedTime = false;
     });
     ReadContext(context).read<ScheduleBloc>().add(LoadSchedules(date: date));
-    // ✅ ส่งแค่ date ไป ไม่ส่ง time → backend จะ return time ปัจจุบันมาเอง
-    Modular.get<TableBloc>().add(LoadTableView(date: date));
+    Modular.get<TableBloc>().add(LoadTableView(date: date, time: _nowHHmm()));
   }
 
   void _onScheduleTap(Schedule schedule) {
@@ -98,9 +100,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
     final dates = scheduleResponse.availableDates;
     if (dates.isEmpty) return;
 
-    // ✅ ไม่ส่ง date → backend จะเลือกวันที่เหมาะสมมาให้เอง
-    // listener จะ sync _selectedDateStr จาก response.date
-    Modular.get<TableBloc>().add(LoadTableView());
+    Modular.get<TableBloc>().add(LoadTableView(time: _nowHHmm()));
   }
 
   // ─── Helpers ────────────────────────────────────────────────────────────
@@ -187,7 +187,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
           return SingleChildScrollView(
             child: Column(
               children: [
-                const DateHeader(),
+                // const DateHeader(),
                 _buildDateTabBar(scheduleState),
                 _buildTableGridSection(scheduleState),
                 _buildScheduleSection(scheduleState),
@@ -232,7 +232,6 @@ class _MeetingWidgetState extends State<MeetingWidget> {
 
         final responseDate = tableState.response.date;
 
-        // ✅ ครั้งแรก: sync วันและแสดงผลเลย ไม่ต้อง load ซ้ำ
         if (!_tableInitialized) {
           _tableInitialized = true;
           setState(() {
@@ -243,17 +242,15 @@ class _MeetingWidgetState extends State<MeetingWidget> {
           ReadContext(
             context,
           ).read<ScheduleBloc>().add(LoadSchedules(date: responseDate));
-          return; // ✅ หยุดเลย ไม่ต้องทำอะไรเพิ่ม
+          return;
         }
 
-        // ✅ หลังจากนั้น: update days เฉยๆ
         if (tableState.response.days.isNotEmpty) {
           setState(() {
             _tableDays = tableState.response.days;
           });
         }
 
-        // ✅ detect mismatch เมื่อ user กด tabbar แล้ว backend fallback
         if (responseDate != _selectedDateStr && !_shownNoTodayDialog) {
           _shownNoTodayDialog = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -279,9 +276,8 @@ class _MeetingWidgetState extends State<MeetingWidget> {
                         _shownNoTodayDialog = false;
                         _userSelectedTime = false;
                       });
-                      // ✅ load ใหม่พร้อม time ปัจจุบัน
                       Modular.get<TableBloc>().add(
-                        LoadTableView(date: responseDate),
+                        LoadTableView(date: responseDate, time: _nowHHmm()),
                       );
                     },
                     backgroundColor: null,
@@ -344,7 +340,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
             Icon(
               Icons.event_note_outlined,
               size: 72,
-              color: color.AppColors.textSecondary.withOpacity(0.4),
+              color: color.AppColors.textSecondary.withValues(alpha: 0.4),
             ),
             const SizedBox(height: 16),
             Text(
@@ -360,7 +356,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
               'Try selecting another date',
               style: TextStyle(
                 fontSize: 13,
-                color: color.AppColors.textSecondary.withOpacity(0.6),
+                color: color.AppColors.textSecondary.withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: 20),

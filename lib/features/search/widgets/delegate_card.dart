@@ -42,7 +42,7 @@ class DelegateCard extends StatelessWidget {
                     : null,
                 backgroundColor: const Color(
                   0xFF4A90D9,
-                ).withValues(alpha: 0.15), // ✅ withValues แทน withOpacity
+                ).withValues(alpha: 0.15), // ✅ withValues แทน withValues(alpha:
                 child: !hasAvatar
                     ? Text(
                         delegate.name.substring(0, 1).toUpperCase(),

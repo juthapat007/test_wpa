@@ -59,7 +59,7 @@ class ChatMessageBubble extends StatelessWidget {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -85,7 +85,7 @@ class ChatMessageBubble extends StatelessWidget {
                             'Edited',
                             style: TextStyle(
                               color: isMe
-                                  ? Colors.white.withOpacity(0.7)
+                                  ? Colors.white.withValues(alpha: 0.7)
                                   : AppColors.textSecondary,
                               fontSize: 10,
                               fontStyle: FontStyle.italic,
@@ -96,7 +96,7 @@ class ChatMessageBubble extends StatelessWidget {
                             '•',
                             style: TextStyle(
                               color: isMe
-                                  ? Colors.white.withOpacity(0.7)
+                                  ? Colors.white.withValues(alpha: 0.7)
                                   : AppColors.textSecondary,
                               fontSize: 10,
                             ),
@@ -107,7 +107,7 @@ class ChatMessageBubble extends StatelessWidget {
                           _formatTime(message.createdAt),
                           style: TextStyle(
                             color: isMe
-                                ? Colors.white.withOpacity(0.8)
+                                ? Colors.white.withValues(alpha: 0.8)
                                 : AppColors.textSecondary,
                             fontSize: 11,
                           ),
@@ -119,14 +119,14 @@ class ChatMessageBubble extends StatelessWidget {
                             size: 14,
                             color: message.isRead
                                 ? Colors.lightBlueAccent
-                                : Colors.white.withOpacity(0.8),
+                                : Colors.white.withValues(alpha: 0.8),
                           ),
                           if (message.isRead) ...[
                             const SizedBox(width: 3),
                             Text(
                               'Seen',
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.7),
+                                color: Colors.white.withValues(alpha: 0.7),
                                 fontSize: 10,
                                 fontWeight: FontWeight.w500,
                               ),

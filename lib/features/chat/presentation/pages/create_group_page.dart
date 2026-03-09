@@ -135,7 +135,7 @@ class _GroupNameSection extends StatelessWidget {
           // Group icon placeholder
           CircleAvatar(
             radius: 28,
-            backgroundColor: AppColors.primary.withOpacity(0.1),
+            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
             child: Icon(Icons.group, color: AppColors.primary, size: 28),
           ),
           const SizedBox(width: 16),
@@ -185,7 +185,7 @@ class _SelectedMembersBar extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 24,
-                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                       backgroundImage: member.avatarUrl.isNotEmpty
                           ? NetworkImage(member.avatarUrl)
                           : null,
@@ -256,7 +256,7 @@ class _FriendSelectList extends StatelessWidget {
         return ListTile(
           leading: CircleAvatar(
             radius: 22,
-            backgroundColor: AppColors.primary.withOpacity(0.1),
+            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
             backgroundImage: friend.avatarUrl.isNotEmpty
                 ? NetworkImage(friend.avatarUrl)
                 : null,

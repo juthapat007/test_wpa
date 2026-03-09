@@ -127,18 +127,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
     }
   }
 
-  // void _onChatStateChanged(BuildContext context, ChatState state) {
-  //   if (state is ChatRoomSelected) {
-  //     Modular.to.pushNamed('/chat/room');
-  //   } else if (state is ChatError) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text(state.message), backgroundColor: Colors.red),
-  //     );
-  //   }
-  // }
-
-  // ─── AppBar ───────────────────────────────────────────────────────────────
-
   // ─── Profile Card ─────────────────────────────────────────────────────────
 
   Widget _buildProfileCard(
@@ -153,7 +141,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -199,7 +187,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -504,7 +492,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -515,7 +503,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         backgroundImage: profile.avatarUrl.isNotEmpty
             ? NetworkImage(profile.avatarUrl)
             : null,
-        backgroundColor: const Color(0xFF4A90D9).withOpacity(0.15),
+        backgroundColor: const Color(0xFF4A90D9).withValues(alpha: 0.15),
         child: profile.avatarUrl.isEmpty
             ? Text(
                 profile.name.isNotEmpty ? profile.name[0].toUpperCase() : '?',

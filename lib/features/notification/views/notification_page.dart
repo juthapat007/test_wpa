@@ -260,7 +260,7 @@ class _NotificationHeader extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: color.AppColors.primary.withOpacity(0.1),
+                color: color.AppColors.primary.withValues(alpha:0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -303,7 +303,7 @@ class _NotificationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: item.isUnread
-          ? color.AppColors.primary.withOpacity(0.05)
+          ? color.AppColors.primary.withValues(alpha: 0.05)
           : Colors.white,
       child: InkWell(
         onTap: onTap,
@@ -394,7 +394,7 @@ class _NotificationTile extends StatelessWidget {
                             '• Tap to read',
                             style: TextStyle(
                               fontSize: 11,
-                              color: color.AppColors.primary.withOpacity(0.7),
+                              color: color.AppColors.primary.withValues(alpha: 0.7),
                             ),
                           ),
                         ],
@@ -422,7 +422,7 @@ class _NotificationTile extends StatelessWidget {
     // ✅ icon ตาม type
     return CircleAvatar(
       radius: 22,
-      backgroundColor: _tileColor.withOpacity(0.12),
+      backgroundColor: _tileColor.withValues(alpha:0.12),
       child: Icon(_tileIcon, size: 22, color: _tileColor),
     );
   }
@@ -512,7 +512,7 @@ class _NotificationDetailSheet extends StatelessWidget {
                           CircleAvatar(
                             radius: 28,
                             backgroundColor: color.AppColors.primary
-                                .withOpacity(0.12),
+                                .withValues(alpha: 0.12),
                             child: Icon(
                               isConnectionType
                                   ? Icons.person_outline
@@ -830,7 +830,7 @@ class _FriendRequestCard extends StatelessWidget {
                     backgroundImage: avatarUrl.isNotEmpty
                         ? NetworkImage(avatarUrl)
                         : null,
-                    backgroundColor: const Color(0xFF4A90D9).withOpacity(0.15),
+                    backgroundColor: const Color(0xFF4A90D9).withValues(alpha: 0.15),
                     child: avatarUrl.isEmpty
                         ? Text(
                             name[0].toUpperCase(),

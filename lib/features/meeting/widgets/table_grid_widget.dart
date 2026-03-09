@@ -91,12 +91,9 @@ class _TableGridWidgetState extends State<TableGridWidget> {
             const SizedBox(height: 12),
 
             AppButton(
-              text: 'View team schedule',
+              text: 'View team meeting',
               textColor: AppColors.textOnPrimary,
               backgroundColor: AppColors.primary,
-
-              // icon: Icons.people_outline,
-              // color: AppColors.primary,
               onPressed: () => showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,
@@ -105,10 +102,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                 ),
 
                 builder: (_) => BlocProvider.value(
-                  value:
-                      Modular.get<
-                        FriendsCubit
-                      >(), // ✅ ส่ง FriendsCubit เข้าไปใน sheet
+                  value: Modular.get<FriendsCubit>(),
                   child: TeamScheduleSheet(
                     response: widget.response,
                     myDelegateId: widget.myDelegateId,
@@ -182,7 +176,6 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                             bottom: rowIndex < rows - 1 ? spacing : 0,
                           ),
                           child: Row(
-                            mainAxisSize: MainAxisSize.min,
                             children: List.generate(columns, (colIndex) {
                               final number = (rowIndex * columns + colIndex + 1)
                                   .toString();
@@ -240,7 +233,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Row(
@@ -267,11 +260,11 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),

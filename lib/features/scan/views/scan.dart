@@ -246,7 +246,7 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.textPrimary.withOpacity(0.08),
+                    color: AppColors.textPrimary.withValues(alpha: 0.08),
                     blurRadius: 24,
                     offset: const Offset(0, 8),
                   ),
@@ -304,11 +304,14 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
             height: 70,
             padding: const EdgeInsets.all(space.m),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(
                 16,
               ), // 👈 เปลี่ยนจาก shape: BoxShape.circle
-              border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+              border: Border.all(
+                color: color.withValues(alpha: 0.3),
+                width: 1.5,
+              ),
             ),
             child: Icon(icon, color: color, size: 30),
           ),
@@ -484,7 +487,7 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
       width: 280,
       height: 280,
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.1),
+        color: AppColors.error.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -519,13 +522,13 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
             Container(
               padding: const EdgeInsets.all(space.xl),
               decoration: BoxDecoration(
-                color: AppColors.textSecondary.withOpacity(0.1),
+                color: AppColors.textSecondary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.qr_code_2_rounded,
                 size: 100,
-                color: AppColors.textSecondary.withOpacity(0.3),
+                color: AppColors.textSecondary.withValues(alpha: 0.3),
               ),
             ),
             const SizedBox(height: space.xl),
@@ -560,7 +563,7 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
             Container(
               padding: const EdgeInsets.all(space.xl),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
+                color: AppColors.error.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(

@@ -175,7 +175,7 @@ class TimeSlotChip extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                       color: isSelected
                           ? Colors.white70
-                          : textColor.withOpacity(0.8),
+                          : textColor.withValues(alpha: 0.8),
                     ),
                   ),
                 ],

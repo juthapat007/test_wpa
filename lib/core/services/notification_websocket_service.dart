@@ -37,7 +37,7 @@ class NotificationWebSocketService {
   /// เมื่อได้รับ type == 'new_notification'
   void handleIncomingEvent(Map<String, dynamic> message) {
     final notifType = _extractNotifType(message);
-    log.i('[NotificationWS] ✅ RECEIVED notif.type=$notifType');
+    log.i('[NotificationWS] RECEIVED notif.type=$notifType');
 
     switch (notifType) {
       case 'connection_request':

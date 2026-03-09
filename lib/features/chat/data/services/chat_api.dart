@@ -50,7 +50,7 @@ class ChatApi {
     required String content,
     required String recipientId,
   }) async {
-    final recipientIdInt = int.tryParse(recipientId); // ✅ tryParse แทน parse
+    final recipientIdInt = int.tryParse(recipientId); 
     if (recipientIdInt == null) {
       throw Exception('Invalid recipientId: $recipientId');
     }
@@ -76,7 +76,7 @@ class ChatApi {
 
   /// ทำเครื่องหมายว่าอ่านข้อความจากคนนั้นแล้วทั้งหมด
   Future<Response> markAllAsRead(String senderId) async {
-    final senderIdInt = int.tryParse(senderId); // ✅ tryParse แทน parse
+    final senderIdInt = int.tryParse(senderId); //  tryParse แทน parse
     if (senderIdInt == null) throw Exception('Invalid senderId: $senderId');
 
     try {

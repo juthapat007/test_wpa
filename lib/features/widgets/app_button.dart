@@ -35,7 +35,7 @@ class AppButton extends StatelessWidget {
         onPressed: isDisabled ? null : onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
-          disabledBackgroundColor: backgroundColor?.withOpacity(0.6),
+          disabledBackgroundColor: backgroundColor?.withValues(alpha: 0.6),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
           ),
@@ -54,7 +54,7 @@ class AppButton extends StatelessWidget {
                 style: TextStyle(
                   color: textColor,
                   fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
       ),

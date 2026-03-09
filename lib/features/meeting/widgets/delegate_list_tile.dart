@@ -18,23 +18,23 @@ class DelegateListTile extends StatelessWidget {
       ),
       contentPadding: EdgeInsets.zero,
       leading: CircleAvatar(
-  backgroundColor: color.AppColors.primary.withOpacity(0.1),
-  foregroundImage: delegate.avatarUrl.isNotEmpty
-      ? NetworkImage(delegate.avatarUrl)
-      : null,
-  onForegroundImageError: delegate.avatarUrl.isNotEmpty
-      ? (_, __) {} // ← กัน exception ไม่ให้ throw
-      : null,
-  child: Text(
-    delegate.delegateName.isNotEmpty
-        ? delegate.delegateName[0].toUpperCase()
-        : '?',
-    style: const TextStyle(
-      color: color.AppColors.primary,
-      fontWeight: FontWeight.w600,
-    ),
-  ),
-),
+        backgroundColor: color.AppColors.primary.withValues(alpha: 0.1),
+        foregroundImage: delegate.avatarUrl.isNotEmpty
+            ? NetworkImage(delegate.avatarUrl)
+            : null,
+        onForegroundImageError: delegate.avatarUrl.isNotEmpty
+            ? (_, __) {} // ← กัน exception ไม่ให้ throw
+            : null,
+        child: Text(
+          delegate.delegateName.isNotEmpty
+              ? delegate.delegateName[0].toUpperCase()
+              : '?',
+          style: const TextStyle(
+            color: color.AppColors.primary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
       title: Text(
         delegate.delegateName,
         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
@@ -56,7 +56,7 @@ class DelegateListTile extends StatelessWidget {
       trailing: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: color.AppColors.primary.withOpacity(0.1),
+          color: color.AppColors.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(

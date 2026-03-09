@@ -81,7 +81,7 @@ class _LoginPageState extends State<LoginPage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: space.m),
+                    SizedBox(height: space.s),
                     const Text(
                       'Global Logistics Conference',
                       style: TextStyle(fontSize: 16),

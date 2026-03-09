@@ -217,7 +217,7 @@ class _GroupAvatarSmall extends StatelessWidget {
   Widget build(BuildContext context) {
     return CircleAvatar(
       radius: 18,
-      backgroundColor: AppColors.primary.withOpacity(0.1),
+      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
       child: Icon(Icons.group, color: AppColors.primary, size: 20),
     );
   }
@@ -238,7 +238,7 @@ class _ParticipantAvatar extends StatelessWidget {
 
     return CircleAvatar(
       radius: 18,
-      backgroundColor: AppColors.primary.withOpacity(0.1),
+      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
       child: ClipOval(
         child: Image.network(
           room.participantAvatar!,
@@ -259,7 +259,7 @@ class _ParticipantAvatar extends StatelessWidget {
   Widget _buildFallback() {
     return CircleAvatar(
       radius: 18,
-      backgroundColor: AppColors.primary.withOpacity(0.1),
+      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
       child: _buildFallbackChild(),
     );
   }

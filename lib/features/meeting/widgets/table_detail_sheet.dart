@@ -54,7 +54,7 @@ class TableDetailSheet extends StatelessWidget {
         width: 40,
         height: 4,
         decoration: BoxDecoration(
-          color: color.AppColors.surface.withOpacity(0.7),
+          color: color.AppColors.surface.withValues(alpha: 0.7),
           borderRadius: BorderRadius.circular(2),
         ),
       ),
@@ -67,7 +67,6 @@ class TableDetailSheet extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ✅ แสดง meetings ถ้ามี
         if (table.meetings.isNotEmpty) ...[
           const Text(
             'Meetings',
@@ -78,23 +77,23 @@ class TableDetailSheet extends StatelessWidget {
           const SizedBox(height: 20),
         ],
         // delegates เดิม
-        if (table.delegates.isNotEmpty) ...[
-          Text(
-            'Delegates (${table.delegates.length})',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: table.delegates.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (_, index) => DelegateListTile(
-              delegate: table.delegates[index],
-              tableNumber: table.tableNumber,
-            ),
-          ),
-        ],
+        // if (table.delegates.isNotEmpty) ...[
+        //   Text(
+        //     'Delegates (${table.delegates.length})',
+        //     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        //   ),
+        //   const SizedBox(height: 16),
+        //   ListView.separated(
+        //     shrinkWrap: true,
+        //     physics: const NeverScrollableScrollPhysics(),
+        //     itemCount: table.delegates.length,
+        //     separatorBuilder: (_, __) => const Divider(height: 1),
+        //     itemBuilder: (_, index) => DelegateListTile(
+        //       delegate: table.delegates[index],
+        //       tableNumber: table.tableNumber,
+        //     ),
+        //   ),
+        // ],
       ],
     );
   }

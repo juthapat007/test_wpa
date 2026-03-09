@@ -95,7 +95,6 @@ class _FriendCard extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(child: _Info(delegate: delegate)),
               _ChatButton(delegate: delegate),
-             
             ],
           ),
         ),
@@ -114,7 +113,7 @@ class _Avatar extends StatelessWidget {
     final hasAvatar = delegate.avatarUrl.isNotEmpty;
     return CircleAvatar(
       radius: 26,
-      backgroundColor: AppColors.primary.withOpacity(0.12),
+      backgroundColor: AppColors.primary.withValues(alpha: 0.12),
       backgroundImage: hasAvatar ? NetworkImage(delegate.avatarUrl) : null,
       child: !hasAvatar
           ? Text(

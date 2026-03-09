@@ -117,7 +117,7 @@ class MeetingCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
       decoration: BoxDecoration(
-        color: helper.statusColor.withOpacity(0.12),
+        color: helper.statusColor.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -152,7 +152,7 @@ class EmptySlotCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       decoration: BoxDecoration(
-        color: AppColors.info.withOpacity(0.2),
+        color: AppColors.info.withValues(alpha: 0.2),
         border: Border.all(color: Colors.grey[200]!, width: 1),
         borderRadius: BorderRadius.circular(10),
       ),
@@ -177,7 +177,7 @@ class EmptySlotCard extends StatelessWidget {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.info.withOpacity(0.5),
+                  color: AppColors.info.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(

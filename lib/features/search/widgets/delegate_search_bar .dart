@@ -59,7 +59,7 @@ class _DelegateSearchBarState extends State<DelegateSearchBar> {
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(
-              color: color.AppColors.textSecondary.withOpacity(0.5),
+              color: color.AppColors.textSecondary.withValues(alpha: 0.5),
             ),
           ),
         ),

@@ -18,9 +18,6 @@ class NotificationItemModel {
   });
 
   factory NotificationItemModel.fromJson(Map<String, dynamic> json) {
-    // print('🔔 notification keys: ${json.keys.toList()}');
-    // print('🔔 is_unread?: ${json['is_unread?']}');
-    // print('🔔 is_unread: ${json['is_unread']}');
 
     return NotificationItemModel(
       id: json['id'],
