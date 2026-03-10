@@ -21,7 +21,6 @@ class ProfileApi {
 
   Future<Response> updateProfile(Map<String, dynamic> data) async {
     try {
-      // final response = await dio.patch('/profile', data: {'profile': data});
       final response = await dio.patch('/profile', data: data);
       log.d('edited profile: ${response.data}');
       return response;

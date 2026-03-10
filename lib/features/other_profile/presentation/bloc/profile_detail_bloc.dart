@@ -113,7 +113,7 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
         ),
       );
     } catch (e) {
-      print('❌ Load schedule others error: $e');
+      print(' Load schedule others error: $e');
       if (currentState is ProfileDetailLoaded) {
         emit(
           ProfileDetailLoaded(

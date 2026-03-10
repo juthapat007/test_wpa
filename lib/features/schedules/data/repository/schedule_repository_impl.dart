@@ -70,7 +70,7 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
           .map((json) => LeaveTypeModel.fromJson(json).toEntity())
           .toList();
     } on DioException catch (e) {
-      print('❌ Error fetching leave types: ${e.message}');
+      print(' Error fetching leave types: ${e.message}');
       return [];
     }
   }
@@ -78,11 +78,8 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
   @override
   Future<LeaveFormResponse> submitLeaveForms(LeaveFormsRequest request) async {
     try {
-      print('📤 Submitting leave forms: ${request.toJson()}');
-
       final response = await api.submitLeaveForms(request.toJson());
-
-      print('✅ Leave forms submitted successfully');
+      print('Leave forms submitted successfully');
 
       return LeaveFormResponse.fromJson(
         response.data is Map<String, dynamic>
@@ -93,8 +90,8 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
               },
       );
     } on DioException catch (e) {
-      print('❌ Error submitting leave forms: ${e.message}');
-      print('❌ Response: ${e.response?.data}');
+      print(' Error submitting leave forms: ${e.message}');
+      print(' Response: ${e.response?.data}');
 
       final errorMessage =
           e.response?.data?['message'] ??
@@ -103,7 +100,7 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
 
       return LeaveFormResponse(success: false, message: errorMessage);
     } catch (e) {
-      print('❌ Unexpected error: $e');
+      print(' Unexpected error: $e');
       return const LeaveFormResponse(
         success: false,
         message: 'An unexpected error occurred',

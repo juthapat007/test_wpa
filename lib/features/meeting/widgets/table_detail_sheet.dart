@@ -10,11 +10,13 @@ import 'package:test_wpa/features/meeting/widgets/delegate_list_tile.dart';
 class TableDetailSheet extends StatelessWidget {
   final TableInfo table;
   final bool isMyTable;
+  final String meetingsSectionTitle;
 
   const TableDetailSheet({
     super.key,
     required this.table,
     required this.isMyTable,
+    this.meetingsSectionTitle = 'Meeting',
   });
   @override
   Widget build(BuildContext context) {
@@ -62,38 +64,21 @@ class TableDetailSheet extends StatelessWidget {
   }
 
   Widget _buildDelegatesList() {
-    if (table.delegates.isEmpty) return _buildEmptyState();
-
+    if (table.delegates.isEmpty && table.meetings.isEmpty) {
+      return _buildEmptyState();
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (table.meetings.isNotEmpty) ...[
-          const Text(
-            'Meetings',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            meetingsSectionTitle,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           ...table.meetings.map((m) => _buildMeetingCard(m)),
           const SizedBox(height: 20),
         ],
-        // delegates เดิม
-        // if (table.delegates.isNotEmpty) ...[
-        //   Text(
-        //     'Delegates (${table.delegates.length})',
-        //     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        //   ),
-        //   const SizedBox(height: 16),
-        //   ListView.separated(
-        //     shrinkWrap: true,
-        //     physics: const NeverScrollableScrollPhysics(),
-        //     itemCount: table.delegates.length,
-        //     separatorBuilder: (_, __) => const Divider(height: 1),
-        //     itemBuilder: (_, index) => DelegateListTile(
-        //       delegate: table.delegates[index],
-        //       tableNumber: table.tableNumber,
-        //     ),
-        //   ),
-        // ],
       ],
     );
   }
@@ -111,7 +96,8 @@ class TableDetailSheet extends StatelessWidget {
             _buildSideRow(
               avatarUrl: meeting.sideA.avatarUrl,
               name: meeting.sideA.name,
-              subtitle: meeting.sideA.title ?? meeting.sideA.company,
+              title: meeting.sideA.title,
+              company: meeting.sideA.company,
               delegateId: meeting.sideA.delegateId,
             ),
             const Padding(
@@ -134,13 +120,12 @@ class TableDetailSheet extends StatelessWidget {
             ...meeting.sideB.members.asMap().entries.map((entry) {
               final isLast = entry.key == meeting.sideB.members.length - 1;
               return Padding(
-                padding: EdgeInsets.only(
-                  bottom: isLast ? 0 : 8,
-                ), // ✅ ไม่เว้นหลังตัวสุดท้าย
+                padding: EdgeInsets.only(bottom: isLast ? 0 : 8),
                 child: _buildSideRow(
                   avatarUrl: entry.value.avatarUrl,
                   name: entry.value.name,
-                  subtitle: meeting.sideB.company,
+                  title: entry.value.title,
+                  company: meeting.sideB.company,
                   delegateId: entry.value.id,
                 ),
               );
@@ -154,7 +139,8 @@ class TableDetailSheet extends StatelessWidget {
   Widget _buildSideRow({
     required String avatarUrl,
     required String name,
-    required String subtitle,
+    required String? title,
+    required String company,
     required int delegateId,
   }) {
     return GestureDetector(
@@ -180,16 +166,28 @@ class TableDetailSheet extends StatelessWidget {
                   name,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
-                    fontSize: 13,
+                    fontSize: 16,
                   ),
                 ),
+
                 Text(
-                  subtitle,
+                  company,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
                     color: color.AppColors.textSecondary,
                   ),
                 ),
+                if (title != null && title.isNotEmpty)
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: color.AppColors.textSecondary,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -198,7 +196,6 @@ class TableDetailSheet extends StatelessWidget {
             size: 16,
             color: color.AppColors.textSecondary,
           ),
-          const SizedBox(height: 12),
         ],
       ),
     );

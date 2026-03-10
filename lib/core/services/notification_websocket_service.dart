@@ -8,6 +8,7 @@ enum WsEventType {
   friendRequest, // connection_request ใหม่
   requestAccepted, // คนอื่น accept request เรา
   requestRejected, // คนอื่น reject request เรา
+
   unknown,
 }
 

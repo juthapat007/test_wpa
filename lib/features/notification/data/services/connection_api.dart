@@ -30,7 +30,7 @@ class ConnectionApi {
       );
       return response;
     } catch (e) {
-      print('❌ ConnectionApi.sendRequest error: $e');
+      print(' ConnectionApi.sendRequest error: $e');
       rethrow;
     }
   }
@@ -53,7 +53,7 @@ class ConnectionApi {
     try {
       await dio.delete('/requests/$targetId/cancel');
     } catch (e) {
-      print('❌ ConnectionApi.cancelRequest error: $e');
+      print(' ConnectionApi.cancelRequest error: $e');
       rethrow;
     }
   }
@@ -64,7 +64,7 @@ class ConnectionApi {
       // await dio.delete('/connections/$delegateId');
       await dio.delete('/networking/unfriend/$delegateId');
     } catch (e) {
-      print('❌ ConnectionApi.unfriend error: $e');
+      print(' ConnectionApi.unfriend error: $e');
       rethrow;
     }
   }

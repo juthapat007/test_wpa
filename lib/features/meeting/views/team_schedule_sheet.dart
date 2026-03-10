@@ -133,9 +133,9 @@ class TeamScheduleSheet extends StatelessWidget {
                             const Padding(
                               padding: EdgeInsets.symmetric(horizontal: 20),
                               child: Text(
-                                'Meetings',
+                                'Meeting',
                                 style: TextStyle(
-                                  fontSize: 15,
+                                  fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),

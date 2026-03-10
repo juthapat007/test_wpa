@@ -44,19 +44,12 @@ class ChatRoomCard extends StatelessWidget {
   Widget _buildAvatar() {
     return Stack(
       children: [
-        // ── Group avatar: ซ้อน 2 วง ─────────────────────────
-        if (room.isGroup)
-          _GroupAvatar(participantIds: room.participantIds)
-        else
-          _AuthenticatedAvatar(
-            imageUrl: room.participantAvatar,
-            name: room.participantName,
-            radius: 28,
-          ),
-
-        // online dot — แสดงเฉพาะ 1-on-1
-        if (!room.isGroup &&
-            room.lastActiveAt != null &&
+        _AuthenticatedAvatar(
+          imageUrl: room.participantAvatar,
+          name: room.participantName,
+          radius: 28,
+        ),
+        if (room.lastActiveAt != null &&
             DateTime.now().difference(room.lastActiveAt!).inMinutes < 5)
           Positioned(
             right: 0,
@@ -77,9 +70,7 @@ class ChatRoomCard extends StatelessWidget {
 
   Widget _buildContent() {
     // ชื่อที่แสดง: ถ้ากลุ่ม → groupName, ถ้า 1-on-1 → participantName เดิม
-    final displayName = room.isGroup
-        ? (room.groupName ?? 'Group Chat')
-        : room.participantName;
+    final displayName = room.participantName;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -297,28 +288,6 @@ class _AuthenticatedAvatarState extends State<_AuthenticatedAvatar> {
           },
         ),
       ),
-    );
-  }
-}
-
-/// Group avatar — ซ้อน 2 วงเล็ก แทน avatar คนเดียว
-class _GroupAvatar extends StatelessWidget {
-  final List<String> participantIds;
-
-  const _GroupAvatar({required this.participantIds});
-
-  @override
-  Widget build(BuildContext context) {
-    // ตอนนี้ยังไม่มี avatar URL → แสดง icon กลุ่มไปก่อน
-    // พอ backend พร้อมค่อยเปลี่ยนมาซ้อน avatar จริง
-    return Container(
-      width: 56,
-      height: 56,
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.12),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(Icons.group, color: AppColors.primary, size: 28),
     );
   }
 }

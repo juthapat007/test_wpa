@@ -17,7 +17,7 @@ class ProfileDetailRepositoryImpl implements ProfileDetailRepository {
       final model = ProfileDetailModel.fromJson(json);
       return model.toEntity();
     } catch (e) {
-      print('❌ ProfileDetailRepositoryImpl error: $e');
+      print(' ProfileDetailRepositoryImpl error: $e');
       throw Exception('Failed to get profile detail: $e');
     }
   }

@@ -34,7 +34,7 @@ class ScheduleOthersRepositoryImpl implements ScheduleOthersRepository {
         schedules: schedules,
       );
     } catch (e) {
-      print('❌ ScheduleOthersRepositoryImpl error: $e');
+      print(' ScheduleOthersRepositoryImpl error: $e');
       throw Exception('Failed to load schedule others: $e');
     }
   }

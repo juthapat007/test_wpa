@@ -383,22 +383,23 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
   }
 
   // ========== Share QR ==========
-  Future<void> _shareQrCode() async {
-    if (_delegateId == null) return;
+Future<void> _shareQrCode() async {
+  if (_delegateId == null) return;
 
-    final profileLink = '${DioClient.appBaseUrl}/#/other_profile/$_delegateId';
-    final shareText = StringBuffer();
+  final profileLink = 'https://wpaapp2026.web.app/other_profile/$_delegateId';
+  
+  final shareText = StringBuffer();
+  shareText.write('${_userName ?? 'Delegate Profile'}\n');
+  if (_userTitle != null) shareText.write('$_userTitle\n');
+  if (_userCompany != null) shareText.write('$_userCompany\n');
+  shareText.write('\n$profileLink');
 
-    shareText.write(' ${_userName ?? 'Delegate Profile'}\n');
-    if (_userTitle != null) shareText.write('$_userTitle\n');
-    if (_userCompany != null) shareText.write(' $_userCompany\n');
-    shareText.write('\n$profileLink');
+  await Share.share(
+    shareText.toString(),
+    subject: 'Profile${_userName != null ? " $_userName" : ""}',
+  );
+}y
 
-    await Share.share(
-      shareText.toString(),
-      subject: 'Profile${_userName != null ? "  $_userName" : ""}',
-    );
-  }
 
   // ========== Search Dialog ==========
   void _openSearchDialog() {

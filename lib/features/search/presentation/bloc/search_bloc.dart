@@ -40,7 +40,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       _allDelegates = response.delegates;
       emit(SearchLoaded(response));
     } catch (e) {
-      print('❌ SearchBloc error: $e');
+      print(' SearchBloc error: $e');
       emit(SearchError('Cannot search delegates: $e'));
     }
   }

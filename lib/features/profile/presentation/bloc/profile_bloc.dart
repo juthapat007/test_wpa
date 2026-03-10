@@ -30,7 +30,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       final profile = await profileRepository.getProfile();
       emit(ProfileLoaded(profile.toViewModel()));
     } catch (e) {
-      print('❌ LoadProfile Error: $e');
+      print(' LoadProfile Error: $e');
       emit(ProfileError(e.toString()));
     }
   }
@@ -52,7 +52,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     }
   }
 
-  // // ✨ แก้ไขให้ emit ProfileLoaded เท่านั้น พร้อม flag isUpdated
+  //แก้ไขให้ emit ProfileLoaded เท่านั้น พร้อม flag isUpdated
   Future<void> _onUpdateProfileField(
     UpdateProfileField event,
     Emitter<ProfileState> emit,
@@ -62,8 +62,6 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     final currentProfile = (state as ProfileLoaded).profile;
 
     try {
-      print('📤 Updating profile field: ${event.field} = ${event.value}');
-
       // เตรียมข้อมูลสำหรับ API
       final Map<String, dynamic> updateData = {event.field: event.value};
 
@@ -80,7 +78,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       // Emit เฉพาะ ProfileLoaded state เดียว พร้อม success flag
       emit(ProfileLoaded(updatedProfile.toViewModel(), wasUpdated: true));
     } catch (e) {
-      print('❌ Update profile error: $e');
+      print(' Update profile error: $e');
 
       // กรณี error ให้แสดง error แล้วกลับไปที่ state เดิม
       emit(
@@ -98,13 +96,23 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   ) async {
     if (state is! ProfileLoaded) return;
     final currentProfile = (state as ProfileLoaded).profile;
+    final fileSize = await event.imageFile.length();
+    if (fileSize > 4 * 1024 * 1024) {
+      emit(
+        ProfileLoaded(
+          currentProfile,
+          updateError: 'Image must be smaller than 4MB',
+        ),
+      );
+      return;
+    }
 
     try {
       await profileApi.uploadAvatar(event.imageFile);
       final updatedProfile = await profileRepository.getProfile();
       emit(ProfileLoaded(updatedProfile.toViewModel(), wasUpdated: true));
     } catch (e) {
-      print('❌ Upload avatar error: $e');
+      print('Upload avatar error: $e');
       emit(
         ProfileLoaded(currentProfile, updateError: 'Failed to upload avatar.'),
       );

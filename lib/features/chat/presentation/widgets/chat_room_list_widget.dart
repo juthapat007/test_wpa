@@ -49,13 +49,7 @@ class _ChatRoomListWidgetState extends State<ChatRoomListWidget>
       currentIndex: 3,
       appBarStyle: AppBarStyle.elegant,
       backgroundColor: color.AppColors.background,
-      actions: [
-        IconButton(
-          onPressed: () => Modular.to.pushNamed('/chat/create_group'),
-          tooltip: 'New Group',
-          icon: const Icon(Icons.group_add_outlined),
-        ),
-      ],
+
       body: Column(
         children: [
           TabBar(

@@ -40,14 +40,6 @@ class ConnectionBloc extends Bloc<ConnectionEvent, ConnectionRequestState> {
 
   // ─── WebSocket listener ────────────────────────────────────────────────────
 
-  // void _listenToWebSocket() {
-  //   _wsSubscription = NotificationWebSocketService.instance.events.listen((
-  //     event,
-  //   ) {
-  //     if (event.type == WsEventType.friendRequest) {
-  //       add(WsFriendRequestReceived(event));
-  //     }
-  //   });
   void _listenToWebSocket() {
     _wsSubscription = NotificationWebSocketService.instance.events.listen((
       event,

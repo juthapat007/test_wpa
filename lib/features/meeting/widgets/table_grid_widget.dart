@@ -309,21 +309,30 @@ class _TableGridWidgetState extends State<TableGridWidget> {
           booth.isOccupied ? Icons.people : Icons.event_available,
           color: booth.isOccupied ? AppColors.success : AppColors.textSecondary,
         ),
-        onTap: () => _showTableDetails(booth, false),
+        onTap: () => _showTableDetails(booth, false, sectionTitle: 'Booths'),
       ),
     );
   }
 
-  void _showTableDetails(TableInfo table, bool isMyTable) {
+  void _showTableDetails(
+    TableInfo table,
+    bool isMyTable, {
+    String? sectionTitle,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => TableDetailSheet(table: table, isMyTable: isMyTable),
+      builder: (_) => TableDetailSheet(
+        table: table,
+        isMyTable: isMyTable,
+        meetingsSectionTitle: sectionTitle ?? 'Meeting',
+      ),
     );
   }
+
 
   int _calculateRows(int tableCount, int columns) =>
       (tableCount / columns).ceil();

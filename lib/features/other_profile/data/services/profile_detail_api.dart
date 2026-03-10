@@ -11,7 +11,7 @@ class ProfileDetailApi {
       final response = await dio.get('/delegates/$delegateId');
       return response.data as Map<String, dynamic>;
     } catch (e) {
-      print('❌ ProfileDetailApi error: $e');
+      print(' ProfileDetailApi error: $e');
       rethrow;
     }
   }
