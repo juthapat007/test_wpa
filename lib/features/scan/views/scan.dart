@@ -383,23 +383,36 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
   }
 
   // ========== Share QR ==========
-Future<void> _shareQrCode() async {
-  if (_delegateId == null) return;
+  Future<void> _shareQrCode() async {
+    if (_currentQrBase64 == null) return;
 
-  final profileLink = 'https://wpaapp2026.web.app/other_profile/$_delegateId';
-  
-  final shareText = StringBuffer();
-  shareText.write('${_userName ?? 'Delegate Profile'}\n');
-  if (_userTitle != null) shareText.write('$_userTitle\n');
-  if (_userCompany != null) shareText.write('$_userCompany\n');
-  shareText.write('\n$profileLink');
+    try {
+      final base64String = _currentQrBase64!.contains(',')
+          ? _currentQrBase64!.split(',').last
+          : _currentQrBase64!;
+      final bytes = base64Decode(base64String);
 
-  await Share.share(
-    shareText.toString(),
-    subject: 'Profile${_userName != null ? " $_userName" : ""}',
-  );
-}y
+      // บันทึกเป็น temp file ก่อน
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/qr_code.png');
+      await file.writeAsBytes(bytes);
 
+      // แชร์เป็นภาพ
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: _userName ?? 'My QR Code',
+        subject: 'Profile${_userName != null ? " $_userName" : ""}',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('เกิดข้อผิดพลาด: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
 
   // ========== Search Dialog ==========
   void _openSearchDialog() {

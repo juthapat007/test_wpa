@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 
-/// 🆕 Bottom Sheet สำหรับ Actions เมื่อกดค้างข้อความ
+///  Bottom Sheet สำหรับ Actions เมื่อกดค้างข้อความ
 /// แสดง: แก้ไข, ลบ, ยกเลิก
 class MessageActionBottomSheet extends StatelessWidget {
   final VoidCallback onEdit;
@@ -69,29 +69,9 @@ class MessageActionBottomSheet extends StatelessWidget {
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: SizedBox(
-              width: double.infinity,
-              child: TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.grey[300]!),
-                  ),
-                ),
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ),
-            ),
+            child: SizedBox(width: double.infinity),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 60),
         ],
       ),
     );
@@ -112,7 +92,7 @@ class MessageActionBottomSheet extends StatelessWidget {
   }
 }
 
-/// 🆕 Dialog สำหรับแก้ไขข้อความ
+/// Dialog สำหรับแก้ไขข้อความ
 class EditMessageDialog extends StatefulWidget {
   final String initialContent;
   final Function(String) onSave;
@@ -202,7 +182,7 @@ class _EditMessageDialogState extends State<EditMessageDialog> {
   }
 }
 
-/// 🆕 Dialog ยืนยันการลบ
+///  Dialog ยืนยันการลบ
 class DeleteMessageDialog {
   static void show({
     required BuildContext context,

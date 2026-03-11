@@ -58,36 +58,38 @@ class MeetingCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Flexible(
-                // ✅ เปลี่ยนจาก Text ธรรมดา
-                child: Text(
-                  '$startTime - $endTime',
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
+              Expanded(
+                child: Wrap(
+                  spacing: 80,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      '$startTime - $endTime',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    if (schedule.tableNumber != null)
+                      Text(
+                        '${schedule.tableNumber}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: helper.statusColor,
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              SizedBox(width: 10),
-              if (schedule.tableNumber != null) ...[
-                const SizedBox(width: 8),
-                Text(
-                  '${schedule.tableNumber}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: helper.statusColor,
-                  ),
-                ),
-              ],
-              const Spacer(),
+              const SizedBox(width: 8),
               _buildBadge(helper),
             ],
           ),
-
+          const SizedBox(height: 4),
           Text(
             _buildSubtitleText(helper),
             style: TextStyle(
@@ -115,7 +117,7 @@ class MeetingCard extends StatelessWidget {
 
   Widget _buildBadge(ScheduleCardHelper helper) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
         color: helper.statusColor.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
@@ -191,7 +193,7 @@ class EmptySlotCard extends StatelessWidget {
               ),
             ],
           ),
-          // const SizedBox(height: 4),
+          const SizedBox(height: 4),
           // Row 2: label
           Text(
             'No Meeting',

@@ -28,9 +28,7 @@ class ChatRepositoryImpl implements ChatRepository {
   @override
   Future<void> connectWebSocket() async {
     final token = await storage.read(key: 'auth_token');
-    if (token == null) {
-      throw Exception('No auth token found');
-    }
+    if (token == null) throw Exception('No auth token found');
     await webSocketService.connect(token);
   }
 
@@ -39,6 +37,8 @@ class ChatRepositoryImpl implements ChatRepository {
     await webSocketService.disconnect();
   }
 
+  @override
+  Stream<String> get roomDeletedStream => webSocketService.roomDeletedStream;
   @override
   Stream<ChatMessage> get messageStream => webSocketService.messageStream;
 
@@ -61,12 +61,13 @@ class ChatRepositoryImpl implements ChatRepository {
   Stream<TypingEvent> get typingStream => webSocketService.typingStream;
 
   @override
-  Future<void> sendMessage(ChatMessage message) async {
+  Future<void> sendMessage(ChatMessage message, {String? imageBase64}) async {
     try {
       await api.sendMessage(
         chatRoomId: message.chatRoomId,
         content: message.content,
         recipientId: message.receiverId,
+        imageBase64: imageBase64,
       );
     } catch (e) {
       debugPrint('REST send failed, falling back to WebSocket: $e');
@@ -83,6 +84,8 @@ class ChatRepositoryImpl implements ChatRepository {
       final rooms = data.map((json) {
         final delegate = json['delegate'];
         final lastMessageText = json['last_message'] as String?;
+        final lastMessageType = json['last_message_type'] as String?; // ✅ เพิ่ม
+        final isLastImage = lastMessageType == 'image';
         final lastMessageAt = json['last_message_at'] as String?;
         return ChatRoom(
           id: json['id'].toString(),
@@ -107,17 +110,13 @@ class ChatRepositoryImpl implements ChatRepository {
           lastActiveAt: lastMessageAt != null
               ? DateTime.parse(lastMessageAt).toLocal()
               : null,
-
-          // ── field ใหม่ ──────────────────────────────────────────
           isGroup: json['is_group'] ?? false,
           groupName: json['group_name'],
           participantIds: json['participant_ids'] != null
               ? (json['participant_ids'] as List)
                     .map<String>((e) => e.toString())
                     .toList()
-              : [
-                  delegate['id'].toString(),
-                ], // 1-on-1 → ใส่ participantId เดิมไปก่อน
+              : [delegate['id'].toString()],
         );
       }).toList();
 
@@ -149,31 +148,39 @@ class ChatRepositoryImpl implements ChatRepository {
 
       final List<dynamic> data = response.data['data'] ?? response.data;
       final meta = response.data['meta'];
+      final messages = data
+          .map((json) {
+            try {
+              final isImage = json['message_type'] == 'image';
+              final content = isImage
+                  ? (json['image_url'] ?? '')
+                  : (json['content'] ?? '');
+              // if (isImage) debugPrint('🖼 image_url: $content');
 
-      print('📋 API Response for partner $partnerId:');
-      print('   Total messages in this page: ${data.length}');
-      print('   Current page: ${meta?['page']}');
-      print('   Total pages: ${meta?['total_pages']}');
-      print('   Total count: ${meta?['total_count']}');
-
-      final messages = data.map((json) {
-        return ChatMessage(
-          id: json['id'].toString(),
-          senderId: json['sender']['id'].toString(),
-          senderName: json['sender']['name'] ?? '',
-          senderAvatar: json['sender']['avatar_url'],
-          receiverId: json['recipient']['id'].toString(),
-          chatRoomId: json['chat_room_id'] as int? ?? 0,
-          content: json['content'] ?? '',
-          createdAt: json['created_at'] != null
-              ? DateTime.parse(json['created_at']).toLocal()
-              : DateTime.now(),
-          editedAt: json['edited_at'] != null
-              ? DateTime.parse(json['edited_at']).toLocal()
-              : null,
-          isDeleted: json['is_deleted'] ?? false,
-        );
-      }).toList();
+              return ChatMessage(
+                id: json['id'].toString(),
+                senderId: json['sender']['id'].toString(),
+                senderName: json['sender']['name'] ?? '',
+                senderAvatar: json['sender']['avatar_url'],
+                receiverId: json['recipient']['id'].toString(),
+                chatRoomId: json['chat_room_id'] as int? ?? 0,
+                content: content,
+                type: isImage ? MessageType.image : MessageType.text,
+                createdAt: json['created_at'] != null
+                    ? DateTime.parse(json['created_at']).toLocal()
+                    : DateTime.now(),
+                editedAt: json['edited_at'] != null
+                    ? DateTime.parse(json['edited_at']).toLocal()
+                    : null,
+                isDeleted: json['is_deleted'] ?? false,
+              );
+            } catch (e) {
+              debugPrint('Skip message parse error: $e | json: $json');
+              return null;
+            }
+          })
+          .whereType<ChatMessage>()
+          .toList();
 
       messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
@@ -202,7 +209,6 @@ class ChatRepositoryImpl implements ChatRepository {
         participantId: participantId,
         participantName: data['title'] ?? '',
         unreadCount: 0,
-        //เพิ่มเพื่อทำchat group
         isGroup: false,
         participantIds: [participantId],
       );
@@ -247,12 +253,23 @@ class ChatRepositoryImpl implements ChatRepository {
     }
   }
 
+  /// ลบประวัติสนทนาทั้งหมดกับ delegate — คืนค่า deleted_count
+  @override
+  Future<int> deleteConversation(String partnerId) async {
+    try {
+      final response = await api.deleteConversation(partnerId);
+      return (response.data['deleted_count'] as int?) ?? 0;
+    } on Exception catch (e) {
+      // โยน error message จาก server ให้ caller จัดการ
+      throw Exception('Failed to delete conversation: $e');
+    }
+  }
+
   Future<void> sendTypingIndicator(String recipientId, bool isTyping) async {
     await webSocketService.sendTypingIndicator(recipientId, isTyping);
   }
 
   Future<void> enterRoom(String roomId) async {
-    // await webSocketService.enterRoom(userId);
     await webSocketService.enterRoom(roomId);
   }
 

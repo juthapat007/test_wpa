@@ -20,25 +20,19 @@ class ChatConversationView extends StatefulWidget {
 class _ChatConversationViewState extends State<ChatConversationView> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
-
-  // Timer? _typingTimer;
-  // bool _isTyping = false;
   bool _isLoadingMore = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    // _messageController.addListener(_onTextChanged);
   }
 
   @override
   void dispose() {
-    // _messageController.removeListener(_onTextChanged);
     _messageController.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
-    // _typingTimer?.cancel();
     super.dispose();
   }
 
@@ -47,7 +41,6 @@ class _ChatConversationViewState extends State<ChatConversationView> {
   void _onScroll() {
     if (!_scrollController.hasClients || _isLoadingMore) return;
 
-    // reverse list: maxScrollExtent คือด้านบนสุด (ข้อความเก่า)
     final atTop =
         _scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200;
@@ -55,8 +48,6 @@ class _ChatConversationViewState extends State<ChatConversationView> {
     if (!atTop) return;
 
     final state = context.read<ChatBloc>().state;
-
-    //  ดึง room/page/hasMore จาก state ทุก type ที่เกี่ยวข้อง
     final room = _extractRoom(state);
     final hasMore = _extractHasMore(state);
     final currentPage = _extractCurrentPage(state);
@@ -82,13 +73,11 @@ class _ChatConversationViewState extends State<ChatConversationView> {
     });
   }
 
-  // ─── Send Message ─────────────────────────────────────────────────────────
+  // ─── Send Text ────────────────────────────────────────────────────────────
 
   void _sendMessage() {
     final content = _messageController.text.trim();
     if (content.isEmpty) return;
-
-    // _stopTyping();
 
     final room = _extractRoom(context.read<ChatBloc>().state);
     if (room == null) return;
@@ -100,34 +89,43 @@ class _ChatConversationViewState extends State<ChatConversationView> {
     _scrollToBottom();
   }
 
+  // ─── Send Image ───────────────────────────────────────────────────────────
+
+  void _sendImage(String imageBase64) {
+    final room = _extractRoom(context.read<ChatBloc>().state);
+    if (room == null) return;
+
+    context.read<ChatBloc>().add(
+      SendMessage(
+        roomId: room.id,
+        type: MessageType.image,
+        imageBase64: imageBase64,
+      ),
+    );
+    _scrollToBottom();
+  }
+
   // ─── Build ────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<ChatBloc, ChatState>(
-      // ✅ FIX: listenWhen — handle scroll และ loading เฉพาะ state ที่เกี่ยวข้อง
       listenWhen: (_, curr) =>
           curr is ChatRoomSelected ||
           curr is NewMessageReceived ||
           curr is MessageSent ||
           curr is MessageSending,
       listener: (context, state) {
-        // reset flag เมื่อ load more เสร็จ
         if (state is ChatRoomSelected) _isLoadingMore = false;
-
-        // scroll to bottom เมื่อมีข้อความใหม่หรือส่งข้อความ
         if (state is NewMessageReceived ||
             state is MessageSent ||
             state is MessageSending) {
           _scrollToBottom();
         }
       },
-      // ✅ FIX: buildWhen — rebuild เฉพาะ state ที่มี messages/room
-      // ChatRoomsLoaded ไม่ควรมา rebuild หน้านี้
       buildWhen: (_, curr) =>
           curr is ChatLoading ||
           curr is ChatRoomSelected ||
-          // curr is LoadingMoreMessages ||
           curr is MessageSending ||
           curr is MessageSent ||
           curr is NewMessageReceived ||
@@ -157,11 +155,8 @@ class _ChatConversationViewState extends State<ChatConversationView> {
           );
         }
 
-        // ✅ FIX: ดึงข้อมูลจาก state ด้วย type-safe helpers
         final room = _extractRoom(state);
         final messages = _extractMessages(state);
-        // final isTyping = _extractIsTyping(state);
-        // final isLoadingMoreState = state is LoadingMoreMessages;
 
         if (room == null) {
           return const EmptyStateWidget(
@@ -187,21 +182,19 @@ class _ChatConversationViewState extends State<ChatConversationView> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       itemCount: messages.length,
                       itemBuilder: (context, index) {
-                        final messageIndex = index;
-                        if (messageIndex < 0 ||
-                            messageIndex >= messages.length) {
+                        final reversedIndex = messages.length - 1 - index;
+                        if (reversedIndex < 0 ||
+                            reversedIndex >= messages.length) {
                           return const SizedBox.shrink();
                         }
 
-                        final reversedIndex =
-                            messages.length - 1 - messageIndex;
                         final message = messages[reversedIndex];
                         final isMe = message.senderId == currentUserId;
 
                         return ChatMessageBubble(
                           message: message,
                           isMe: isMe,
-                          onEdit: isMe
+                          onEdit: isMe && message.type == MessageType.text
                               ? (newContent) => context.read<ChatBloc>().add(
                                   UpdateMessageLocal(
                                     messageId: message.id,
@@ -221,6 +214,7 @@ class _ChatConversationViewState extends State<ChatConversationView> {
             ChatInputField(
               controller: _messageController,
               onSend: _sendMessage,
+              onSendImage: _sendImage, // ✅ wire image callback
             ),
             SizedBox(height: space_bottom.l),
           ],
@@ -229,7 +223,7 @@ class _ChatConversationViewState extends State<ChatConversationView> {
     );
   }
 
-  // ─── Type-safe State Helpers ──────────────────────────────────────────────
+  // ─── Helpers ──────────────────────────────────────────────────────────────
 
   ChatRoom? _extractRoom(ChatState state) => switch (state) {
     ChatRoomSelected(:final room) => room,

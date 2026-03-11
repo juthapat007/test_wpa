@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 
-/// 🆕 Widget แสดง "กำลังพิมพ์..." เมื่ออีกฝ่ายกำลังพิมพ์
+///  Widget แสดง "กำลังพิมพ์..." เมื่ออีกฝ่ายกำลังพิมพ์
 class TypingIndicator extends StatefulWidget {
   final String userName;
 

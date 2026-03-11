@@ -61,7 +61,6 @@ class _QrScannerScreenState extends State<ScannerScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Camera View
           MobileScanner(
             controller: _controller,
             onDetect: _onDetect,

@@ -21,7 +21,7 @@ class LeaveTypeModel {
 
   factory LeaveTypeModel.fromJson(Map<String, dynamic> json) {
     return LeaveTypeModel(
-      id: json['id'],
+      id: json['id'] as int? ?? 0,
       code: json['code'] ?? '',
       name: json['name'] ?? '',
       description: json['description'],

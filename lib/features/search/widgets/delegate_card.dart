@@ -21,10 +21,7 @@ class DelegateCard extends StatelessWidget {
       elevation: 1,
       child: InkWell(
         onTap: () async {
-          await Modular.to.pushNamed(
-            '/other_profile',
-            arguments: {'delegate_id': delegate.id},
-          );
+          await Modular.to.pushNamed('/other_profile/${delegate.id}');
           if (context.mounted) {
             ReadContext(context).read<SearchBloc>().add(RefreshDelegates());
           }

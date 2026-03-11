@@ -11,15 +11,30 @@ class ChatConversationPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        ReadContext(context).read<ChatBloc>().add(BackToRoomList());
-        return true;
+    return BlocListener<ChatBloc, ChatState>(
+      listenWhen: (_, curr) => curr is ConversationDeleted,
+      listener: (context, state) {
+        if (state is ConversationDeleted) {
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Conversation cleared (${state.deletedCount} messages)',
+              ),
+            ),
+          );
+        }
       },
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: _buildAppBar(context),
-        body: const ChatConversationView(),
+      child: WillPopScope(
+        onWillPop: () async {
+          ReadContext(context).read<ChatBloc>().add(BackToRoomList());
+          return true;
+        },
+        child: Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: _buildAppBar(context),
+          body: const ChatConversationView(),
+        ),
       ),
     );
   }
@@ -36,7 +51,6 @@ class ChatConversationPage extends StatelessWidget {
         },
       ),
       title: BlocBuilder<ChatBloc, ChatState>(
-        // ✅ buildWhen: rebuild เฉพาะเมื่อ room หรือ connection เปลี่ยน
         buildWhen: (prev, curr) {
           final prevRoom = _extractRoom(prev);
           final currRoom = _extractRoom(curr);
@@ -50,10 +64,79 @@ class ChatConversationPage extends StatelessWidget {
           return _AppBarTitle(room: room);
         },
       ),
+      actions: [
+        BlocBuilder<ChatBloc, ChatState>(
+          builder: (context, state) {
+            final room = _extractRoom(state);
+            if (room == null) return const SizedBox.shrink();
+            return PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (val) {
+                if (val == 'clear') _showClearDialog(context, room);
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: 'clear',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_sweep, color: Colors.red),
+                      SizedBox(width: 12),
+                      Text(
+                        'Clear conversation',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ],
     );
   }
 
-  /// ✅ FIX: ดึง room จาก state อย่างปลอดภัย — ไม่ return dynamic แล้ว
+  void _showClearDialog(BuildContext context, ChatRoom room) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text(
+          'Clear Conversation',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          'Delete all messages with ${room.participantName}?\n\n'
+          'This action cannot be undone and affects both sides.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ReadContext(
+                context,
+              ).read<ChatBloc>().add(DeleteConversation(room.participantId));
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Delete All'),
+          ),
+        ],
+      ),
+    );
+  }
+
   ChatRoom? _extractRoom(ChatState state) => switch (state) {
     ChatRoomSelected(:final room) => room,
     LoadingMoreMessages(:final room) => room,
@@ -63,6 +146,10 @@ class ChatConversationPage extends StatelessWidget {
     _ => null,
   };
 }
+
+enum _MenuAction { clearHistory }
+
+// ── AppBar Title ──────────────────────────────────────────────────────────────
 
 class _AppBarTitle extends StatelessWidget {
   final ChatRoom room;
@@ -112,10 +199,8 @@ class _AppBarTitle extends StatelessWidget {
   }
 }
 
-/// ✅ FIX: Avatar widget แยกออกมา จัดการ null / error URL ได้ครบ
 class _ParticipantAvatar extends StatelessWidget {
   final ChatRoom room;
-
   const _ParticipantAvatar({required this.room});
 
   @override
@@ -134,7 +219,6 @@ class _ParticipantAvatar extends StatelessWidget {
           width: 36,
           height: 36,
           fit: BoxFit.cover,
-          // ✅ ถ้าโหลดภาพไม่ได้ (404 / expired) → แสดง initials แทน
           errorBuilder: (_, __, ___) => _buildFallbackChild(),
           loadingBuilder: (_, child, progress) {
             if (progress == null) return child;

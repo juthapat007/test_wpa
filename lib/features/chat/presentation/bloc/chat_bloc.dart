@@ -21,6 +21,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   StreamSubscription? _messageDeletedSubscription;
   StreamSubscription? _messageUpdatedSubscription;
   StreamSubscription? _typingSubscription;
+  StreamSubscription? _roomDeletedSubscription;
 
   List<ChatRoom> _chatRooms = [];
   ChatRoom? _selectedRoom;
@@ -68,6 +69,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<DeleteMessageLocal>(_onDeleteMessageLocal);
     on<UpdateMessageLocal>(_onUpdateMessageLocal);
     on<MarkAllChatsRead>(_onMarkAllChatsRead);
+
+    // ── ใหม่ ──────────────────────────────────────────────────────────────
+    on<DeleteConversation>(_onDeleteConversation);
   }
 
   // ─── WebSocket ───────────────────────────────────────────────────────────
@@ -77,7 +81,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     Emitter<ChatState> emit,
   ) async {
     try {
-      // ถ้า connect อยู่แล้ว ไม่ต้อง connect ซ้ำ
       final wsService = (chatRepository as ChatRepositoryImpl).webSocketService;
       if (wsService.isConnected) {
         log.i('WebSocket already connected, skipping');
@@ -110,9 +113,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
     if (event.isConnected && _selectedRoom != null) {
       try {
-        (chatRepository as ChatRepositoryImpl).enterRoom(
-          _selectedRoom!.participantId,
-        );
+        (chatRepository as ChatRepositoryImpl).enterRoom(_selectedRoom!.id);
       } catch (e) {
         log.w('Failed to re-enter room after reconnect', error: e);
       }
@@ -154,6 +155,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
             ? TypingStarted(event.userId)
             : TypingStopped(event.userId),
       );
+    });
+    _roomDeletedSubscription = chatRepository.roomDeletedStream.listen((
+      roomId,
+    ) {
+      log.i('[Bloc] room_deleted received: $roomId → back to list');
+      add(BackToRoomList());
     });
   }
 
@@ -263,16 +270,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       _hasMoreMessages = true;
 
       try {
-        await (chatRepository as ChatRepositoryImpl).enterRoom(
-          event.room.id,
-          // event.room.participantId,
-        );
+        await (chatRepository as ChatRepositoryImpl).enterRoom(event.room.id);
       } catch (e) {
         log.w('Failed to enter room', error: e);
       }
 
       final response = await chatRepository.getChatHistory(
-        // event.room.id,
         event.room.participantId,
         page: 1,
         limit: 50,
@@ -281,7 +284,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       _messages = response['messages'];
       final totalPages = response['totalPages'] ?? 1;
       _hasMoreMessages = _currentPage < totalPages;
-      //เพิ่มตรงนี้ — mark as read ทันทีที่เปิดห้อง
+
       if (event.room.unreadCount > 0) {
         add(MarkAsRead(event.room.participantId));
       }
@@ -342,7 +345,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   ) async {
     try {
       final response = await chatRepository.getChatHistory(
-        // event.roomId,
         _selectedRoom!.participantId,
         page: 1,
         limit: event.limit ?? 50,
@@ -378,7 +380,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
     try {
       final response = await chatRepository.getChatHistory(
-        // event.roomId,
         _selectedRoom!.participantId,
         page: nextPage,
         limit: event.limit,
@@ -411,37 +412,25 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   ) async {
     if (_selectedRoom == null) return;
 
+    final isImage = event.imageBase64 != null;
+
+    // สร้าง optimistic message — ถ้าเป็นรูปให้ใส่ placeholder ก่อน
     final message = ChatMessage(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       senderId: _currentUserId ?? '0',
       senderName: _currentUserName ?? 'Me',
       receiverId: _selectedRoom!.participantId,
       chatRoomId: int.tryParse(_selectedRoom!.id) ?? 0,
-      content: event.content,
+      content: isImage ? event.imageBase64! : event.content,
       createdAt: DateTime.now(),
-      type: event.type,
+      type: isImage ? MessageType.image : event.type,
     );
 
     _messages = [..._messages, message];
     emit(MessageSending(room: _selectedRoom!, messages: _messages));
 
     try {
-      await chatRepository.sendMessage(message);
-      //  อัปเดต last message ใน chat room list
-      // _chatRooms = _chatRooms.map((room) {
-      //   return room.participantId == _selectedRoom!.participantId
-      //       ? room.copyWith(
-      //           lastMessage: message,
-      //           lastActiveAt: message.createdAt,
-      //         )
-      //       : room;
-      // }).toList();
-
-      //  อัปเดต _selectedRoom ด้วย
-      // _selectedRoom = _selectedRoom!.copyWith(
-      //   lastMessage: message,
-      //   lastActiveAt: message.createdAt,
-      // );
+      await chatRepository.sendMessage(message, imageBase64: event.imageBase64);
       emit(MessageSent(room: _selectedRoom!, messages: _messages));
     } catch (e) {
       log.e('Failed to send message', error: e);
@@ -455,14 +444,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     try {
       await chatRepository.markAsRead(event.roomId);
       _chatRooms = _chatRooms.map((room) {
-        // return room.id == event.roomId ? room.copyWith(unreadCount: 0) : room;
         return room.participantId == event.roomId
             ? room.copyWith(unreadCount: 0)
             : room;
       }).toList();
-      // if (_selectedRoom?.id == event.roomId) {
-      //   _selectedRoom = _selectedRoom!.copyWith(unreadCount: 0);
-      // }
       if (_selectedRoom?.participantId == event.roomId) {
         _selectedRoom = _selectedRoom!.copyWith(unreadCount: 0);
       }
@@ -479,21 +464,16 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     bool hasChanges = false;
 
     _messages = _messages.map((m) {
-      // Case 1: ตรง messageId → mark read ตามปกติ
       if (m.id == event.messageId && !m.isRead) {
         hasChanges = true;
         return m.copyWith(isRead: true);
       }
-
-      // Case 2: bulk read — server ส่ง messageId == '0' หรือ 'all'
-      // mark ทุก message ที่เราเป็นคนส่ง (senderId == currentUserId)
       if ((event.messageId == '0' || event.messageId == 'all') &&
           m.senderId == (_currentUserId ?? '') &&
           !m.isRead) {
         hasChanges = true;
         return m.copyWith(isRead: true);
       }
-
       return m;
     }).toList();
 
@@ -530,9 +510,15 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   ) {
     final message = event.message;
 
-    // ตรวจสอบข้อความซ้ำ
     final existingIndex = _messages.indexWhere((m) {
       if (m.id == message.id) return true;
+      if (m.type == MessageType.image &&
+          message.type == MessageType.image &&
+          m.senderId == message.senderId &&
+          m.createdAt.difference(message.createdAt).inSeconds.abs() < 10) {
+        return true;
+      }
+
       return m.senderId == message.senderId &&
           m.content == message.content &&
           m.createdAt.difference(message.createdAt).inSeconds.abs() < 5;
@@ -665,9 +651,59 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
     _emitCurrentState(emit);
   }
+
+  // ── ลบประวัติสนทนาทั้งหมด ────────────────────────────────────────────────
+
+  Future<void> _onDeleteConversation(
+    DeleteConversation event,
+    Emitter<ChatState> emit,
+  ) async {
+    try {
+      final deletedCount = await chatRepository.deleteConversation(
+        event.partnerId,
+      );
+
+      // Clear messages ทันที
+      _messages = [];
+
+      // ลบ room ออกจาก list
+      _chatRooms = _chatRooms
+          .where((r) => r.participantId != event.partnerId)
+          .toList();
+
+      // Reset selected room
+      _selectedRoom = null;
+      _currentPage = 1;
+      _hasMoreMessages = true;
+
+      log.i('Conversation deleted: $deletedCount messages removed');
+
+      emit(
+        ConversationDeleted(
+          rooms: _chatRooms,
+          isWebSocketConnected: _isWebSocketConnected,
+          deletedCount: deletedCount,
+        ),
+      );
+    } catch (e) {
+      log.e('Failed to delete conversation', error: e);
+      // แสดง error แล้วกลับไปที่ room state เดิม
+      emit(ChatError('Failed to delete conversation: $e'));
+      if (_selectedRoom != null) {
+        emit(_buildRoomState());
+      } else {
+        emit(
+          ChatRoomsLoaded(
+            rooms: _chatRooms,
+            isWebSocketConnected: _isWebSocketConnected,
+          ),
+        );
+      }
+    }
+  }
+
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
-  /// ✅ Single source of truth สำหรับ emit state ของห้องแชท
   ChatRoomSelected _buildRoomState({bool isTyping = false}) {
     return ChatRoomSelected(
       room: _selectedRoom!,
@@ -679,7 +715,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     );
   }
 
-  /// ✅ Re-emit state ปัจจุบันโดยไม่เปลี่ยน context (ใช้เมื่อ flag เปลี่ยนแต่ UI ไม่ควรกระโดด)
   void _emitCurrentState(Emitter<ChatState> emit) {
     if (_selectedRoom != null) {
       emit(_buildRoomState());
@@ -696,10 +731,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   Future<void> _leaveCurrentRoom() async {
     if (_selectedRoom == null) return;
     try {
-      await (chatRepository as ChatRepositoryImpl).leaveRoom(
-        // _selectedRoom!.participantId,
-        _selectedRoom!.id,
-      );
+      await (chatRepository as ChatRepositoryImpl).leaveRoom(_selectedRoom!.id);
     } catch (e) {
       log.w('Failed to leave room', error: e);
     }
@@ -712,6 +744,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     await _messageDeletedSubscription?.cancel();
     await _messageUpdatedSubscription?.cancel();
     await _typingSubscription?.cancel();
+    await _roomDeletedSubscription?.cancel();
   }
 
   Future<void> _initializeCurrentUserId() async {

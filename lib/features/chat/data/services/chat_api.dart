@@ -18,10 +18,7 @@ class ChatApi {
     }
   }
 
-  /// ดึงประวัติข้อความกับคนใดคนหนึ่ง(กันลืม)
-  /// [partnerId] = ID ของคู่สนทนา
-  /// [page] = หน้าที่ต้องการ (default = 1 คือหน้าล่าสุด)
-  /// [perPage] = จำนวนข้อความต่อหน้า
+  /// ดึงประวัติข้อความกับคนใดคนหนึ่ง
   Future<Response> getChatHistory({
     required String partnerId,
     int? page,
@@ -45,26 +42,35 @@ class ChatApi {
     }
   }
 
+  /// ส่งข้อความ (text หรือ image)
+  /// [imageBase64] — data URI เช่น "data:image/png;base64,..." (nullable)
   Future<Response> sendMessage({
     required int chatRoomId,
     required String content,
     required String recipientId,
+    String? imageBase64,
   }) async {
-    final recipientIdInt = int.tryParse(recipientId); 
+    final recipientIdInt = int.tryParse(recipientId);
     if (recipientIdInt == null) {
       throw Exception('Invalid recipientId: $recipientId');
     }
 
     try {
+      final messageBody = <String, dynamic>{
+        'chat_room_id': chatRoomId,
+        'recipient_id': recipientIdInt,
+      };
+
+      if (imageBase64 != null && imageBase64.isNotEmpty) {
+        // ส่งรูป — content อาจว่างได้
+        messageBody['image'] = imageBase64;
+      } else {
+        messageBody['content'] = content;
+      }
+
       final response = await dio.post(
         '/messages',
-        data: {
-          'message': {
-            'content': content,
-            'chat_room_id': chatRoomId,
-            'recipient_id': recipientIdInt,
-          },
-        },
+        data: {'message': messageBody},
       );
       log.i('Message sent: ${response.data}');
       return response;
@@ -76,7 +82,7 @@ class ChatApi {
 
   /// ทำเครื่องหมายว่าอ่านข้อความจากคนนั้นแล้วทั้งหมด
   Future<Response> markAllAsRead(String senderId) async {
-    final senderIdInt = int.tryParse(senderId); //  tryParse แทน parse
+    final senderIdInt = int.tryParse(senderId);
     if (senderIdInt == null) throw Exception('Invalid senderId: $senderId');
 
     try {
@@ -136,11 +142,14 @@ class ChatApi {
     }
   }
 
-  /// ลบการสนทนาทั้งหมดกับคนนั้น
+  /// ลบประวัติสนทนาทั้งหมดกับคนนั้น (soft delete — server ยังเก็บไว้)
+  /// DELETE /api/v1/messages/conversation/:delegate_id
   Future<Response> deleteConversation(String partnerId) async {
     try {
       final response = await dio.delete('/messages/conversation/$partnerId');
-      log.i('Conversation with $partnerId deleted');
+      log.i(
+        'Conversation with $partnerId deleted (deleted_count: ${response.data?['deleted_count']})',
+      );
       return response;
     } catch (e) {
       log.e('Error deleting conversation with $partnerId', error: e);

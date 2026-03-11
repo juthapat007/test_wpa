@@ -18,56 +18,13 @@ class TeamScheduleSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ─── Flatten people จาก delegates + meetings ──────────────────────────
-    final peopleEntries =
-        <
-          ({
-            String tableNumber,
-            int delegateId,
-            String name,
-            String subtitle,
-            String avatarUrl,
-          })
-        >[];
-
     final meetingEntries = <({String tableNumber, TableMeeting meeting})>[];
 
     for (final table in response.tables) {
-      for (final d in table.delegates) {
-        peopleEntries.add((
-          tableNumber: table.tableNumber,
-          delegateId: d.delegateId,
-          name: d.delegateName,
-          subtitle: d.title ?? d.company,
-          avatarUrl: d.avatarUrl,
-        ));
-      }
       for (final m in table.meetings) {
         meetingEntries.add((tableNumber: table.tableNumber, meeting: m));
-        peopleEntries.add((
-          tableNumber: table.tableNumber,
-          delegateId: m.sideA.delegateId,
-          name: m.sideA.name,
-          subtitle: m.sideA.title ?? m.sideA.company,
-          avatarUrl: m.sideA.avatarUrl,
-        ));
-        for (final member in m.sideB.members) {
-          peopleEntries.add((
-            tableNumber: table.tableNumber,
-            delegateId: member.id,
-            name: member.name,
-            subtitle: m.sideB.company,
-            avatarUrl: member.avatarUrl,
-          ));
-        }
       }
     }
-
-    // ─── กัน duplicate ────────────────────────────────────────────────────
-    final seen = <int>{};
-    final uniquePeople = peopleEntries
-        .where((e) => seen.add(e.delegateId))
-        .toList();
 
     return BlocBuilder<FriendsCubit, FriendsState>(
       builder: (context, friendsState) {
@@ -108,7 +65,7 @@ class TeamScheduleSheet extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${uniquePeople.length} people',
+                      '${meetingEntries.length} meetings',
                       style: const TextStyle(
                         fontSize: 13,
                         color: AppColors.textSecondary,
@@ -118,42 +75,28 @@ class TeamScheduleSheet extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-
               Expanded(
-                child: uniquePeople.isEmpty && meetingEntries.isEmpty
-                    ? const Center(child: Text('No delegates assigned'))
+                child: meetingEntries.isEmpty
+                    ? const Center(child: Text('No meetings assigned'))
                     : ListView(
                         controller: scrollController,
-                        padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
                         children: [
-                          // ─── People Section ───────────────────────
-
-                          // ─── Meetings Section ─────────────────────
-                          if (meetingEntries.isNotEmpty) ...[
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20),
-                              child: Text(
-                                'Meeting',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                          const Text(
+                            'Meetings',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
                             ),
-                            const SizedBox(height: 8),
-                            ...meetingEntries.map(
-                              (e) => Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                ),
-                                child: _buildMeetingCard(
-                                  e.meeting,
-                                  e.tableNumber,
-                                  friendIds,
-                                ),
-                              ),
+                          ),
+                          const SizedBox(height: 8),
+                          ...meetingEntries.map(
+                            (e) => _buildMeetingCard(
+                              e.meeting,
+                              e.tableNumber,
+                              friendIds,
                             ),
-                          ],
+                          ),
                         ],
                       ),
               ),
@@ -188,6 +131,7 @@ class TeamScheduleSheet extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Table badge
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
@@ -204,13 +148,35 @@ class TeamScheduleSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            _buildSideRow(
-              avatarUrl: meeting.sideA.avatarUrl,
-              name: meeting.sideA.name,
-              subtitle: meeting.sideA.title ?? meeting.sideA.company,
-              delegateId: meeting.sideA.delegateId,
-              status: _resolveStatus(meeting.sideA.delegateId, friendIds),
+
+            // ─── Side A ───────────────────────────────────────────────
+            Card(
+              margin: EdgeInsets.zero,
+              color: const Color(0xFFF0F9FF),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+                side: BorderSide(color: Colors.blue.shade100),
+              ),
+              clipBehavior: Clip.hardEdge,
+              child: InkWell(
+                onTap: () => Modular.to.pushNamed(
+                  '/other_profile',
+                  arguments: {'delegate_id': meeting.sideA.delegateId},
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: _buildSideRow(
+                    avatarUrl: meeting.sideA.avatarUrl,
+                    name: meeting.sideA.name,
+                    title: meeting.sideA.title,
+                    company: meeting.sideA.company,
+                    delegateId: meeting.sideA.delegateId,
+                    status: _resolveStatus(meeting.sideA.delegateId, friendIds),
+                  ),
+                ),
+              ),
             ),
+
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
               child: Row(
@@ -228,16 +194,37 @@ class TeamScheduleSheet extends StatelessWidget {
                 ],
               ),
             ),
+
+            // ─── Side B ───────────────────────────────────────────────
             ...meeting.sideB.members.asMap().entries.map((entry) {
               final isLast = entry.key == meeting.sideB.members.length - 1;
               return Padding(
                 padding: EdgeInsets.only(bottom: isLast ? 0 : 8),
-                child: _buildSideRow(
-                  avatarUrl: entry.value.avatarUrl,
-                  name: entry.value.name,
-                  subtitle: meeting.sideB.company,
-                  delegateId: entry.value.id,
-                  status: _resolveStatus(entry.value.id, friendIds),
+                child: Card(
+                  margin: EdgeInsets.zero,
+                  color: const Color(0xFFF0FDF4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(color: Colors.green.shade100),
+                  ),
+                  clipBehavior: Clip.hardEdge,
+                  child: InkWell(
+                    onTap: () => Modular.to.pushNamed(
+                      '/other_profile',
+                      arguments: {'delegate_id': entry.value.id},
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: _buildSideRow(
+                        avatarUrl: entry.value.avatarUrl,
+                        name: entry.value.name,
+                        title: entry.value.title,
+                        company: meeting.sideB.company,
+                        delegateId: entry.value.id,
+                        status: _resolveStatus(entry.value.id, friendIds),
+                      ),
+                    ),
+                  ),
                 ),
               );
             }),
@@ -247,65 +234,69 @@ class TeamScheduleSheet extends StatelessWidget {
     );
   }
 
-  // ─── Side Row ─────────────────────────────────────────────────────────────
+  // ─── Side Row (ไม่มี GestureDetector — tap อยู่ที่ InkWell) ──────────────
 
   Widget _buildSideRow({
     required String avatarUrl,
     required String name,
-    required String subtitle,
+    required String? title,
+    required String company,
     required int delegateId,
     required _FriendStatus status,
   }) {
-    return GestureDetector(
-      onTap: () => Modular.to.pushNamed(
-        '/other_profile',
-        arguments: {'delegate_id': delegateId},
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 18,
-            foregroundImage: avatarUrl.isNotEmpty
-                ? NetworkImage(avatarUrl)
-                : null,
-            child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?'),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 18,
+          foregroundImage: avatarUrl.isNotEmpty
+              ? NetworkImage(avatarUrl)
+              : null,
+          child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?'),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
                 ),
+              ),
+              if (title != null && title.isNotEmpty)
                 Text(
-                  subtitle,
+                  title,
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
                     color: AppColors.textSecondary,
                   ),
                 ),
-              ],
-            ),
+              Text(
+                company,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
           ),
-          _FriendStatusBadge(status: status),
-          const SizedBox(width: 4),
-          const Icon(
-            Icons.chevron_right,
-            size: 16,
-            color: AppColors.textSecondary,
-          ),
-        ],
-      ),
+        ),
+        _FriendStatusBadge(status: status),
+        const SizedBox(width: 4),
+        const Icon(
+          Icons.chevron_right,
+          size: 16,
+          color: AppColors.textSecondary,
+        ),
+      ],
     );
   }
-}
+} // ← ปิด TeamScheduleSheet
 
-// ─── Friend Status ────────────────────────────────────────────────────────────
+// ─── Friend Status (อยู่นอก class ถูกต้อง) ───────────────────────────────────
 
 enum _FriendStatus { self, friend, none }
 

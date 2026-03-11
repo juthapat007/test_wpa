@@ -40,7 +40,8 @@ class ChatWebSocketService with WidgetsBindingObserver {
   final _messageUpdatedController =
       StreamController<MessageUpdatedEvent>.broadcast();
   final _typingController = StreamController<TypingEvent>.broadcast();
-
+  final _roomDeletedController = StreamController<String>.broadcast();
+  Stream<String> get roomDeletedStream => _roomDeletedController.stream;
   bool _isConnected = false;
   bool get isConnected => _isConnected;
 
@@ -164,9 +165,15 @@ class ChatWebSocketService with WidgetsBindingObserver {
   void _startHeartbeat() {
     _heartbeatTimer?.cancel();
     _heartbeatTimer = Timer.periodic(_heartbeatInterval, (_) {
-      if (!_isConnected || _channel == null) return;
+      if (!_isConnected || _channel == null || _chatChannelIdentifier == null)
+        return;
       try {
-        _channel!.sink.add(jsonEncode({'type': 'ping'}));
+        // ✅ ถูก — ใช้ ActionCable perform format
+        _sendCommand(
+          'message',
+          _chatChannelIdentifier!,
+          data: {'action': 'ping'},
+        );
         log.v('[Heartbeat] ping sent');
       } catch (e) {
         log.w('[Heartbeat] failed to send ping: $e');
@@ -347,7 +354,18 @@ class ChatWebSocketService with WidgetsBindingObserver {
 
       case 'announcement':
         log.d('Announcement: ${message['content']}');
+      case 'room_deleted':
+        final roomId = (message['room_id'] ?? '').toString();
+        log.i('[WS] room_deleted: roomId=$roomId');
+        _roomDeletedController.add(roomId);
 
+      case 'member_left':
+        final delegateId = (message['delegate_id'] ?? '').toString();
+        log.i('[WS] member_left: delegate=$delegateId');
+      // TODO: handle เมื่อ implement group chat
+
+      case 'announcement':
+        log.d('Announcement: ${message['content']}');
       default:
         if (message.containsKey('sender') && message.containsKey('content')) {
           _handleNewMessage(message);
@@ -548,6 +566,15 @@ class ChatWebSocketService with WidgetsBindingObserver {
                 .toString();
       }
 
+      // ── รองรับ message_type: "image" ──────────────────────────────────────
+      final rawType = messageData['message_type'] ?? messageData['type'];
+      final isImage = rawType?.toString().toLowerCase() == 'image';
+
+      // สำหรับ image message: content = image_url (เก็บใน field content เดียวกัน)
+      final content = isImage
+          ? (messageData['image_url'] ?? '')
+          : (messageData['content'] ?? '');
+
       final message = ChatMessage(
         id: messageData['id'].toString(),
         senderId: senderId,
@@ -555,7 +582,8 @@ class ChatWebSocketService with WidgetsBindingObserver {
         senderAvatar: senderAvatar,
         receiverId: receiverId,
         chatRoomId: messageData['chat_room_id'] as int? ?? 0,
-        content: messageData['content'] ?? '',
+        content: content,
+        type: isImage ? MessageType.image : MessageType.text,
         createdAt: messageData['created_at'] != null
             ? DateTime.parse(messageData['created_at'])
             : DateTime.now(),
@@ -567,7 +595,10 @@ class ChatWebSocketService with WidgetsBindingObserver {
       );
 
       _messageController.add(message);
-      log.i('New message: "${message.content}" from $senderId');
+      log.i(
+        'New ${isImage ? "image" : "text"} message from $senderId'
+        '${isImage ? "" : ': "${message.content}"'}',
+      );
     } catch (e) {
       log.e('Error handling new message', error: e);
     }
@@ -607,11 +638,11 @@ class ChatWebSocketService with WidgetsBindingObserver {
 
   String? _roomChannelIdentifier; // เพิ่ม field นี้
   Timer? _presenceTimer;
-  
+
   Future<void> enterRoom(String roomId) async {
-    log.i('[Presence] enterRoom called with roomId=$roomId'); 
+    log.i('[Presence] enterRoom called with roomId=$roomId');
     if (!_isConnected || _chatChannelIdentifier == null) {
-      log.w('[Presence] skip — not connected'); 
+      log.w('[Presence] skip — not connected');
       return;
     }
 
@@ -620,7 +651,7 @@ class ChatWebSocketService with WidgetsBindingObserver {
       'room_id': int.tryParse(roomId) ?? roomId,
     });
     _sendCommand('subscribe', _roomChannelIdentifier!);
-    log.i('[Presence] subscribed ChatRoomChannel room=$roomId'); 
+    log.i('[Presence] subscribed ChatRoomChannel room=$roomId');
 
     _presenceTimer?.cancel();
     _presenceTimer = Timer.periodic(const Duration(seconds: 20), (_) {
@@ -630,7 +661,7 @@ class ChatWebSocketService with WidgetsBindingObserver {
         _roomChannelIdentifier!,
         data: {'action': 'ping'},
       );
-      log.v('[Presence] ping sent room=$roomId'); 
+      log.v('[Presence] ping sent room=$roomId');
     });
   }
 
@@ -644,7 +675,6 @@ class ChatWebSocketService with WidgetsBindingObserver {
       _roomChannelIdentifier = null;
     }
   }
- 
 
   Future<void> disconnect() async {
     _reconnectAttempts = _maxReconnectAttempts; // หยุด auto-reconnect
@@ -672,5 +702,6 @@ class ChatWebSocketService with WidgetsBindingObserver {
     _messageDeletedController.close();
     _messageUpdatedController.close();
     _typingController.close();
+    _roomDeletedController.close();
   }
 }

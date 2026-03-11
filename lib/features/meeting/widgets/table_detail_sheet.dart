@@ -18,6 +18,7 @@ class TableDetailSheet extends StatelessWidget {
     required this.isMyTable,
     this.meetingsSectionTitle = 'Meeting',
   });
+
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
@@ -27,13 +28,10 @@ class TableDetailSheet extends StatelessWidget {
       expand: false,
       builder: (context, scrollController) {
         return Column(
-          // ลบ mainAxisSize: MainAxisSize.min ออก (หรือเปลี่ยนเป็น max)
           children: [
-            // Handle bar อยู่นอก scroll
             const SizedBox(height: 12),
             _buildHandle(),
             const SizedBox(height: 16),
-            // ส่วนที่ scroll ได้
             Expanded(
               child: SingleChildScrollView(
                 controller: scrollController,
@@ -89,17 +87,36 @@ class TableDetailSheet extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(12),
-
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSideRow(
-              avatarUrl: meeting.sideA.avatarUrl,
-              name: meeting.sideA.name,
-              title: meeting.sideA.title,
-              company: meeting.sideA.company,
-              delegateId: meeting.sideA.delegateId,
+            // ─── Side A ───────────────────────────────────────────────
+            Card(
+              margin: EdgeInsets.zero,
+              color: const Color(0xFFF0F9FF),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+                side: BorderSide(color: Colors.blue.shade100),
+              ),
+              clipBehavior: Clip.hardEdge,
+              child: InkWell(
+                onTap: () => Modular.to.pushNamed(
+                  '/other_profile',
+                  arguments: {'delegate_id': meeting.sideA.delegateId},
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: _buildSideRow(
+                    avatarUrl: meeting.sideA.avatarUrl,
+                    name: meeting.sideA.name,
+                    title: meeting.sideA.title,
+                    company: meeting.sideA.company,
+                    delegateId: meeting.sideA.delegateId,
+                  ),
+                ),
+              ),
             ),
+
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
               child: Row(
@@ -117,16 +134,36 @@ class TableDetailSheet extends StatelessWidget {
                 ],
               ),
             ),
+
+            // ─── Side B members ───────────────────────────────────────
             ...meeting.sideB.members.asMap().entries.map((entry) {
               final isLast = entry.key == meeting.sideB.members.length - 1;
               return Padding(
                 padding: EdgeInsets.only(bottom: isLast ? 0 : 8),
-                child: _buildSideRow(
-                  avatarUrl: entry.value.avatarUrl,
-                  name: entry.value.name,
-                  title: entry.value.title,
-                  company: meeting.sideB.company,
-                  delegateId: entry.value.id,
+                child: Card(
+                  margin: EdgeInsets.zero,
+                  color: const Color(0xFFF0FDF4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(color: Colors.green.shade100),
+                  ),
+                  clipBehavior: Clip.hardEdge,
+                  child: InkWell(
+                    onTap: () => Modular.to.pushNamed(
+                      '/other_profile',
+                      arguments: {'delegate_id': entry.value.id},
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: _buildSideRow(
+                        avatarUrl: entry.value.avatarUrl,
+                        name: entry.value.name,
+                        title: entry.value.title,
+                        company: meeting.sideB.company,
+                        delegateId: entry.value.id,
+                      ),
+                    ),
+                  ),
                 ),
               );
             }),
@@ -143,61 +180,54 @@ class TableDetailSheet extends StatelessWidget {
     required String company,
     required int delegateId,
   }) {
-    return GestureDetector(
-      onTap: () => Modular.to.pushNamed(
-        '/other_profile',
-        arguments: {'delegate_id': delegateId},
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 18,
-            foregroundImage: avatarUrl.isNotEmpty
-                ? NetworkImage(avatarUrl)
-                : null,
-            child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?'),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 18,
+          foregroundImage: avatarUrl.isNotEmpty
+              ? NetworkImage(avatarUrl)
+              : null,
+          child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?'),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
                 ),
-
+              ),
+              Text(
+                company,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: color.AppColors.textSecondary,
+                ),
+              ),
+              if (title != null && title.isNotEmpty)
                 Text(
-                  company,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
+                  title,
                   style: const TextStyle(
                     fontSize: 12,
-                    fontWeight: FontWeight.bold,
                     color: color.AppColors.textSecondary,
                   ),
                 ),
-                if (title != null && title.isNotEmpty)
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: color.AppColors.textSecondary,
-                    ),
-                  ),
-              ],
-            ),
+            ],
           ),
-          const Icon(
-            Icons.chevron_right,
-            size: 16,
-            color: color.AppColors.textSecondary,
-          ),
-        ],
-      ),
+        ),
+        const Icon(
+          Icons.chevron_right,
+          size: 16,
+          color: color.AppColors.textSecondary,
+        ),
+      ],
     );
   }
 

@@ -1,5 +1,3 @@
-// lib/features/other_profile/presentation/bloc/profile_detail_event.dart
-
 import 'package:flutter/foundation.dart';
 
 @immutable
@@ -40,8 +38,8 @@ class UnfriendRequest extends ProfileDetailEvent {
   UnfriendRequest(this.delegateId);
 }
 
-/// ✅ date เป็น optional — ถ้าไม่ส่ง backend คืน default (วันแรก)
-///    ส่ง date เมื่อ user กดเปลี่ยน tab ใน DateTabBar
+// date เป็น optional — ถ้าไม่ส่ง backend คืน default (วันแรก)
+//    ส่ง date เมื่อ user กดเปลี่ยน tab ใน DateTabBar
 class LoadScheduleOthers extends ProfileDetailEvent {
   final int delegateId;
   final String? date; // "2025-10-13"

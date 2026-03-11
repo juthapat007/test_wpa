@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:test_wpa/features/meeting/domain/entities/table_view_entities.dart';
 
 class TableDelegateModel {
@@ -17,11 +18,9 @@ class TableDelegateModel {
 
   factory TableDelegateModel.fromJson(Map<String, dynamic> json) {
     return TableDelegateModel(
-      // delegateId: json['delegate_id'],
-      // delegateName: json['delegate_name'] ?? '',
-      delegateId: json['id'],
-      delegateName: json['name'],
-      company: json['company'],
+      delegateId: json['id'] as int? ?? 0,
+      delegateName: json['name'] ?? '',
+      company: json['company'] ?? '',
       avatarUrl: json['avatar_url'] ?? '',
       title: json['title'],
     );
@@ -37,6 +36,8 @@ class TableDelegateModel {
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 class TableInfoModel {
   final int tableId;
@@ -55,11 +56,13 @@ class TableInfoModel {
 
   factory TableInfoModel.fromJson(Map<String, dynamic> json) {
     return TableInfoModel(
-      tableId: json['table_id'],
+      tableId: json['table_id'] as int? ?? 0,
       tableNumber: json['table_number'] ?? '',
       delegates:
           (json['delegates'] as List?)
-              ?.map((e) => TableDelegateModel.fromJson(e))
+              ?.map(
+                (e) => TableDelegateModel.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           [],
       nearTables:
@@ -69,7 +72,9 @@ class TableInfoModel {
           [],
       meetings:
           (json['meetings'] as List?)
-              ?.map((e) => TableMeetingModel.fromJson(e))
+              ?.map(
+                (e) => TableMeetingModel.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           [],
     );
@@ -85,6 +90,8 @@ class TableInfoModel {
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 class TableLayoutModel {
   final String type;
@@ -110,6 +117,8 @@ class TableLayoutModel {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+
 class TableViewResponseModel {
   final int year;
   final String date;
@@ -133,19 +142,19 @@ class TableViewResponseModel {
 
   factory TableViewResponseModel.fromJson(Map<String, dynamic> json) {
     return TableViewResponseModel(
-      year: json['year'],
+      year: json['year'] as int? ?? 0,
       date: json['date'] ?? '',
       time: json['time'] ?? '',
       myTable: json['my_table'] ?? '',
       tables:
           (json['tables'] as List?)
-              ?.map((e) => TableInfoModel.fromJson(e))
+              ?.map((e) => TableInfoModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
       timesToday: List<String>.from(json['times_today'] ?? []),
       days: List<String>.from(json['days'] ?? []),
       layout: json['layout'] != null
-          ? TableLayoutModel.fromJson(json['layout'])
+          ? TableLayoutModel.fromJson(json['layout'] as Map<String, dynamic>)
           : null,
     );
   }
@@ -164,6 +173,8 @@ class TableViewResponseModel {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+
 class MeetingMemberModel {
   final int id;
   final String name;
@@ -176,17 +187,21 @@ class MeetingMemberModel {
     this.title,
     required this.avatarUrl,
   });
+
   factory MeetingMemberModel.fromJson(Map<String, dynamic> json) {
     return MeetingMemberModel(
-      id: json['id'],
+      id: json['id'] as int? ?? 0,
       name: json['name'] ?? '',
       title: json['title'],
       avatarUrl: json['avatar_url'] ?? '',
     );
   }
+
   MeetingMember toEntity() =>
       MeetingMember(id: id, name: name, title: title, avatarUrl: avatarUrl);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 class MeetingSideAModel {
   final int delegateId;
@@ -205,14 +220,20 @@ class MeetingSideAModel {
 
   factory MeetingSideAModel.fromJson(Map<String, dynamic> json) {
     return MeetingSideAModel(
-      // delegateId: json['delegate_id'],
-      delegateId: json['id'],
+      delegateId: json['id'] as int? ?? 0,
       name: json['name'] ?? '',
       title: json['title'],
       company: json['company'] ?? '',
       avatarUrl: json['avatar_url'] ?? '',
     );
   }
+
+  factory MeetingSideAModel.empty() => MeetingSideAModel(
+    delegateId: 0,
+    name: 'Unknown',
+    company: '',
+    avatarUrl: '',
+  );
 
   MeetingSideA toEntity() => MeetingSideA(
     delegateId: delegateId,
@@ -222,6 +243,8 @@ class MeetingSideAModel {
     avatarUrl: avatarUrl,
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 class MeetingSideBModel {
   final int teamId;
@@ -235,18 +258,28 @@ class MeetingSideBModel {
     required this.company,
     required this.members,
   });
+
   factory MeetingSideBModel.fromJson(Map<String, dynamic> json) {
     return MeetingSideBModel(
-      teamId: json['team_id'],
+      teamId: json['team_id'] as int? ?? 0,
       teamName: json['team_name'] ?? '',
       company: json['company'] ?? '',
       members:
           (json['members'] as List?)
-              ?.map((e) => MeetingMemberModel.fromJson(e))
+              ?.map(
+                (e) => MeetingMemberModel.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           [],
     );
   }
+
+  factory MeetingSideBModel.empty() => MeetingSideBModel(
+    teamId: 0,
+    teamName: 'Unknown',
+    company: '',
+    members: [],
+  );
 
   MeetingSideB toEntity() => MeetingSideB(
     teamId: teamId,
@@ -255,6 +288,8 @@ class MeetingSideBModel {
     members: members.map((m) => m.toEntity()).toList(),
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 class TableMeetingModel {
   final int scheduleId;
@@ -272,14 +307,29 @@ class TableMeetingModel {
   });
 
   factory TableMeetingModel.fromJson(Map<String, dynamic> json) {
+    final booker = json['booker'] as Map<String, dynamic>?;
+    final targetTeam = json['target_team'] as Map<String, dynamic>?;
+
+    if (booker == null || targetTeam == null) {
+      debugPrint(
+        'TableMeetingModel: missing booker/target_team | keys: ${json.keys.toList()}',
+      );
+    }
+
     return TableMeetingModel(
-      scheduleId: json['schedule_id'],
-      startAt: DateTime.parse(json['start_at']),
-      endAt: DateTime.parse(json['end_at']),
-      // sideA: MeetingSideAModel.fromJson(json['side_a']),
-      // sideB: MeetingSideBModel.fromJson(json['side_b']),
-      sideA: MeetingSideAModel.fromJson(json['booker']),
-      sideB: MeetingSideBModel.fromJson(json['target_team']),
+      scheduleId: json['schedule_id'] as int? ?? 0,
+      startAt: json['start_at'] != null
+          ? DateTime.parse(json['start_at'] as String)
+          : DateTime.now(),
+      endAt: json['end_at'] != null
+          ? DateTime.parse(json['end_at'] as String)
+          : DateTime.now(),
+      sideA: booker != null
+          ? MeetingSideAModel.fromJson(booker)
+          : MeetingSideAModel.empty(),
+      sideB: targetTeam != null
+          ? MeetingSideBModel.fromJson(targetTeam)
+          : MeetingSideBModel.empty(),
     );
   }
 

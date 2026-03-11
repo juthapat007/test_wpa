@@ -1,5 +1,3 @@
-// lib/features/other_profile/presentation/bloc/profile_detail_state.dart
-
 import 'package:flutter/foundation.dart';
 import 'package:test_wpa/features/other_profile/domain/entities/profile_detail.dart';
 import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';

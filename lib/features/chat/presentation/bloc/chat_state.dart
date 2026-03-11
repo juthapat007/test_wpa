@@ -25,7 +25,7 @@ final class ChatRoomSelected extends ChatState {
   final List<ChatMessage> messages;
   final bool isWebSocketConnected;
   final bool hasMoreMessages;
-  final int currentPage; //เก็บ page ปัจจุบัน
+  final int currentPage;
   final bool isTyping;
 
   ChatRoomSelected({
@@ -38,7 +38,6 @@ final class ChatRoomSelected extends ChatState {
   });
 }
 
-// ✨ State สำหรับกำลังโหลดข้อความเก่าเพิ่ม
 final class LoadingMoreMessages extends ChatState {
   final ChatRoom room;
   final List<ChatMessage> messages;
@@ -77,6 +76,19 @@ final class NewMessageReceived extends ChatState {
     required this.message,
     required this.room,
     required this.messages,
+  });
+}
+
+/// Conversation ถูกลบสำเร็จ — UI ควร pop กลับไปยัง room list
+final class ConversationDeleted extends ChatState {
+  final List<ChatRoom> rooms;
+  final bool isWebSocketConnected;
+  final int deletedCount;
+
+  ConversationDeleted({
+    required this.rooms,
+    required this.isWebSocketConnected,
+    required this.deletedCount,
   });
 }
 

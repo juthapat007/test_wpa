@@ -24,7 +24,6 @@ class WebSocketConnectionChanged extends ChatEvent {
 class LoadChatRooms extends ChatEvent {}
 
 /// Reset internal state แล้วโหลดใหม่จาก server
-/// ใช้เมื่อ re-enter chat tab เพื่อให้ unread count ถูกต้อง
 class ResetAndLoadChatRooms extends ChatEvent {}
 
 class SelectChatRoom extends ChatEvent {
@@ -60,10 +59,15 @@ class SendMessage extends ChatEvent {
   final String content;
   final MessageType type;
 
+  /// base64 data URI สำหรับส่งรูป เช่น "data:image/png;base64,..."
+  /// ถ้าไม่ใช่ null จะถูกส่งเป็น image message
+  final String? imageBase64;
+
   SendMessage({
     required this.roomId,
-    required this.content,
+    this.content = '',
     this.type = MessageType.text,
+    this.imageBase64,
   });
 }
 
@@ -101,19 +105,16 @@ class WebSocketMessageUpdated extends ChatEvent {
 
 // ─── Typing ───────────────────────────────────────────────────────────────────
 
-/// อีกฝ่ายเริ่มพิมพ์
 class TypingStarted extends ChatEvent {
   final String userId;
   TypingStarted(this.userId);
 }
 
-/// อีกฝ่ายหยุดพิมพ์
 class TypingStopped extends ChatEvent {
   final String userId;
   TypingStopped(this.userId);
 }
 
-/// ส่ง typing indicator ไปยัง WebSocket
 class SendTypingIndicator extends ChatEvent {
   final String recipientId;
   final bool isTyping;
@@ -133,4 +134,11 @@ class UpdateMessageLocal extends ChatEvent {
   final String messageId;
   final String newContent;
   UpdateMessageLocal({required this.messageId, required this.newContent});
+}
+
+/// ลบประวัติสนทนาทั้งหมดกับ delegate คนนี้
+/// หลัง delete: clear message list ออกจาก UI ทันที + ลบ room ออกจาก list
+class DeleteConversation extends ChatEvent {
+  final String partnerId;
+  DeleteConversation(this.partnerId);
 }

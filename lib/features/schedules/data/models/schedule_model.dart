@@ -32,11 +32,10 @@ class ScheduleModel {
   });
 
   factory ScheduleModel.fromJson(Map<String, dynamic> json) {
-    // ดึง conference_date เพื่อใช้ประกอบ parse เวลา human time
     final conferenceDate = json['conference_date'] as String? ?? '';
 
     return ScheduleModel(
-      id: json['id'],
+      id: json['id'] as int? ?? 0,
       startAt: DateTimeHelper.parseFlexibleDateTime(
         json['start_at'].toString(),
         conferenceDate,
@@ -56,7 +55,7 @@ class ScheduleModel {
                 .map((e) => TeamDelegateModel.fromJson(e))
                 .toList()
           : null,
-      durationMinutes: json['duration_minutes'],
+      durationMinutes: json['duration_minutes'] as int?,
       leave: json['leave'],
       type: json['type'],
       title: json['title'],
@@ -94,7 +93,7 @@ class ScheduleDelegateModel {
     }
 
     return ScheduleDelegateModel(
-      id: json['id'],
+      id: json['id'] as int?,
       name: json['name'],
       company: json['company'],
     );
@@ -119,7 +118,7 @@ class TeamDelegateModel {
 
   factory TeamDelegateModel.fromJson(Map<String, dynamic> json) {
     return TeamDelegateModel(
-      id: json['id'],
+      id: json['id'] as int? ?? 0,
       name: json['name'] ?? '',
       company: json['company'] ?? '',
     );

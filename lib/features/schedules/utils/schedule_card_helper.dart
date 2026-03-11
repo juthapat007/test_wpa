@@ -8,7 +8,6 @@ class ScheduleCardHelper {
 
   ScheduleCardHelper(this.schedule);
 
-  // เพิ่มใน class ScheduleCardHelper
   static EventCardType resolveCardType(Schedule s) {
     switch (s.type) {
       case 'event':

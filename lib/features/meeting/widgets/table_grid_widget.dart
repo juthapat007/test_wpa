@@ -80,16 +80,13 @@ class _TableGridWidgetState extends State<TableGridWidget> {
           else ...[
             if (widget.currentSchedule?.type == 'event')
               BreakTimeBanner(title: widget.currentSchedule?.title),
-
             if (!hasNoAssignment) MyTableBanner(response: widget.response),
             if (hasNoAssignment) const NoAssignmentBanner(),
             const SizedBox(height: 12),
             _buildZoomableGrid(regularTables),
             const SizedBox(height: 12),
-
             const TableLegend(showLeave: true),
             const SizedBox(height: 12),
-
             AppButton(
               text: 'View team meeting',
               textColor: AppColors.textOnPrimary,
@@ -100,7 +97,6 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                 shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                 ),
-
                 builder: (_) => BlocProvider.value(
                   value: Modular.get<FriendsCubit>(),
                   child: TeamScheduleSheet(
@@ -126,6 +122,8 @@ class _TableGridWidgetState extends State<TableGridWidget> {
     );
   }
 
+  // ─── Zoomable Grid ────────────────────────────────────────────────────────
+
   Widget _buildZoomableGrid(List<TableInfo> regularTables) {
     final tableMap = {for (var t in regularTables) t.tableNumber: t};
     final layout = widget.response.layout;
@@ -139,13 +137,66 @@ class _TableGridWidgetState extends State<TableGridWidget> {
         ((screenWidth - (padding * 2) - ((columns - 1) * spacing)) / columns)
             .clamp(40.0, 60.0);
 
-    final gridWidth =
-        (columns * cellSize) + ((columns - 1) * spacing) + (padding * 2);
-    final gridHeight =
-        (rows * cellSize) + ((rows - 1) * spacing) + (padding * 2);
+    Widget buildGrid({double? forceCellSize}) {
+      final cs = forceCellSize ?? cellSize;
+      return Container(
+        width: (columns * cs) + ((columns - 1) * spacing) + (padding * 2),
+        height: (rows * cs) + ((rows - 1) * spacing) + (padding * 2),
+        padding: const EdgeInsets.all(padding),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(rows, (rowIndex) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: rowIndex < rows - 1 ? spacing : 0,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(columns, (colIndex) {
+                  final number = (rowIndex * columns + colIndex + 1).toString();
+                  final table = tableMap[number];
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      right: colIndex < columns - 1 ? spacing : 0,
+                    ),
+                    child: SizedBox(
+                      width: cs,
+                      height: cs,
+                      child: table != null
+                          ? () {
+                              final isMyTable =
+                                  table.tableNumber == widget.response.myTable;
+                              final isOnLeave =
+                                  isMyTable &&
+                                  widget.currentSchedule?.leave != null;
+                              return TableCellWidget(
+                                table: table,
+                                isMyTable: isMyTable,
+                                isSelected:
+                                    _selectedTableNumber == table.tableNumber,
+                                isOnLeave: isOnLeave,
+                                onTap: () {
+                                  setState(
+                                    () => _selectedTableNumber =
+                                        table.tableNumber,
+                                  );
+                                  _showTableDetails(table, isMyTable);
+                                },
+                              );
+                            }()
+                          : EmptyTableCell(tableNumber: number),
+                    ),
+                  );
+                }),
+              ),
+            );
+          }),
+        ),
+      );
+    }
 
     return Container(
-      height: 400,
+      height: 280,
       decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.circular(12),
@@ -155,74 +206,30 @@ class _TableGridWidgetState extends State<TableGridWidget> {
         borderRadius: BorderRadius.circular(12),
         child: Stack(
           children: [
-            InteractiveViewer(
-              transformationController: _transformController,
-              minScale: 0.5,
-              maxScale: 4.0,
-              boundaryMargin: const EdgeInsets.all(40),
-              constrained: false,
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width,
-                child: Center(
-                  child: Container(
-                    width: gridWidth,
-                    height: gridHeight,
-                    padding: const EdgeInsets.all(padding),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: List.generate(rows, (rowIndex) {
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            bottom: rowIndex < rows - 1 ? spacing : 0,
-                          ),
-                          child: Row(
-                            children: List.generate(columns, (colIndex) {
-                              final number = (rowIndex * columns + colIndex + 1)
-                                  .toString();
-                              final table = tableMap[number];
-                              return Padding(
-                                padding: EdgeInsets.only(
-                                  right: colIndex < columns - 1 ? spacing : 0,
-                                ),
-                                child: SizedBox(
-                                  width: cellSize,
-                                  height: cellSize,
-                                  child: table != null
-                                      ? () {
-                                          final isMyTable =
-                                              table.tableNumber ==
-                                              widget.response.myTable;
-                                          final isOnLeave =
-                                              isMyTable &&
-                                              widget.currentSchedule?.leave !=
-                                                  null;
-                                          return TableCellWidget(
-                                            table: table,
-                                            isMyTable: isMyTable,
-                                            isSelected:
-                                                _selectedTableNumber ==
-                                                table.tableNumber,
-                                            isOnLeave: isOnLeave,
-                                            onTap: () {
-                                              setState(
-                                                () => _selectedTableNumber =
-                                                    table.tableNumber,
-                                              );
-                                              _showTableDetails(
-                                                table,
-                                                isMyTable,
-                                              );
-                                            },
-                                          );
-                                        }()
-                                      : EmptyTableCell(tableNumber: number),
-                                ),
-                              );
-                            }),
-                          ),
-                        );
-                      }),
-                    ),
+            Positioned.fill(
+              child: FittedBox(fit: BoxFit.contain, child: buildGrid()),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: GestureDetector(
+                onTap: () => _openFullscreen(buildGrid),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.fullscreen,
+                    size: 20,
+                    color: AppColors.primary,
                   ),
                 ),
               ),
@@ -239,43 +246,13 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.pinch, size: 14, color: Colors.white70),
+                    Icon(Icons.fullscreen, size: 12, color: Colors.white70),
                     SizedBox(width: 4),
                     Text(
-                      'Pinch to zoom',
+                      'Tap to expand',
                       style: TextStyle(fontSize: 10, color: Colors.white70),
                     ),
                   ],
-                ),
-              ),
-            ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => _transformController.value = Matrix4.identity(),
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.center_focus_strong,
-                      size: 18,
-                      color: AppColors.primary,
-                    ),
-                  ),
                 ),
               ),
             ),
@@ -284,6 +261,20 @@ class _TableGridWidgetState extends State<TableGridWidget> {
       ),
     );
   }
+
+  // ✅ อยู่ใน class ถูกต้อง — มี context ใช้ได้
+  void _openFullscreen(Widget Function({double? forceCellSize}) buildGrid) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (_) => _FullscreenGridDialog(
+        buildGrid: buildGrid,
+        transformController: TransformationController(),
+      ),
+    );
+  }
+
+  // ─── Booth Card ───────────────────────────────────────────────────────────
 
   Widget _buildBoothCard(TableInfo booth) {
     return Card(
@@ -314,6 +305,8 @@ class _TableGridWidgetState extends State<TableGridWidget> {
     );
   }
 
+  // ─── Table Detail Sheet ───────────────────────────────────────────────────
+
   void _showTableDetails(
     TableInfo table,
     bool isMyTable, {
@@ -333,7 +326,67 @@ class _TableGridWidgetState extends State<TableGridWidget> {
     );
   }
 
-
   int _calculateRows(int tableCount, int columns) =>
       (tableCount / columns).ceil();
+}
+
+// ─── Fullscreen Dialog ────────────────────────────────────────────────────────
+
+class _FullscreenGridDialog extends StatefulWidget {
+  final Widget Function({double? forceCellSize}) buildGrid;
+  final TransformationController transformController;
+
+  const _FullscreenGridDialog({
+    required this.buildGrid,
+    required this.transformController,
+  });
+
+  @override
+  State<_FullscreenGridDialog> createState() => _FullscreenGridDialogState();
+}
+
+class _FullscreenGridDialogState extends State<_FullscreenGridDialog> {
+  @override
+  void dispose() {
+    widget.transformController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog.fullscreen(
+      backgroundColor: Colors.black87,
+      child: Stack(
+        children: [
+          InteractiveViewer(
+            transformationController: widget.transformController,
+            minScale: 0.3,
+            maxScale: 5.0,
+            boundaryMargin: const EdgeInsets.all(80),
+            constrained: false,
+            child: widget.buildGrid(),
+          ),
+          Positioned(
+            top: 40,
+            right: 16,
+            child: IconButton(
+              style: IconButton.styleFrom(backgroundColor: Colors.white24),
+              icon: const Icon(Icons.close, color: Colors.white),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+          Positioned(
+            top: 40,
+            left: 16,
+            child: IconButton(
+              style: IconButton.styleFrom(backgroundColor: Colors.white24),
+              icon: const Icon(Icons.center_focus_strong, color: Colors.white),
+              onPressed: () =>
+                  widget.transformController.value = Matrix4.identity(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
