@@ -84,7 +84,7 @@ class ChatRepositoryImpl implements ChatRepository {
       final rooms = data.map((json) {
         final delegate = json['delegate'];
         final lastMessageText = json['last_message'] as String?;
-        final lastMessageType = json['last_message_type'] as String?; // ✅ เพิ่ม
+        final lastMessageType = json['last_message_type'] as String?;
         final isLastImage = lastMessageType == 'image';
         final lastMessageAt = json['last_message_at'] as String?;
         return ChatRoom(
@@ -126,7 +126,11 @@ class ChatRepositoryImpl implements ChatRepository {
         if (b.lastActiveAt == null) return -1;
         return b.lastActiveAt!.compareTo(a.lastActiveAt!);
       });
-
+      for (final r in rooms) {
+        debugPrint(
+          'Room: id=${r.id} participantId=${r.participantId} name=${r.participantName}',
+        );
+      }
       return rooms;
     } catch (e) {
       throw Exception('Failed to load chat rooms: $e');
@@ -155,7 +159,6 @@ class ChatRepositoryImpl implements ChatRepository {
               final content = isImage
                   ? (json['image_url'] ?? '')
                   : (json['content'] ?? '');
-              // if (isImage) debugPrint('🖼 image_url: $content');
 
               return ChatMessage(
                 id: json['id'].toString(),
@@ -173,6 +176,7 @@ class ChatRepositoryImpl implements ChatRepository {
                     ? DateTime.parse(json['edited_at']).toLocal()
                     : null,
                 isDeleted: json['is_deleted'] ?? false,
+                isRead: json['read_at'] != null,
               );
             } catch (e) {
               debugPrint('Skip message parse error: $e | json: $json');

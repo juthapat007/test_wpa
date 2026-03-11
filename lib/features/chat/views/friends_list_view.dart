@@ -1,5 +1,3 @@
-// lib/features/chat/views/friends_list_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_modular/flutter_modular.dart';
@@ -83,10 +81,12 @@ class _FriendCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () => Modular.to.pushNamed(
-          '/other_profile',
-          arguments: {'delegate_id': delegate.id},
-        ),
+        onTap: () => Modular.to.pushNamed('/other_profile/${delegate.id}'),
+
+        // Modular.to.pushNamed(
+        //   '/other_profile',
+        //   arguments: {'delegate_id': delegate.id},
+        // ),
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(

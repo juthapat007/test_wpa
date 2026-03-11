@@ -22,17 +22,18 @@ String _encodeBase64(Uint8List bytes) {
 class ChatInputField extends StatefulWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
+  final Function(String imageBase64)? onSendImage;
+  final VoidCallback? onChanged;
+  final String? hintText;
 
   /// callback เมื่อ user เลือกรูป — ส่ง base64 data URI กลับไป
-  final Function(String imageBase64)? onSendImage;
-
-  final String? hintText;
 
   const ChatInputField({
     super.key,
     required this.controller,
     required this.onSend,
     this.onSendImage,
+    this.onChanged,
     this.hintText,
   });
 
@@ -222,6 +223,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
             Expanded(
               child: TextField(
                 controller: widget.controller,
+                onChanged: (_) => widget.onChanged?.call(),
                 decoration: InputDecoration(
                   hintText: widget.hintText ?? 'Type a message...',
                   border: OutlineInputBorder(

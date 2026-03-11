@@ -16,8 +16,11 @@ class NotificationApi {
   }
 
   /// GET /api/v1/notifications/unread_count
-  Future<Map<String, dynamic>> getUnreadCount() async {
-    final response = await dio.get('/notifications/unread_count');
+  Future<Map<String, dynamic>> getUnreadCount({String? type}) async {
+    final response = await dio.get(
+      '/notifications/unread_count',
+      queryParameters: type != null ? {'type': type} : null,
+    );
     return response.data as Map<String, dynamic>;
   }
 

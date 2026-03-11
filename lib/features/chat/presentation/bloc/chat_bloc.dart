@@ -20,7 +20,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   StreamSubscription? _readReceiptSubscription;
   StreamSubscription? _messageDeletedSubscription;
   StreamSubscription? _messageUpdatedSubscription;
-  StreamSubscription? _typingSubscription;
   StreamSubscription? _roomDeletedSubscription;
 
   List<ChatRoom> _chatRooms = [];
@@ -47,13 +46,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<DisconnectWebSocket>(_onDisconnectWebSocket);
     on<WebSocketMessageReceived>(_onWebSocketMessageReceived);
     on<WebSocketConnectionChanged>(_onWebSocketConnectionChanged);
-
     on<LoadChatRooms>(_onLoadChatRooms);
     on<ResetAndLoadChatRooms>(_onResetAndLoadChatRooms);
     on<SelectChatRoom>(_onSelectChatRoom);
     on<BackToRoomList>(_onBackToRoomList);
     on<CreateChatRoom>(_onCreateChatRoom);
-
     on<LoadChatHistory>(_onLoadChatHistory);
     on<LoadMoreMessages>(_onLoadMoreMessages);
     on<SendMessage>(_onSendMessage);
@@ -61,11 +58,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<MessageReadReceived>(_onMessageReadReceived);
     on<WebSocketMessageDeleted>(_onWebSocketMessageDeleted);
     on<WebSocketMessageUpdated>(_onWebSocketMessageUpdated);
-
-    on<TypingStarted>(_onTypingStarted);
-    on<TypingStopped>(_onTypingStopped);
-    on<SendTypingIndicator>(_onSendTypingIndicator);
-
     on<DeleteMessageLocal>(_onDeleteMessageLocal);
     on<UpdateMessageLocal>(_onUpdateMessageLocal);
     on<MarkAllChatsRead>(_onMarkAllChatsRead);
@@ -149,13 +141,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         ),
       ),
     );
-    _typingSubscription = chatRepository.typingStream.listen((event) {
-      add(
-        event.isTyping
-            ? TypingStarted(event.userId)
-            : TypingStopped(event.userId),
-      );
-    });
+
     _roomDeletedSubscription = chatRepository.roomDeletedStream.listen((
       roomId,
     ) {
@@ -451,32 +437,77 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       if (_selectedRoom?.participantId == event.roomId) {
         _selectedRoom = _selectedRoom!.copyWith(unreadCount: 0);
       }
+
+      if (_selectedRoom != null) {
+        final response = await chatRepository.getChatHistory(
+          _selectedRoom!.participantId,
+          page: 1,
+          limit: 50,
+        );
+        final newMessages = response['messages'] as List<ChatMessage>;
+        final newMap = {for (final m in newMessages) m.id: m};
+
+        // ✅ merge isRead เท่านั้น ไม่ replace ทั้งหมด
+        _messages = _messages.map((existing) {
+          final updated = newMap[existing.id];
+          if (updated == null) return existing;
+          return existing.copyWith(isRead: updated.isRead);
+        }).toList();
+      }
+
       _emitCurrentState(emit);
     } catch (e) {
       log.w('Failed to mark as read', error: e);
     }
   }
+  // Future<void> _onMarkAsRead(MarkAsRead event, Emitter<ChatState> emit) async {
+  //   try {
+  //     await chatRepository.markAsRead(event.roomId);
+  //     _chatRooms = _chatRooms.map((room) {
+  //       return room.participantId == event.roomId
+  //           ? room.copyWith(unreadCount: 0)
+  //           : room;
+  //     }).toList();
+  //     if (_selectedRoom?.participantId == event.roomId) {
+  //       _selectedRoom = _selectedRoom!.copyWith(unreadCount: 0);
+  //     }
+  //     _emitCurrentState(emit);
+  //   } catch (e) {
+  //     log.w('Failed to mark as read', error: e);
+  //   }
+  // }
 
   void _onMessageReadReceived(
     MessageReadReceived event,
     Emitter<ChatState> emit,
   ) {
-    bool hasChanges = false;
+    // 🔍 DEBUG — ลบออกหลัง fix แล้ว
+    log.i(
+      '[ReadReceipt] messageId=${event.messageId} currentUserId=$_currentUserId',
+    );
+    log.i('[ReadReceipt] total messages=${_messages.length}');
+    for (final m in _messages) {
+      log.i(
+        '[ReadReceipt] msg id=${m.id} senderId=${m.senderId} isRead=${m.isRead}',
+      );
+    }
 
+    bool hasChanges = false;
     _messages = _messages.map((m) {
-      if (m.id == event.messageId && !m.isRead) {
-        hasChanges = true;
-        return m.copyWith(isRead: true);
-      }
-      if ((event.messageId == '0' || event.messageId == 'all') &&
-          m.senderId == (_currentUserId ?? '') &&
-          !m.isRead) {
-        hasChanges = true;
-        return m.copyWith(isRead: true);
+      if (!m.isRead && m.senderId == (_currentUserId ?? '')) {
+        if (event.messageId == '0' || event.messageId == 'all') {
+          hasChanges = true;
+          return m.copyWith(isRead: true);
+        }
+        if (m.id == event.messageId) {
+          hasChanges = true;
+          return m.copyWith(isRead: true);
+        }
       }
       return m;
     }).toList();
 
+    log.i('[ReadReceipt] hasChanges=$hasChanges');
     if (hasChanges && _selectedRoom != null) emit(_buildRoomState());
   }
 
@@ -743,7 +774,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     await _readReceiptSubscription?.cancel();
     await _messageDeletedSubscription?.cancel();
     await _messageUpdatedSubscription?.cancel();
-    await _typingSubscription?.cancel();
     await _roomDeletedSubscription?.cancel();
   }
 

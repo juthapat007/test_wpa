@@ -304,6 +304,9 @@ class ChatWebSocketService with WidgetsBindingObserver {
   void _handleActionCableDataMessage(Map<String, dynamic> message) {
     final type = message['type'] as String?;
 
+    log.i(
+      '[WS RAW] type=$type | keys=${message.keys.toList()} | data=${jsonEncode(message)}',
+    );
     if (type == 'new_notification') {
       log.i('[ChatWS] → NotificationWS: ${message['notification']?['type']}');
       NotificationWebSocketService.instance.handleIncomingEvent(message);
@@ -331,20 +334,6 @@ class ChatWebSocketService with WidgetsBindingObserver {
 
       case 'message_status_update':
         _handleMessageStatusUpdate(message);
-
-      case 'typing_start':
-        final userId = (message['user_id'] ?? message['userId'] ?? '')
-            .toString();
-        if (userId.isNotEmpty) {
-          _typingController.add(TypingEvent(userId: userId, isTyping: true));
-        }
-
-      case 'typing_stop':
-        final userId = (message['user_id'] ?? message['userId'] ?? '')
-            .toString();
-        if (userId.isNotEmpty) {
-          _typingController.add(TypingEvent(userId: userId, isTyping: false));
-        }
 
       case 'message_deleted':
         _handleMessageDeleted(message);

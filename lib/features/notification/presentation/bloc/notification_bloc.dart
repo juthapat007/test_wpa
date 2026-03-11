@@ -51,8 +51,8 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   ) async {
     try {
       final results = await Future.wait([
-        notificationRepository.getNotifications(type: 'system'),
-        notificationRepository.getUnreadCount(),
+        notificationRepository.getNotifications(),
+        notificationRepository.getUnreadCount(type: 'system'),
       ]);
       emit(
         NotificationLoaded(
@@ -73,7 +73,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     try {
       final results = await Future.wait([
         notificationRepository.getNotifications(type: event.type),
-        notificationRepository.getUnreadCount(),
+        notificationRepository.getUnreadCount(type: 'system'),
       ]);
       emit(
         NotificationLoaded(
@@ -86,12 +86,44 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     }
   }
 
+  // Future<void> _onLoadNotifications(
+  //   LoadNotifications event,
+  //   Emitter<NotificationState> emit,
+  // ) async {
+  //   emit(NotificationLoading());
+  //   try {
+  //     final notifications = await notificationRepository.getNotifications(
+  //       type: event.type,
+  //     );
+
+  //     // คำนวณ unread เองจาก list — ไม่ใช้ API count เพราะมัน nับ rejected ด้วย
+  //     final systemUnread = notifications
+  //         .where(
+  //           (n) =>
+  //               n.isUnread &&
+  //               n.type != 'connection_request' &&
+  //               n.type != 'connection_accepted' &&
+  //               n.type != 'connection_rejected',
+  //         )
+  //         .length;
+
+  //     emit(
+  //       NotificationLoaded(
+  //         notifications: notifications,
+  //         unreadCount: systemUnread,
+  //       ),
+  //     );
+  //   } catch (e) {
+  //     emit(NotificationError('Failed to load notifications: $e'));
+  //   }
+  // }
+
   Future<void> _onLoadUnreadCount(
     LoadUnreadCount event,
     Emitter<NotificationState> emit,
   ) async {
     try {
-      final count = await notificationRepository.getUnreadCount();
+      final count = await notificationRepository.getUnreadCount(type: 'system');
       final currentState = state;
       if (currentState is NotificationLoaded) {
         emit(
@@ -114,7 +146,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       await notificationRepository.markAllAsRead(type: event.type);
       final results = await Future.wait([
         notificationRepository.getNotifications(type: 'system'),
-        notificationRepository.getUnreadCount(),
+        notificationRepository.getUnreadCount(type: 'system'),
       ]);
       emit(
         NotificationLoaded(
@@ -127,41 +159,15 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     }
   }
 
-  // Future<void> _onMarkRead(
-  //   MarkNotificationRead event,
-  //   Emitter<NotificationState> emit,
-  // ) async {
-  //   try {
-  //     await notificationRepository.markAsRead(event.id);
-  //     final freshCount = await notificationRepository.getUnreadCount();
-  //     final currentState = state;
-  //     if (currentState is NotificationLoaded) {
-  //       final updated = currentState.notifications.map((n) {
-  //         if (n.id != event.id) return n;
-  //         return NotificationItem(
-  //           id: n.id,
-  //           type: n.type,
-  //           readAt: DateTime.now(),
-  //           createdAt: n.createdAt,
-  //           isUnread: false,
-  //           notifiable: n.notifiable,
-  //         );
-  //       }).toList();
-  //       emit(
-  //         NotificationLoaded(notifications: updated, unreadCount: freshCount),
-  //       );
-  //     }
-  //   } catch (e) {
-  //     emit(NotificationError('Failed to mark as read: $e'));
-  //   }
-  // }
   Future<void> _onMarkRead(
     MarkNotificationRead event,
     Emitter<NotificationState> emit,
   ) async {
     try {
       await notificationRepository.markAsRead(event.id);
-      final freshCount = await notificationRepository.getUnreadCount();
+      final freshCount = await notificationRepository.getUnreadCount(
+        type: 'system',
+      );
       final currentState = state;
       if (currentState is NotificationLoaded) {
         final updated = currentState.notifications.map((n) {
@@ -180,8 +186,6 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
         );
       }
     } catch (e) {
-      // ✅ silently fail — ไม่ emit error ให้ list หาย
-      // แค่ log ไว้
       print('⚠️ markAsRead failed: $e');
     }
   }

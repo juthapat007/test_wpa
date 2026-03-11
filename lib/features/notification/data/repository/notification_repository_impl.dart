@@ -25,9 +25,9 @@ class NotificationRepositoryImpl implements NotificationRepository {
   }
 
   @override
-  Future<int> getUnreadCount() async {
+  Future<int> getUnreadCount({String? type}) async {
     try {
-      final data = await api.getUnreadCount();
+      final data = await api.getUnreadCount(type: type);
       return data['unread_count'] as int? ?? 0;
     } catch (e) {
       throw Exception('Failed to get unread count: $e');

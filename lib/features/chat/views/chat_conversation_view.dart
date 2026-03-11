@@ -21,6 +21,7 @@ class _ChatConversationViewState extends State<ChatConversationView> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
   bool _isLoadingMore = false;
+  Timer? _typingTimer;
 
   @override
   void initState() {
@@ -30,6 +31,7 @@ class _ChatConversationViewState extends State<ChatConversationView> {
 
   @override
   void dispose() {
+    _typingTimer?.cancel();
     _messageController.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
@@ -88,7 +90,23 @@ class _ChatConversationViewState extends State<ChatConversationView> {
     _messageController.clear();
     _scrollToBottom();
   }
+  // ─── Typing Indicator ─────────────────────────────────────────────────────
 
+  void _onTyping() {
+    final room = _extractRoom(context.read<ChatBloc>().state);
+    if (room == null) return;
+
+    context.read<ChatBloc>().add(
+      SendTypingIndicator(recipientId: room.participantId, isTyping: true),
+    );
+
+    _typingTimer?.cancel();
+    _typingTimer = Timer(const Duration(seconds: 2), () {
+      context.read<ChatBloc>().add(
+        SendTypingIndicator(recipientId: room.participantId, isTyping: false),
+      );
+    });
+  }
   // ─── Send Image ───────────────────────────────────────────────────────────
 
   void _sendImage(String imageBase64) {
@@ -214,7 +232,8 @@ class _ChatConversationViewState extends State<ChatConversationView> {
             ChatInputField(
               controller: _messageController,
               onSend: _sendMessage,
-              onSendImage: _sendImage, // ✅ wire image callback
+              onSendImage: _sendImage,
+              onChanged: _onTyping,
             ),
             SizedBox(height: space_bottom.l),
           ],

@@ -2,7 +2,7 @@ import 'package:test_wpa/features/notification/domain/entities/notification_enti
 
 abstract class NotificationRepository {
   Future<List<NotificationItem>> getNotifications({String? type});
-  Future<int> getUnreadCount();
+  Future<int> getUnreadCount({String? type});
   Future<void> markAllAsRead({String? type});
   Future<void> markAsRead(int id);
 }
