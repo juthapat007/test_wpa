@@ -115,9 +115,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   bool _isNavigatingToChat = false;
   void _onChatStateChanged(BuildContext context, ChatState state) {
     if (state is ChatRoomSelected && !_isNavigatingToChat) {
-      _isNavigatingToChat = true; // ✅ lock ก่อน navigate
       Modular.to.pushNamed('/chat/room').then((_) {
-        // ✅ reset เมื่อกลับมา
         if (mounted) _isNavigatingToChat = false;
       });
     } else if (state is ChatError) {
@@ -254,34 +252,12 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
 
   // ─── Action Buttons ───────────────────────────────────────────────────────
 
-  // Widget _buildActionButtons(
-  //   ProfileDetail profile,
-  //   BuildContext context,
-  //   bool isSending,
-  // ) {
-  //   return Row(
-  //     children: [
-  //       Expanded(child: _buildConnectButton(profile, context, isSending)),
-  //       SizedBox(width: 4),
-  //       Expanded(
-  //         child: AppButton(
-  //           text: 'Chat',
-  //           // icon: Icons.chat_bubble_outline,
-  //           onPressed: () => ReadContext(context).read<ChatBloc>().add(
-  //             CreateChatRoom(profile.id.toString(), profile.name),
-  //           ),
-  //           isLoading: false,
-  //         ),
-  //       ),
-  //     ],
-  //   );
-  // }
   Widget _buildActionButtons(
     ProfileDetail profile,
     BuildContext context,
     bool isSending,
   ) {
-    // ✅ กรณี requestedToMe — แสดง 3 ปุ่มเท่ากัน
+    // กรณี requestedToMe — แสดง 3 ปุ่มเท่ากัน
     if (profile.connectionStatus == ConnectionStatus.requestedToMe) {
       final requestId = profile.connectionRequestId;
       if (requestId != null) {
@@ -329,7 +305,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       }
     }
 
-    // ✅ กรณีอื่น — Connect + Chat
     return Row(
       children: [
         Expanded(child: _buildConnectButton(profile, context, isSending)),
@@ -368,7 +343,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
 
       case ConnectionStatus.requestedByMe:
         return AppButton(
-          text: isSending ? 'Cancelling...' : 'Requested',
+          text: isSending ? 'Cancelling...' : 'Unrequested',
           backgroundColor: const Color(0xFFFF9800),
           textColor: Colors.white,
           isLoading: isSending,
@@ -408,12 +383,13 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         actions: [
           AppDialogAction(
             label: 'Cancel',
+            backgroundColor: color.AppColors.background,
             onPressed: () => Navigator.of(context).pop(),
           ),
           AppDialogAction(
             label: 'Unfriend',
             isPrimary: true,
-            backgroundColor: const Color(0xFFE05454),
+            backgroundColor: color.AppColors.error,
             onPressed: () {
               Navigator.of(context).pop();
               ReadContext(
@@ -443,12 +419,15 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           AppDialogAction(
             label: 'Yes, Cancel',
             isPrimary: true,
-            backgroundColor: const Color(0xFFFF9800),
+            backgroundColor: color.AppColors.warning,
             onPressed: () {
               Navigator.of(context).pop();
+              final requestId = profile.connectionRequestId;
+              print('🔍 connectionRequestId: $requestId');
+              if (requestId == null) return;
               ReadContext(
                 context,
-              ).read<ProfileDetailBloc>().add(CancelFriendRequest(profile.id));
+              ).read<ProfileDetailBloc>().add(CancelFriendRequest(requestId));
             },
           ),
         ],

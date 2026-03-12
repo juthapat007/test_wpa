@@ -7,6 +7,7 @@ import 'package:test_wpa/features/notification/presentation/bloc/notification_bl
 import 'app_bottom_navigation_bar.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:test_wpa/features/notification/presentation/bloc/connection_bloc.dart';
 
 enum AppBarStyle { standard, elegant }
 
@@ -56,13 +57,40 @@ class AppScaffold extends StatelessWidget {
                           }
                           return previous.runtimeType != current.runtimeType;
                         },
+                        // builder: (context, state) {
+                        //   final avatarUrl = state is AuthAuthenticated
+                        //       ? state.avatarUrl
+                        //       : null;
+                        //   return AppAvatar(
+                        //     imageUrl: avatarUrl,
+                        //     onTap: () => Modular.to.pushNamed('/profile'),
+                        //   );
+                        // },
                         builder: (context, state) {
                           final avatarUrl = state is AuthAuthenticated
                               ? state.avatarUrl
                               : null;
-                          return AppAvatar(
-                            imageUrl: avatarUrl,
+                          return GestureDetector(
                             onTap: () => Modular.to.pushNamed('/profile'),
+                            child: Container(
+                              width: 45,
+                              height: 45,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white),
+                                image: avatarUrl != null && avatarUrl.isNotEmpty
+                                    ? DecorationImage(
+                                        image: NetworkImage(avatarUrl),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : const DecorationImage(
+                                        image: AssetImage(
+                                          'assets/images/logo.png',
+                                        ),
+                                        fit: BoxFit.cover,
+                                      ),
+                              ),
+                            ),
                           );
                         },
                       ),
@@ -97,7 +125,11 @@ class AppScaffold extends StatelessWidget {
                     return true;
                   },
                   builder: (context, state) {
-                    String? avatarUrl;
+                    // String? avatarUrl;
+                    final avatarUrl = state is AuthAuthenticated
+                        ? state.avatarUrl
+                        : null;
+
                     return GestureDetector(
                       onTap: () => Modular.to.pushNamed('/profile'),
                       child: Container(
@@ -154,52 +186,61 @@ class AppScaffold extends StatelessWidget {
 
   List<Widget>? _defaultActions(BuildContext context) {
     return [
-      // 🔔 Notification Button with Badge
       BlocBuilder<NotificationBloc, NotificationState>(
-        builder: (context, state) {
-          int unreadCount = 0;
-          if (state is NotificationLoaded) {
-            unreadCount = state.unreadCount;
-          } else if (state is UnreadCountLoaded) {
-            unreadCount = state.count;
-          }
+        builder: (context, notifState) {
+          return BlocBuilder<ConnectionBloc, ConnectionRequestState>(
+            builder: (context, connState) {
+              int notifCount = 0;
+              if (notifState is NotificationLoaded) {
+                notifCount = notifState.unreadCount;
+              }
+              int pendingCount = 0;
+              if (connState is ConnectionRequestLoaded) {
+                pendingCount = connState.requests
+                    .where((r) => r.isPending)
+                    .length;
+              }
 
-          return Stack(
-            clipBehavior: Clip.none,
-            children: [
-              IconButton(
-                onPressed: () => Modular.to.pushNamed('/notification'),
-                icon: const Icon(
-                  Icons.notifications_outlined,
-                  color: color.AppColors.textSecondary,
-                ),
-              ),
-              if (unreadCount > 0)
-                Positioned(
-                  top: 6,
-                  right: 6,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: color.AppColors.error,
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 18,
-                      minHeight: 18,
-                    ),
-                    child: Text(
-                      unreadCount > 9 ? '9+' : '$unreadCount',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
+              final totalCount = notifCount + pendingCount;
+
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  IconButton(
+                    onPressed: () => Modular.to.pushNamed('/notification'),
+                    icon: const Icon(
+                      Icons.notifications_outlined,
+                      color: color.AppColors.textSecondary,
                     ),
                   ),
-                ),
-            ],
+                  if (totalCount > 0)
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: color.AppColors.error,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 18,
+                          minHeight: 18,
+                        ),
+                        child: Text(
+                          totalCount > 9 ? '9+' : '$totalCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           );
         },
       ),

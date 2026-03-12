@@ -262,7 +262,6 @@ class _TableGridWidgetState extends State<TableGridWidget> {
     );
   }
 
-  // ✅ อยู่ใน class ถูกต้อง — มี context ใช้ได้
   void _openFullscreen(Widget Function({double? forceCellSize}) buildGrid) {
     showDialog(
       context: context,
@@ -322,6 +321,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
         table: table,
         isMyTable: isMyTable,
         meetingsSectionTitle: sectionTitle ?? 'Meeting',
+        myDelegateId: widget.myDelegateId,
       ),
     );
   }

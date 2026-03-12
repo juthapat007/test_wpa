@@ -61,9 +61,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<DeleteMessageLocal>(_onDeleteMessageLocal);
     on<UpdateMessageLocal>(_onUpdateMessageLocal);
     on<MarkAllChatsRead>(_onMarkAllChatsRead);
-
-    // ── ใหม่ ──────────────────────────────────────────────────────────────
     on<DeleteConversation>(_onDeleteConversation);
+    on<TypingStarted>(_onTypingStarted);
+    on<TypingStopped>(_onTypingStopped);
+    on<SendTypingIndicator>(_onSendTypingIndicator);
   }
 
   // ─── WebSocket ───────────────────────────────────────────────────────────
@@ -447,7 +448,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         final newMessages = response['messages'] as List<ChatMessage>;
         final newMap = {for (final m in newMessages) m.id: m};
 
-        // ✅ merge isRead เท่านั้น ไม่ replace ทั้งหมด
         _messages = _messages.map((existing) {
           final updated = newMap[existing.id];
           if (updated == null) return existing;
@@ -460,22 +460,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       log.w('Failed to mark as read', error: e);
     }
   }
-  // Future<void> _onMarkAsRead(MarkAsRead event, Emitter<ChatState> emit) async {
-  //   try {
-  //     await chatRepository.markAsRead(event.roomId);
-  //     _chatRooms = _chatRooms.map((room) {
-  //       return room.participantId == event.roomId
-  //           ? room.copyWith(unreadCount: 0)
-  //           : room;
-  //     }).toList();
-  //     if (_selectedRoom?.participantId == event.roomId) {
-  //       _selectedRoom = _selectedRoom!.copyWith(unreadCount: 0);
-  //     }
-  //     _emitCurrentState(emit);
-  //   } catch (e) {
-  //     log.w('Failed to mark as read', error: e);
-  //   }
-  // }
 
   void _onMessageReadReceived(
     MessageReadReceived event,

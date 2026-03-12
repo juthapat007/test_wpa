@@ -68,12 +68,12 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       // เรียก API เพื่ออัพเดทข้อมูล
       final response = await profileApi.updateProfile(updateData);
 
-      print('✅ Profile updated successfully');
+      print('Profile updated successfully');
 
       // โหลดข้อมูลใหม่จาก API
       final updatedProfile = await profileRepository.getProfile();
 
-      print('✅ Profile reloaded successfully');
+      print('Profile reloaded successfully');
 
       // Emit เฉพาะ ProfileLoaded state เดียว พร้อม success flag
       emit(ProfileLoaded(updatedProfile.toViewModel(), wasUpdated: true));

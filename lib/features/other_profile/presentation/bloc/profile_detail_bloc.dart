@@ -68,7 +68,7 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
         );
       }
     } catch (e) {
-      print('⚠️ Could not enrich requestId: $e');
+      print('Could not enrich requestId: $e');
     }
     return profile;
   }
@@ -79,8 +79,6 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
     Emitter<ProfileDetailState> emit,
   ) async {
     final currentState = state;
-
-    // ✅ แสดง isScheduleLoading แทนการ emit loading ทั้งหน้า
     if (currentState is ProfileDetailLoaded) {
       emit(
         ProfileDetailLoaded(
@@ -176,7 +174,7 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
 
     emit(FriendRequestSending());
     try {
-      await connectionRepository.cancelRequest(event.targetId);
+      await connectionRepository.cancelRequest(event.requestId);
       emit(
         ProfileDetailLoaded(
           _copyProfile(

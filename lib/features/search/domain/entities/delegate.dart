@@ -8,7 +8,7 @@ class Delegate {
   final String companyName;
   final String avatarUrl;
   final String countryCode;
-  final int? teamId; // ✅ nullable
+  final int? teamId;
   final bool firstLogin;
   final bool isConnected;
   final String connectionStatus;
@@ -21,7 +21,7 @@ class Delegate {
     this.companyName = '',
     this.avatarUrl = '',
     required this.countryCode,
-    this.teamId, // ✅ optional
+    this.teamId,
     required this.firstLogin,
     required this.isConnected,
     this.connectionStatus = 'none',

@@ -234,7 +234,7 @@ class _TimeSlotSheetState extends State<_TimeSlotSheet> {
   Widget build(BuildContext context) {
     final date = widget.response.date;
 
-    // ✅ เวลาปัจจุบันของ device สำหรับแสดงใน header
+    // เวลาปัจจุบันของ device สำหรับแสดงใน header
     final now = DateTime.now();
     final h = now.hour > 12
         ? now.hour - 12
@@ -275,7 +275,6 @@ class _TimeSlotSheetState extends State<_TimeSlotSheet> {
                       ),
                       const SizedBox(height: 16),
 
-                      // ✅ title + current time pill
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
@@ -382,7 +381,7 @@ class _TimeSlotSheetState extends State<_TimeSlotSheet> {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Container(
-                          // ✅ highlight chip ที่ตรงกับเวลาปัจจุบัน
+                          // highlight chip ที่ตรงกับเวลาปัจจุบัน
                           decoration: isNow
                               ? BoxDecoration(
                                   color: AppColors.primary.withValues(
@@ -414,7 +413,6 @@ class _TimeSlotSheetState extends State<_TimeSlotSheet> {
                                   },
                                 ),
                               ),
-                              // ✅ "NOW" label ขวามือ
                               if (isNow)
                                 Padding(
                                   padding: const EdgeInsets.only(

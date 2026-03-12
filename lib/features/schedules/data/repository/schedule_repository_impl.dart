@@ -26,7 +26,7 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
       final code = e.response?.statusCode;
 
       if (code == 404) {
-        // ✅ ถ้า 404 แต่มี available_dates ในresponse ให้ส่งกลับไป
+        // ถ้า 404 แต่มี available_dates ในresponse ให้ส่งกลับไป
         if (e.response?.data != null &&
             e.response?.data['available_dates'] != null) {
           return ScheduleResponseModel.fromJson(

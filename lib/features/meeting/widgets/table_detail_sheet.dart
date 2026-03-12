@@ -1,9 +1,8 @@
-// lib/features/meeting/widgets/table_detail_sheet.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
+import 'package:test_wpa/core/theme/app_colors.dart';
 import 'package:test_wpa/features/meeting/domain/entities/table_view_entities.dart';
 import 'package:test_wpa/features/meeting/widgets/delegate_list_tile.dart';
 
@@ -11,12 +10,14 @@ class TableDetailSheet extends StatelessWidget {
   final TableInfo table;
   final bool isMyTable;
   final String meetingsSectionTitle;
+  final int myDelegateId;
 
   const TableDetailSheet({
     super.key,
     required this.table,
     required this.isMyTable,
     this.meetingsSectionTitle = 'Meeting',
+    this.myDelegateId = 0,
   });
 
   @override
@@ -100,10 +101,13 @@ class TableDetailSheet extends StatelessWidget {
               ),
               clipBehavior: Clip.hardEdge,
               child: InkWell(
-                onTap: () => Modular.to.pushNamed(
-                  '/other_profile',
-                  arguments: {'delegate_id': meeting.sideA.delegateId},
-                ),
+                onTap: () {
+                  if (meeting.sideA.delegateId == myDelegateId) return;
+                  Modular.to.pushNamed(
+                    '/other_profile',
+                    arguments: {'delegate_id': meeting.sideA.delegateId},
+                  );
+                },
                 child: Padding(
                   padding: const EdgeInsets.all(10),
                   child: _buildSideRow(
@@ -149,10 +153,13 @@ class TableDetailSheet extends StatelessWidget {
                   ),
                   clipBehavior: Clip.hardEdge,
                   child: InkWell(
-                    onTap: () => Modular.to.pushNamed(
-                      '/other_profile',
-                      arguments: {'delegate_id': entry.value.id},
-                    ),
+                    onTap: () {
+                      if (entry.value.id == myDelegateId) return;
+                      Modular.to.pushNamed(
+                        '/other_profile',
+                        arguments: {'delegate_id': entry.value.id},
+                      );
+                    },
                     child: Padding(
                       padding: const EdgeInsets.all(10),
                       child: _buildSideRow(
@@ -180,26 +187,60 @@ class TableDetailSheet extends StatelessWidget {
     required String company,
     required int delegateId,
   }) {
+    final isMe = delegateId == myDelegateId;
+
     return Row(
       children: [
-        CircleAvatar(
-          radius: 18,
-          foregroundImage: avatarUrl.isNotEmpty
-              ? NetworkImage(avatarUrl)
-              : null,
-          child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?'),
+        Stack(
+          children: [
+            CircleAvatar(
+              radius: 18,
+              foregroundImage: avatarUrl.isNotEmpty
+                  ? NetworkImage(avatarUrl)
+                  : null,
+              child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?'),
+            ),
+          ],
         ),
         const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  if (isMe)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: const Text(
+                        'You',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                ],
               ),
               Text(
                 company,
@@ -208,7 +249,7 @@ class TableDetailSheet extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: color.AppColors.textSecondary,
+                  color: AppColors.textSecondary,
                 ),
               ),
               if (title != null && title.isNotEmpty)
@@ -216,17 +257,18 @@ class TableDetailSheet extends StatelessWidget {
                   title,
                   style: const TextStyle(
                     fontSize: 12,
-                    color: color.AppColors.textSecondary,
+                    color: AppColors.textSecondary,
                   ),
                 ),
             ],
           ),
         ),
-        const Icon(
-          Icons.chevron_right,
-          size: 16,
-          color: color.AppColors.textSecondary,
-        ),
+        if (!isMe)
+          const Icon(
+            Icons.chevron_right,
+            size: 16,
+            color: AppColors.textSecondary,
+          ),
       ],
     );
   }

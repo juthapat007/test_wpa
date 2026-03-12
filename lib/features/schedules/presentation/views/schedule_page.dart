@@ -155,7 +155,6 @@ class _SchedulePageState extends State<SchedulePage> {
     return Scaffold(
       backgroundColor: color.AppColors.surface,
       floatingActionButton: _buildFAB(),
-      // ✅ BlocListener จัดการ side effects แยกจาก BlocBuilder
       body: BlocListener<ScheduleBloc, ScheduleState>(
         listenWhen: (_, curr) =>
             curr is ScheduleLoaded && _selectedDateStr.isEmpty,
@@ -229,7 +228,6 @@ class _SchedulePageState extends State<SchedulePage> {
     );
   }
 
-  // ✅ BlocBuilder นี้ไม่มี side effect แล้ว — แค่ render UI
   Widget _buildDateTabBar() {
     return BlocBuilder<ScheduleBloc, ScheduleState>(
       buildWhen: (prev, curr) =>

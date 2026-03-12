@@ -1,5 +1,3 @@
-// lib/core/widgets/app_shell.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_modular/flutter_modular.dart';
@@ -17,6 +15,12 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
+  @override
+  void initState() {
+    super.initState();
+    Modular.get<NotificationBloc>().add(LoadNotifications());
+  }
+
   @override
   Widget build(BuildContext context) {
     // ใช้ BlocProvider.value เพื่อไม่ให้ dispose bloc เมื่อ route เปลี่ยน

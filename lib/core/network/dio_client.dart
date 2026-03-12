@@ -4,7 +4,6 @@ import 'package:test_wpa/core/constants/setup_Logger.dart';
 import 'package:test_wpa/core/interceptors/auth_interceptor.dart';
 
 class DioClient {
-  // static const String appBaseUrl = 'https://wpa-docker-8aer.onrender.com';
   static const webAppUrl = 'https://wpaapp2026.web.app';
   static final DioClient _instance = DioClient._internal();
   factory DioClient() => _instance;
@@ -15,7 +14,7 @@ class DioClient {
 
   final Dio dio = Dio(
     BaseOptions(
-      baseUrl: 'https://wpa-docker-8aer.onrender.com/api/v1',
+      baseUrl: 'https://wpadocker-production.up.railway.app/api/v1',
 
       // baseUrl: 'http://192.168.1.30:3000/api/v1',
       connectTimeout: const Duration(seconds: 60),
@@ -27,7 +26,8 @@ class DioClient {
 
   Future<void> init() async {
     dio.interceptors.clear();
-    dio.interceptors.add(setupLogger());
+    // print log
+    // dio.interceptors.add(setupLogger());
     dio.interceptors.add(AuthInterceptor());
   }
 
@@ -36,13 +36,14 @@ class DioClient {
   static Dio createDio() {
     final dio = Dio(
       BaseOptions(
-        baseUrl: 'https://wpa-docker-8aer.onrender.com/api/v1',
+        baseUrl: 'https://wpadocker-production.up.railway.app/api/v1',
         // baseUrl: 'http://192.168.1.30:3000/api/v1',
         connectTimeout: const Duration(seconds: 60),
         receiveTimeout: const Duration(seconds: 60),
       ),
     );
-    dio.interceptors.add(setupLogger());
+    // print log
+    // dio.interceptors.add(setupLogger());
     dio.interceptors.add(AuthInterceptor());
     return dio;
   }

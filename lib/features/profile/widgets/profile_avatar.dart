@@ -47,76 +47,6 @@ class _ProfileAvatarState extends State<ProfileAvatar> {
   }
 
   @override
-  // Widget build(BuildContext context) {
-  //   final imageUrl = widget.avatarUrl.trim();
-  //   return Center(
-  //     child: GestureDetector(
-  //       onTap: _pickAndUpload, // ✅ กดเพื่อเลือกรูป
-  //       child: Stack(
-  //         children: [
-  //           Container(
-  //             width: 110,
-  //             height: 110,
-  //             decoration: BoxDecoration(
-  //               shape: BoxShape.circle,
-  //               border: Border.all(color: Colors.white, width: 4),
-  //               boxShadow: [
-  //                 BoxShadow(
-  //                   color: Colors.black.withValues(alpha: 0.1),
-  //                   blurRadius: 10,
-  //                   offset: const Offset(0, 4),
-  //                 ),
-  //               ],
-  //             ),
-  //             child: ClipOval(
-  //               child: _isUploading
-  //                   ? const Center(
-  //                       child: CircularProgressIndicator(strokeWidth: 2),
-  //                     )
-  //                   : imageUrl.isNotEmpty && _token != null
-  //                   ? Image.network(
-  //                       imageUrl,
-  //                       fit: BoxFit.cover,
-  //                       width: 110,
-  //                       height: 110,
-  //                       headers: {
-  //                         'Authorization': 'Bearer $_token',
-  //                         'Accept': 'image/*',
-  //                       },
-  //                       loadingBuilder: (context, child, progress) {
-  //                         if (progress == null) return child;
-  //                         return const Center(
-  //                           child: CircularProgressIndicator(strokeWidth: 2),
-  //                         );
-  //                       },
-  //                       errorBuilder: (_, __, ___) => _defaultAvatar(),
-  //                     )
-  //                   : _defaultAvatar(),
-  //             ),
-  //           ),
-  //           // ✅ ไอคอนกล้องมุมขวาล่าง
-  //           Positioned(
-  //             bottom: 0,
-  //             right: 0,
-  //             child: Container(
-  //               padding: const EdgeInsets.all(6),
-  //               decoration: const BoxDecoration(
-  //                 color: Color(0xFF4A90D9),
-  //                 shape: BoxShape.circle,
-  //               ),
-  //               child: const Icon(
-  //                 Icons.camera_alt,
-  //                 color: Colors.white,
-  //                 size: 16,
-  //               ),
-  //             ),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
-  @override
   Widget build(BuildContext context) {
     final imageUrl = widget.avatarUrl.trim();
 
@@ -124,7 +54,7 @@ class _ProfileAvatarState extends State<ProfileAvatar> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ✅ avatar แค่แสดงรูป ไม่ต้อง onTap แล้ว
+          // avatar แค่แสดงรูป ไม่ต้อง onTap แล้ว
           Stack(
             children: [
               Container(

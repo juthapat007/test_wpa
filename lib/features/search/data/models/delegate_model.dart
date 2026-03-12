@@ -5,12 +5,12 @@ import 'package:dio/dio.dart';
 class DelegateModel {
   final int id;
   final String name;
-  final String? title; // null ใน API
+  final String? title;
   final String email;
   final String? companyName;
   final String? avatarUrl;
   final String countryCode;
-  final int? teamId; // ✅ null ใน API (เช่น Daniel Johnson)
+  final int? teamId; 
   final bool firstLogin;
   final bool isConnected;
   final String connectionStatus;
@@ -23,7 +23,7 @@ class DelegateModel {
     this.companyName,
     this.avatarUrl,
     required this.countryCode,
-    this.teamId, // ✅ optional
+    this.teamId, 
     required this.firstLogin,
     required this.isConnected,
     required this.connectionStatus,
@@ -37,7 +37,7 @@ class DelegateModel {
     companyName: json['company_name'] as String?,
     avatarUrl: json['avatar_url'] as String?,
     countryCode: json['country_code'] as String? ?? 'N/A',
-    teamId: json['team_id'] as int?, // ✅ ไม่ crash ถ้า null
+    teamId: json['team_id'] as int?, 
     firstLogin: json['first_login'] as bool,
     isConnected: json['is_connected'] as bool,
     connectionStatus: json['connection_status'] as String? ?? 'none',

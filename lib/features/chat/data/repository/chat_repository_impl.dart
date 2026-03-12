@@ -284,6 +284,6 @@ class ChatRepositoryImpl implements ChatRepository {
   static String? _resolveAvatarUrl(String? url) {
     if (url == null || url.isEmpty) return null;
     if (url.startsWith('http')) return url;
-    return 'https://wpa-docker-8aer.onrender.com$url';
+    return 'https://wpadocker-production.up.railway.app$url';
   }
 }

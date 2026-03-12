@@ -29,8 +29,6 @@ class _LoginPageState extends State<LoginPage> {
 
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
-      // print('UI email = ${_emailCtrl.text}');
-      // print('UI password = ${_passwordCtrl.text}');
       FocusScope.of(context).unfocus();
       BlocProvider.of<AuthBloc>(context).add(
         AuthLoginEvent(
@@ -46,7 +44,6 @@ class _LoginPageState extends State<LoginPage> {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthAuthenticated) {
-          print('login Done');
           Modular.to.navigate('/meeting');
         } else if (state is AuthError) {
           ScaffoldMessenger.of(context).showSnackBar(

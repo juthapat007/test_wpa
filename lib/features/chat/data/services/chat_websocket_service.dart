@@ -88,7 +88,6 @@ class ChatWebSocketService with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
       case AppLifecycleState.resumed:
-        // user เปิดแอพจริงๆ → reconnect ได้
         _isAppInForeground = true;
         log.i('[Lifecycle] App resumed → foreground');
         if (!_isConnected && _lastToken != null) {
@@ -98,7 +97,6 @@ class ChatWebSocketService with WidgetsBindingObserver {
 
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
-        // แอพเข้า background (รวมถึงตอน FCM ปลุก) → หยุด timer ทั้งหมด
         _isAppInForeground = false;
         log.i('[Lifecycle] App backgrounded → cancel timers');
         _cancelTimers();
@@ -125,7 +123,7 @@ class ChatWebSocketService with WidgetsBindingObserver {
         await _channel!.sink.close();
         _channel = null;
       }
-      final wsUrl = 'wss://wpa-docker-8aer.onrender.com/cable?token=$token';
+      final wsUrl = 'wss://wpadocker-production.up.railway.app/cable?token=$token';
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
       _channel!.stream.listen(
         _handleMessage,
@@ -168,7 +166,6 @@ class ChatWebSocketService with WidgetsBindingObserver {
       if (!_isConnected || _channel == null || _chatChannelIdentifier == null)
         return;
       try {
-        // ✅ ถูก — ใช้ ActionCable perform format
         _sendCommand(
           'message',
           _chatChannelIdentifier!,

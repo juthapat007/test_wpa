@@ -45,8 +45,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  /// ✅ Reload ด้วย keyword เดิม หน้า 1 — ใช้หลังกลับจาก OtherProfilePage
-  Future<void> _onRefresh(
+   Future<void> _onRefresh(
     RefreshDelegates event,
     Emitter<SearchState> emit,
   ) async {

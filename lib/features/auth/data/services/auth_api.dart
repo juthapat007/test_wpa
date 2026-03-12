@@ -14,11 +14,9 @@ class AuthApi {
         '/login',
         data: {'email': email, 'password': password},
       );
-      debugPrint('API response: ${response.data}');
       return response;
     } catch (e, s) {
       debugPrint('API error: $e');
-      debugPrintStack(stackTrace: s);
       rethrow;
     }
   }
@@ -36,7 +34,6 @@ class AuthApi {
           },
         },
       );
-      debugPrint('Device token registered');
     } catch (e) {
       debugPrint('Failed to register device token: $e');
     }

@@ -152,17 +152,23 @@ class TeamScheduleSheet extends StatelessWidget {
             // ─── Side A ───────────────────────────────────────────────
             Card(
               margin: EdgeInsets.zero,
+              // color: Colors.blue.withValues(alpha: 0.05),
               color: const Color(0xFFF0F9FF),
+
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
                 side: BorderSide(color: Colors.blue.shade100),
               ),
               clipBehavior: Clip.hardEdge,
               child: InkWell(
-                onTap: () => Modular.to.pushNamed(
-                  '/other_profile',
-                  arguments: {'delegate_id': meeting.sideA.delegateId},
-                ),
+                onTap: () {
+                  // ดักตัวเอง
+                  if (meeting.sideA.delegateId == myDelegateId) return;
+                  Modular.to.pushNamed(
+                    '/other_profile',
+                    arguments: {'delegate_id': meeting.sideA.delegateId},
+                  );
+                },
                 child: Padding(
                   padding: const EdgeInsets.all(10),
                   child: _buildSideRow(
@@ -202,17 +208,21 @@ class TeamScheduleSheet extends StatelessWidget {
                 padding: EdgeInsets.only(bottom: isLast ? 0 : 8),
                 child: Card(
                   margin: EdgeInsets.zero,
-                  color: const Color(0xFFF0FDF4),
+                  // color: Colors.amber.withValues(alpha: 0.05),
+                  color: const Color(0xFFFFFBEB),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
-                    side: BorderSide(color: Colors.green.shade100),
+                    side: BorderSide(color: Colors.amberAccent.shade100),
                   ),
                   clipBehavior: Clip.hardEdge,
                   child: InkWell(
-                    onTap: () => Modular.to.pushNamed(
-                      '/other_profile',
-                      arguments: {'delegate_id': entry.value.id},
-                    ),
+                    onTap: () {
+                      if (entry.value.id == myDelegateId) return;
+                      Modular.to.pushNamed(
+                        '/other_profile',
+                        arguments: {'delegate_id': entry.value.id},
+                      );
+                    },
                     child: Padding(
                       padding: const EdgeInsets.all(10),
                       child: _buildSideRow(

@@ -42,7 +42,7 @@
     <category android:name="android.intent.category.BROWSABLE"/>
     <data
         android:scheme="https"
-        android:host="wpa-docker-8aer.onrender.com"
+        android:host="wpadocker-production.up.railway.app"
         android:pathPrefix="/deeplink-reset-password"/>
 </intent-filter>
 <!-- เพิ่มใหม่: Custom Scheme -->

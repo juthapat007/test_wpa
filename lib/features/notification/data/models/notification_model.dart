@@ -18,7 +18,6 @@ class NotificationItemModel {
   });
 
   factory NotificationItemModel.fromJson(Map<String, dynamic> json) {
-
     return NotificationItemModel(
       id: json['id'],
       type: json['type'] ?? '',
@@ -64,7 +63,7 @@ class NotificationNotifiableModel {
     return NotificationNotifiableModel(
       type: json['type'] ?? '',
       id: json['id'] ?? 0,
-      // ✅ รองรับทั้ง 'sender', 'requester' field จาก backend
+      // รองรับทั้ง 'sender', 'requester' field จาก backend
       sender: json['sender'] != null
           ? NotificationSenderModel.fromJson(json['sender'])
           : json['requester'] != null
@@ -84,7 +83,6 @@ class NotificationNotifiableModel {
       id: id,
       content: content,
       status: status,
-      // ✅ ส่ง sender/requester/target ออกไปด้วย — ไม่ทิ้งข้อมูลแล้ว
       requester: sender?.toEntity(),
       target: target?.toEntity(),
     );
@@ -113,7 +111,7 @@ class NotificationSenderModel {
   static String? _resolveUrl(String? url) {
     if (url == null || url.isEmpty) return null;
     if (url.startsWith('http')) return url;
-    return 'https://wpa-docker-8aer.onrender.com$url';
+    return 'https://wpadocker-production.up.railway.app$url';
   }
 
   NotificationSender toEntity() {

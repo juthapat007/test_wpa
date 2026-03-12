@@ -8,8 +8,7 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
   final ScheduleRepository scheduleRepository;
 
   ScheduleBloc({required this.scheduleRepository}) : super(ScheduleInitial()) {
-    // ✅ droppable() — ถ้ามี event ซ้ำเข้ามาระหว่างที่กำลัง load อยู่ จะ drop ทิ้ง
-    on<LoadSchedules>(_onLoadSchedules, transformer: droppable());
+   on<LoadSchedules>(_onLoadSchedules, transformer: droppable());
     on<ChangeDate>(_onChangeDate, transformer: droppable());
     on<LoadLeaveTypes>(_onLoadLeaveTypes, transformer: droppable());
     on<SubmitLeaveForms>(_onSubmitLeaveForms);

@@ -12,12 +12,8 @@ final class ProfileDetailLoading extends ProfileDetailState {}
 final class ProfileDetailLoaded extends ProfileDetailState {
   final ProfileDetail profile;
   final List<Schedule>? schedules;
-
-  /// ✅ ข้อมูลจาก API สำหรับ DateTabBar
-  final List<String> availableDates; // ["2025-10-12", ...]
+  final List<String> availableDates;
   final String selectedDate; // วันที่ที่แสดงอยู่ตอนนี้
-
-  /// ✅ กำลังโหลด schedule (แสดง shimmer ใน section นั้น ไม่ต้อง loading ทั้งหน้า)
   final bool isScheduleLoading;
 
   ProfileDetailLoaded(

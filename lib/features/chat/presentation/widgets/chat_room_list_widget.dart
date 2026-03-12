@@ -25,11 +25,8 @@ class _ChatRoomListWidgetState extends State<ChatRoomListWidget>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
 
-    // ✅ โหลด rooms เสมอเมื่อเปิดหน้า
     ReadContext(context).read<ChatBloc>().add(ResetAndLoadChatRooms());
 
-    // ✅ Connect WebSocket เฉพาะเมื่อยังไม่ได้ connect
-    // (AppShell อาจ connect ไปแล้ว — ไม่ต้อง connect ซ้ำ)
     final wsService = Modular.get<ChatWebSocketService>();
     if (!wsService.isConnected) {
       ReadContext(context).read<ChatBloc>().add(ConnectWebSocket());

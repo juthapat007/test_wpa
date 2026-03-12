@@ -42,34 +42,40 @@ class ChatRoomCard extends StatelessWidget {
   }
 
   Widget _buildAvatar() {
-    return Stack(
-      children: [
-        _AuthenticatedAvatar(
-          imageUrl: room.participantAvatar,
-          name: room.participantName,
-          radius: 28,
-        ),
-        if (room.lastActiveAt != null &&
-            DateTime.now().difference(room.lastActiveAt!).inMinutes < 5)
-          Positioned(
-            right: 0,
-            bottom: 0,
-            child: Container(
-              width: 14,
-              height: 14,
-              decoration: BoxDecoration(
-                color: AppColors.success,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-              ),
-            ),
-          ),
-      ],
+    return _AuthenticatedAvatar(
+      imageUrl: room.participantAvatar,
+      name: room.participantName,
+      radius: 28,
     );
   }
+  // Widget _buildAvatar() {
+  //   return Stack(
+  //     children: [
+  //       _AuthenticatedAvatar(
+  //         imageUrl: room.participantAvatar,
+  //         name: room.participantName,
+  //         radius: 28,
+  //       ),
+  //       if (room.lastActiveAt != null &&
+  //           DateTime.now().difference(room.lastActiveAt!).inMinutes < 5)
+  //         Positioned(
+  //           right: 0,
+  //           bottom: 0,
+  //           child: Container(
+  //             width: 14,
+  //             height: 14,
+  //             decoration: BoxDecoration(
+  //               color: AppColors.success,
+  //               shape: BoxShape.circle,
+  //               border: Border.all(color: Colors.white, width: 2),
+  //             ),
+  //           ),
+  //         ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildContent() {
-    // ชื่อที่แสดง: ถ้ากลุ่ม → groupName, ถ้า 1-on-1 → participantName เดิม
     final displayName = room.participantName;
 
     return Column(
@@ -255,11 +261,10 @@ class _AuthenticatedAvatarState extends State<_AuthenticatedAvatar> {
 
     // ถ้าเป็น ui-avatars.com หรือ http อื่นๆ ที่ไม่ต้อง auth
     final needsAuth =
-        hasUrl && widget.imageUrl!.contains('wpa-docker-8aer.onrender.com');
+        hasUrl && widget.imageUrl!.contains('wpadocker-production.up.railway.app');
 
     if (!hasUrl) return _buildFallback();
 
-    // ✅ URL ภายนอก (ui-avatars etc.) โหลดตรงได้เลย
     if (!needsAuth) {
       return CircleAvatar(
         radius: widget.radius,
@@ -270,7 +275,6 @@ class _AuthenticatedAvatarState extends State<_AuthenticatedAvatar> {
       );
     }
 
-    // ✅ URL ของ server ต้องใส่ token
     if (_token == null) return _buildFallback();
 
     return ClipOval(

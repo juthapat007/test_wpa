@@ -84,10 +84,8 @@ class _ChatInputFieldState extends State<ChatInputField> {
 
       setState(() => _isSendingImage = true);
 
-      // ✅ encode ใน isolate — ไม่บล็อก UI
       final base64Uri = await compute(_encodeBase64, bytes);
 
-      // ✅ แก้: widget.onSendImage?.call() ไม่ใช่ onSendImage()
       widget.onSendImage?.call(base64Uri);
     } catch (e) {
       if (mounted) {

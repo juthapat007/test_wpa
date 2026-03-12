@@ -38,15 +38,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       if (token != null) {
         Modular.get<ChatWebSocketService>().connect(token);
 
-        // NotificationWebSocketService.instance.connect(token);
       }
-      //คอยเก็บ token
 
-      // final fcmToken = await FirebaseMessaging.instance.getToken();
-      // print('FCM Token: $fcmToken');
-      // if (fcmToken != null) {
-      //   await authRepository.registerDeviceToken(fcmToken);
-      // }
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      print('FCM Token: $fcmToken');
+      if (fcmToken != null) {
+        await authRepository.registerDeviceToken(fcmToken);
+      }
 
       /// fcm
       emit(

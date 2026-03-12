@@ -32,9 +32,9 @@ class NotificationItem {
 class NotificationNotifiable {
   final String type; // "message", "connection", "schedule"
   final int id;
-  final String? status; // ✅ เพิ่ม
-  final NotificationSender? requester; // ✅ เปลี่ยนจาก sender
-  final NotificationSender? target; // ✅ เพิ่ม
+  final String? status; 
+  final NotificationSender? requester; 
+  final NotificationSender? target; 
 
   final String? content;
 

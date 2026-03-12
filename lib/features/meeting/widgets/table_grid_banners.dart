@@ -212,14 +212,14 @@ class NoTableCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
-              Icons.event_busy_outlined,
+              Icons.free_breakfast_outlined,
               size: 32,
               color: Color(0xFF9CA3AF),
             ),
           ),
           const SizedBox(height: 16),
           const Text(
-            'No Table Assigned',
+            'Free Time',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -228,7 +228,7 @@ class NoTableCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           const Text(
-            "You don't have a table assignment\nfor this time slot.",
+            'This is your break time.\nSit back, relax, and recharge!',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
@@ -236,6 +236,7 @@ class NoTableCard extends StatelessWidget {
               color: AppColors.textSecondary,
             ),
           ),
+
           if (nextTimeRange != null) ...[
             const SizedBox(height: 20),
             const Divider(height: 1),
@@ -266,7 +267,7 @@ class NoTableCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Next slot: $nextTimeRange',
+                      'Jump to next slot: $nextTimeRange ',
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -295,7 +296,7 @@ class NoTableCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'Try selecting another time slot',
+                  'Enjoy your free time!',
                   style: TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary.withValues(alpha: 0.6),

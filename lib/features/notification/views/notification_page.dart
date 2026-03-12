@@ -49,7 +49,7 @@ class _NotificationPageState extends State<NotificationPage>
               controller: _tabController,
               children: [
                 _SystemNotificationsTab(),
-                _AttendanceTab(),
+                // _AttendanceTab(),
                 _FriendRequestsTab(),
               ],
             ),
@@ -99,7 +99,6 @@ class _TabBar extends StatelessWidget {
           }
         },
         tabs: [
-          // ✅ Badge dot บน EVENT PLAN tab
           Tab(
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -113,8 +112,8 @@ class _TabBar extends StatelessWidget {
               ],
             ),
           ),
-          const Tab(text: 'ATTENDANCE STATUS'),
 
+          // const Tab(text: 'ATTENDANCE STATUS'),
           Tab(
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -131,39 +130,17 @@ class _TabBar extends StatelessWidget {
   }
 }
 
-// class _UnreadBadgeDot extends StatelessWidget {
-//   @override
-//   Widget build(BuildContext context) {
-//     return BlocBuilder<NotificationBloc, NotificationState>(
-//       builder: (context, state) {
-//         final hasUnread = state is NotificationLoaded && state.unreadCount > 0;
-//         if (!hasUnread) return const SizedBox.shrink();
-//         return Container(
-//           width: 7,
-//           height: 7,
-//           decoration: const BoxDecoration(
-//             color: Colors.red,
-//             shape: BoxShape.circle,
-//           ),
-//         );
-//       },
-//     );
-//   }
-// }
 class _UnreadBadgeDot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<NotificationBloc, NotificationState>(
       builder: (context, state) {
         if (state is! NotificationLoaded) return const SizedBox.shrink();
-        // ✅ นับเฉพาะ admin notification
+
         final hasUnread = state.notifications.any(
-          (n) =>
-              n.isUnread &&
-              n.type != 'connection_request' &&
-              n.type != 'connection_accepted' &&
-              n.type != 'connection_rejected',
+          (n) => n.isUnread && n.type == 'admin_announce',
         );
+
         if (!hasUnread) return const SizedBox.shrink();
         return Container(
           width: 7,
@@ -178,27 +155,6 @@ class _UnreadBadgeDot extends StatelessWidget {
   }
 }
 
-// class _PendingBadgeDot extends StatelessWidget {
-//   @override
-//   Widget build(BuildContext context) {
-//     return BlocBuilder<ConnectionBloc, ConnectionRequestState>(
-//       builder: (context, state) {
-//         final hasPending =
-//             state is ConnectionRequestLoaded &&
-//             state.requests.any((r) => r.isPending);
-//         if (!hasPending) return const SizedBox.shrink();
-//         return Container(
-//           width: 7,
-//           height: 7,
-//           decoration: const BoxDecoration(
-//             color: Colors.red,
-//             shape: BoxShape.circle,
-//           ),
-//         );
-//       },
-//     );
-//   }
-// }
 class _PendingBadgeDot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -258,12 +214,7 @@ class _SystemNotificationsTab extends StatelessWidget {
         NotificationLoaded(notifications: final allItems) => Builder(
           builder: (context) {
             final items = allItems
-                .where(
-                  (n) =>
-                      n.type != 'connection_request' &&
-                      n.type != 'connection_accepted' &&
-                      n.type != 'connection_rejected',
-                )
+                .where((n) => n.type == 'admin_announce')
                 .toList();
 
             if (items.isEmpty)
@@ -374,6 +325,53 @@ class _NotificationHeader extends StatelessWidget {
   }
 }
 
+class _FriendRequestsHeader extends StatelessWidget {
+  final int unreadCount;
+  const _FriendRequestsHeader({required this.unreadCount});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: Colors.white,
+      child: Row(
+        children: [
+          if (unreadCount > 0) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: color.AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '$unreadCount unread',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: color.AppColors.primary,
+                ),
+              ),
+            ),
+          ],
+          const Spacer(),
+          if (unreadCount > 0)
+            TextButton.icon(
+              onPressed: () => ReadContext(context)
+                  .read<NotificationBloc>()
+                  .add(MarkAllNotificationsRead(type: 'connection')),
+              icon: const Icon(Icons.done_all, size: 16),
+              label: const Text('Mark all as read'),
+              style: TextButton.styleFrom(
+                foregroundColor: color.AppColors.primary,
+                textStyle: const TextStyle(fontSize: 13),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 // ─── Notification Tile ────────────────────────────────────────────────────
 
 class _NotificationTile extends StatelessWidget {
@@ -395,7 +393,7 @@ class _NotificationTile extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ✅ แถบสีซ้ายแสดง unread
+              //  แถบสีซ้ายแสดง unread
               if (item.isUnread)
                 Container(
                   width: 3,
@@ -430,7 +428,6 @@ class _NotificationTile extends StatelessWidget {
                             ),
                           ),
                         ),
-                        // ✅ dot สีน้ำเงินขวา
                         if (item.isUnread)
                           Container(
                             width: 8,
@@ -504,7 +501,6 @@ class _NotificationTile extends StatelessWidget {
         onBackgroundImageError: (_, __) {},
       );
     }
-    // ✅ icon ตาม type
     return CircleAvatar(
       radius: 22,
       backgroundColor: _tileColor.withValues(alpha: 0.12),
@@ -660,7 +656,6 @@ class _NotificationDetailSheet extends StatelessWidget {
                         ),
                       ],
                     ] else if (content != null && content.isNotEmpty) ...[
-                      // ✅ แสดง content เต็มจาก Admin
                       Text(
                         'Message',
                         style: TextStyle(
@@ -697,7 +692,6 @@ class _NotificationDetailSheet extends StatelessWidget {
                       ),
                     ],
 
-                    // ✅ ถ้าเป็น friend request ให้กดไปหน้า profile ได้
                     if (isConnectionType &&
                         item.notifiable?.id != null &&
                         item.notifiable!.id > 0) ...[
@@ -787,14 +781,14 @@ class _DetailRow extends StatelessWidget {
 // Tab 2: Attendance
 // ═══════════════════════════════════════════════════════════════════════════
 
-class _AttendanceTab extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => const _EmptyState(
-    icon: Icons.how_to_reg_outlined,
-    title: 'Attendance Status',
-    message: 'Your attendance records\nwill appear here.',
-  );
-}
+// class _AttendanceTab extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) => const _EmptyState(
+//     icon: Icons.how_to_reg_outlined,
+//     title: 'Attendance Status',
+//     message: 'Your attendance records\nwill appear here.',
+//   );
+// }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Tab 3: Friend Requests
@@ -807,11 +801,7 @@ class _FriendRequestsTab extends StatelessWidget {
       builder: (context, notifState) {
         final acceptedNotifs = notifState is NotificationLoaded
             ? notifState.notifications
-                  .where(
-                    (n) =>
-                        n.type == 'connection_accepted' &&
-                        n.notifiable?.status == 'accepted',
-                  )
+                  .where((n) => n.type == 'connection_accepted')
                   .toList()
             : <NotificationItem>[];
 
@@ -870,6 +860,7 @@ class _FriendRequestsTab extends StatelessWidget {
       );
     }
 
+    final unreadAccepted = accepted.where((n) => n.isUnread).length;
     return RefreshIndicator(
       onRefresh: () async {
         ReadContext(
@@ -877,41 +868,48 @@ class _FriendRequestsTab extends StatelessWidget {
         ).read<ConnectionBloc>().add(LoadConnectionRequests());
         ReadContext(context).read<NotificationBloc>().add(LoadNotifications());
       },
-      child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
         children: [
-          // ── Accepted cards (ใหม่) ──────────────────────────
-          if (accepted.isNotEmpty) ...[
-            _SectionLabel(label: 'Accepted Your Request'),
-            ...accepted.map(
-              (n) => _AcceptedFriendCard(
-                notification: n,
-                onTap: () {
-                  if (n.isUnread) {
-                    ReadContext(
-                      context,
-                    ).read<NotificationBloc>().add(MarkNotificationRead(n.id));
-                  }
-                },
-              ),
+          _FriendRequestsHeader(unreadCount: unreadAccepted),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              children: [
+                // ── Accepted cards (ใหม่) ──────────────────────────
+                if (accepted.isNotEmpty) ...[
+                  _SectionLabel(label: 'Accepted Your Request'),
+                  ...accepted.map(
+                    (n) => _AcceptedFriendCard(
+                      notification: n,
+                      onTap: () {
+                        if (n.isUnread) {
+                          ReadContext(context).read<NotificationBloc>().add(
+                            MarkNotificationRead(n.id),
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                  if (pending.isNotEmpty) const SizedBox(height: 8),
+                ],
+                // ── Pending cards (เดิม) ──────────────────────────
+                if (pending.isNotEmpty) ...[
+                  _SectionLabel(label: 'Pending Requests'),
+                  ...pending.map(
+                    (request) => _FriendRequestCard(
+                      request: request,
+                      onConfirm: () => ReadContext(context)
+                          .read<ConnectionBloc>()
+                          .add(AcceptConnectionRequest(request.id)),
+                      onNotNow: () => ReadContext(context)
+                          .read<ConnectionBloc>()
+                          .add(RejectConnectionRequest(request.id)),
+                    ),
+                  ),
+                ],
+              ],
             ),
-            if (pending.isNotEmpty) const SizedBox(height: 8),
-          ],
-          // ── Pending cards (เดิม) ──────────────────────────
-          if (pending.isNotEmpty) ...[
-            _SectionLabel(label: 'Pending Requests'),
-            ...pending.map(
-              (request) => _FriendRequestCard(
-                request: request,
-                onConfirm: () => ReadContext(context)
-                    .read<ConnectionBloc>()
-                    .add(AcceptConnectionRequest(request.id)),
-                onNotNow: () => ReadContext(context).read<ConnectionBloc>().add(
-                  RejectConnectionRequest(request.id),
-                ),
-              ),
-            ),
-          ],
+          ),
         ],
       ),
     );
@@ -927,8 +925,11 @@ class _AcceptedFriendCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // requester = คนที่กด Accept (ฝั่งรับ request)
+    // final person =
+    // notification.notifiable?.requester ?? notification.notifiable?.target;
     final person =
-        notification.notifiable?.requester ?? notification.notifiable?.target;
+        notification.notifiable?.target ?? notification.notifiable?.requester;
+
     final avatarUrl = person?.avatarUrl ?? '';
     final name = person?.name ?? 'Someone';
     final personId = notification.notifiable?.requester?.id;
@@ -943,14 +944,6 @@ class _AcceptedFriendCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
 
-        // onTap: () {
-        //   onTap();
-        //   print('👤 person: ${person?.id} / ${person?.name}');
-        //   print('📌 notifiable.id: ${notification.notifiable?.id}');
-        //   if (personId != null) {
-        //     Modular.to.pushNamed('/other_profile/$personId');
-        //   }
-        // },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(14),
@@ -978,7 +971,6 @@ class _AcceptedFriendCard extends StatelessWidget {
                           )
                         : null,
                   ),
-                  // ✅ checkmark badge มุมล่างขวา
                   Positioned(
                     bottom: 0,
                     right: 0,

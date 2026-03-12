@@ -5,17 +5,26 @@ import 'package:test_wpa/features/meeting/domain/entities/table_view_entities.da
 
 class DelegateListTile extends StatelessWidget {
   final TableDelegate delegate;
-  final String? tableNumber; // ถ้าไม่ส่งมา = ไม่แสดง trailing
+  final String? tableNumber;
+  final int myDelegateId;
 
-  const DelegateListTile({super.key, required this.delegate, this.tableNumber});
+  const DelegateListTile({
+    super.key,
+    required this.delegate,
+    this.tableNumber,
+    this.myDelegateId = 0,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      onTap: () => Modular.to.pushNamed(
-        '/other_profile',
-        arguments: {'delegate_id': delegate.delegateId},
-      ),
+      onTap: () {
+        if (delegate.delegateId == myDelegateId) return; // ดักตัวเอง
+        Modular.to.pushNamed(
+          '/other_profile',
+          arguments: {'delegate_id': delegate.delegateId},
+        );
+      },
       contentPadding: EdgeInsets.zero,
       leading: CircleAvatar(
         backgroundColor: color.AppColors.primary.withValues(alpha: 0.1),
@@ -60,7 +69,7 @@ class DelegateListTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
-          'Table ${tableNumber}', // ✅ ใช้จาก table โดยตรง
+          'Table ${tableNumber}',
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.bold,

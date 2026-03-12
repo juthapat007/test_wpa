@@ -52,7 +52,6 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
 
   @override
   void dispose() {
-    // ✅ Dispose controller ตอนที่ widget ถูก dispose จริงๆ
     _controller.dispose();
     super.dispose();
   }
@@ -62,14 +61,8 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
 
     if (_formKey.currentState!.validate()) {
       setState(() => _isSubmitting = true);
-
       final newValue = _controller.text.trim();
-
-      // ✅ ปิด dialog ก่อน
       Navigator.of(context).pop();
-
-      // ✅ ส่ง event หลังจากปิด dialog แล้ว
-      // ใช้ parentContext เพื่อเข้าถึง ProfileBloc
       widget.parentContext.read<ProfileBloc>().add(
         UpdateProfileField(field: widget.field, value: newValue),
       );

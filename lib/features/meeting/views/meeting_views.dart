@@ -315,7 +315,6 @@ class _MeetingWidgetState extends State<MeetingWidget> {
                   '⏰ onTimeSlotChanged: time=$time date=${tableState.response.date}',
                 );
                 _userSelectedTime = true;
-                // ✅ time เป็น ISO แล้ว ส่งตรงๆ ได้เลย
                 Modular.get<TableBloc>().add(
                   ChangeTimeSlot(time, date: tableState.response.date),
                 );

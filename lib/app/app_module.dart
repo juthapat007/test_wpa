@@ -42,7 +42,7 @@ import 'package:test_wpa/features/schedules/domain/repositories/schedule_reposit
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/page/schedule_widget.dart';
 
-// Schedule Others 
+// Schedule Others
 import 'package:test_wpa/features/schedules/data/services/schedule_others_api.dart';
 import 'package:test_wpa/features/schedules/data/repository/schedule_others_repository_impl.dart';
 import 'package:test_wpa/features/schedules/domain/repositories/schedule_others_repository.dart';
@@ -294,11 +294,23 @@ class AppModule extends Module {
       ),
     );
 
+    // r.child(
+    //   '/notification',
+    //   child: (_) => AppShell(child: const Notification()),
+    // );
     r.child(
       '/notification',
-      child: (_) => AppShell(child: const Notification()),
+      child: (_) => AppShell(
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: Modular.get<NotificationBloc>()),
+            BlocProvider.value(value: Modular.get<ConnectionBloc>()),
+            BlocProvider.value(value: Modular.get<FriendsCubit>()),
+          ],
+          child: const Notification(),
+        ),
+      ),
     );
-
     r.child('/chat', child: (_) => AppShell(child: const ConnectedChat()));
 
     r.child(
@@ -359,15 +371,15 @@ class AppModule extends Module {
         child: ChangePasswordPage(),
       ),
     );
-r.child(
-  '/reset-password', 
-  child: (_) => BlocProvider.value(
-    value: Modular.get<AuthBloc>(),
-    child: ResetPasswordPage(
-      token: r.args.queryParams['token'] ?? '', // รับจาก queryParams
-    ),
-  ),
-);
+    r.child(
+      '/reset-password',
+      child: (_) => BlocProvider.value(
+        value: Modular.get<AuthBloc>(),
+        child: ResetPasswordPage(
+          token: r.args.queryParams['token'] ?? '', // รับจาก queryParams
+        ),
+      ),
+    );
 
     r.child(
       '/attendance',

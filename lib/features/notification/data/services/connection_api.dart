@@ -1,5 +1,3 @@
-// lib/features/notification/data/services/connection_api.dart
-
 import 'package:dio/dio.dart';
 
 class ConnectionApi {
@@ -13,8 +11,6 @@ class ConnectionApi {
     return response.data as List<dynamic>;
   }
 
-  /// GET /api/v1/connections — รายชื่อเพื่อนทั้งหมด
-  /// ⚠️ ถ้า backend ยังไม่มี endpoint นี้ → response จะเป็น 404
   ///    ให้แจ้งทีม backend เพิ่ม GET /api/v1/connections
   Future<List<dynamic>> getFriends() async {
     final response = await dio.get('/connections');
@@ -48,12 +44,11 @@ class ConnectionApi {
   }
 
   /// DELETE /api/v1/requests/:target_id/cancel
-  /// ใช้ target_id = delegate id ที่เราส่ง request ไป (ไม่ใช่ request id)
-  Future<void> cancelRequest(int targetId) async {
+  Future<void> cancelRequest(int requestId) async {
     try {
-      await dio.delete('/requests/$targetId/cancel');
+      await dio.delete('/requests/$requestId/cancel');
     } catch (e) {
-      print(' ConnectionApi.cancelRequest error: $e');
+      print('ConnectionApi.cancelRequest error: $e');
       rethrow;
     }
   }
@@ -61,7 +56,6 @@ class ConnectionApi {
   /// DELETE /api/v1/connections/:delegate_id
   Future<void> unfriend(int delegateId) async {
     try {
-      // await dio.delete('/connections/$delegateId');
       await dio.delete('/networking/unfriend/$delegateId');
     } catch (e) {
       print(' ConnectionApi.unfriend error: $e');

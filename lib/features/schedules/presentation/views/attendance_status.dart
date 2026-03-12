@@ -58,7 +58,7 @@ class _AttendanceStatusState extends State<AttendanceStatus> {
 
   void _onStateChanged(BuildContext context, ScheduleState state) {
     if (state is LeaveTypesLoaded) {
-      setState(() => _leaveTypes = state.leaveTypes); // ✅ เซฟไว้ใน local state
+      setState(() => _leaveTypes = state.leaveTypes); 
     } else if (state is LeaveTypesError) {
       _showSnackBar(state.message, Colors.red);
     } else if (state is LeaveFormsSubmitted) {

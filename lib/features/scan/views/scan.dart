@@ -75,6 +75,9 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
     setState(() {
       _delegateId = id;
       _userName = name;
+      _userTitle = title; 
+      _userCompany = company; 
+      _userTeam = team; 
     });
 
     if (id != null && mounted) {
@@ -383,6 +386,36 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
   }
 
   // ========== Share QR ==========
+  // Future<void> _shareQrCode() async {
+  //   if (_currentQrBase64 == null) return;
+
+  //   try {
+  //     final base64String = _currentQrBase64!.contains(',')
+  //         ? _currentQrBase64!.split(',').last
+  //         : _currentQrBase64!;
+  //     final bytes = base64Decode(base64String);
+
+  //     // บันทึกเป็น temp file ก่อน
+  //     final tempDir = await getTemporaryDirectory();
+  //     final file = File('${tempDir.path}/qr_code.png');
+  //     await file.writeAsBytes(bytes);
+
+  //     // แชร์เป็นภาพ
+  //     await Share.shareXFiles(
+  //       [XFile(file.path)],
+  //       text: _userName ?? 'My QR Code',
+  //       subject: 'Profile${_userName != null ? " $_userName" : ""}',
+  //     );
+  //   } catch (e) {
+  //     if (!mounted) return;
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('เกิดข้อผิดพลาด: $e'),
+  //         backgroundColor: AppColors.error,
+  //       ),
+  //     );
+  //   }
+  // }
   Future<void> _shareQrCode() async {
     if (_currentQrBase64 == null) return;
 
@@ -392,16 +425,28 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
           : _currentQrBase64!;
       final bytes = base64Decode(base64String);
 
-      // บันทึกเป็น temp file ก่อน
       final tempDir = await getTemporaryDirectory();
       final file = File('${tempDir.path}/qr_code.png');
       await file.writeAsBytes(bytes);
 
-      // แชร์เป็นภาพ
+      // ✅ สร้าง text ที่มีข้อมูลครบ
+      final lines = <String>[];
+      if (_userName != null) lines.add('👤 $_userName');
+      if (_userTitle != null && _userTitle!.isNotEmpty)
+        lines.add('💼 $_userTitle');
+      if (_userCompany != null && _userCompany!.isNotEmpty)
+        lines.add('🏢 $_userCompany');
+      if (_userTeam != null && _userTeam!.isNotEmpty)
+        lines.add('👥 $_userTeam');
+      lines.add('');
+      lines.add('📲 Scan to connect on WPA');
+
       await Share.shareXFiles(
         [XFile(file.path)],
-        text: _userName ?? 'My QR Code',
-        subject: 'Profile${_userName != null ? " $_userName" : ""}',
+        text: lines.join('\n'),
+        subject: _userName != null
+            ? 'Connect with $_userName on WPA'
+            : 'My WPA Profile',
       );
     } catch (e) {
       if (!mounted) return;

@@ -16,8 +16,8 @@ class SendFriendRequest extends ProfileDetailEvent {
 
 /// ยกเลิกคำขอที่เราส่งออกไป → DELETE /api/v1/requests/:target_id/cancel
 class CancelFriendRequest extends ProfileDetailEvent {
-  final int targetId;
-  CancelFriendRequest(this.targetId);
+  final int requestId;
+  CancelFriendRequest(this.requestId);
 }
 
 /// ยอมรับคำขอ → PATCH /api/v1/requests/:id/accept

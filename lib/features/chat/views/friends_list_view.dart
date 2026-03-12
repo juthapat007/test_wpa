@@ -12,7 +12,6 @@ class FriendsListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ BlocProvider สร้าง Cubit ใหม่ให้ตัวเอง — ไม่ต้องพึ่ง parent
     return BlocProvider(
       create: (_) =>
           FriendsCubit(delegateRepository: Modular.get<DelegateRepository>())

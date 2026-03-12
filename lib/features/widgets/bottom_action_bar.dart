@@ -22,20 +22,16 @@ class BottomActionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white, // ✅ ต้องอยู่นอกสุดให้ background เต็มจอ
+      color: Colors.white,
       child: SafeArea(
         top: false,
-        bottom: false, // ✅ ปิด SafeArea ด้านล่าง
+        bottom: false,
         child: Container(
           padding: EdgeInsets.only(
             left: space.m,
             right: space.m,
             top: space.xs,
-            bottom:
-                space_bottom.xl +
-                MediaQuery.of(
-                  context,
-                ).padding.bottom, // ✅ บวก system inset เข้าไปด้วย
+            bottom: space_bottom.xl + MediaQuery.of(context).padding.bottom,
           ),
           decoration: BoxDecoration(
             color: Colors.white,

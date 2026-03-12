@@ -1,5 +1,3 @@
-// lib/features/notification/domain/repositories/connection_repository.dart
-
 import 'package:test_wpa/features/notification/domain/entities/connection_request_entity.dart';
 
 /// Friend entity สำหรับ friend list tab
@@ -57,10 +55,8 @@ abstract class ConnectionRepository {
   Future<void> rejectRequest(int requestId);
 
   /// DELETE /api/v1/requests/:target_id/cancel — ยกเลิกคำขอที่เราส่งออกไป
-  /// ⚠️ ใช้ target_id (delegate id) ไม่ใช่ request id
   Future<void> cancelRequest(int targetId);
 
   /// DELETE /api/v1/connections/:delegate_id — ยกเลิกการเป็นเพื่อน
-  /// ⚠️ ถ้า backend ยังไม่มี endpoint นี้ ต้องแจ้งทีม backend ให้เพิ่ม
   Future<void> unfriend(int delegateId);
 }

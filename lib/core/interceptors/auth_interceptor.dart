@@ -9,7 +9,6 @@ class AuthInterceptor extends Interceptor {
     RequestInterceptorHandler handler,
   ) async {
     if (options.path.contains('/login')) {
-      // print('Skip auth for login');
       return handler.next(options);
     }
 

@@ -44,7 +44,7 @@ class ConnectionBloc extends Bloc<ConnectionEvent, ConnectionRequestState> {
     _wsSubscription = NotificationWebSocketService.instance.events.listen((
       event,
     ) {
-      log.i('[ConnectionBloc] ✅ WS event=${event.type}'); // เช็คบรรทัดนี้
+      log.i('[ConnectionBloc] WS event=${event.type}'); // เช็คบรรทัดนี้
       if (event.type == WsEventType.friendRequest) {
         add(WsFriendRequestReceived(event));
       }
