@@ -40,3 +40,7 @@ class AuthChangePassword extends AuthEvent {
     required this.newPasswordConfirmation,
   });
 }
+class AuthUpdateAvatar extends AuthEvent {
+  final String avatarUrl;
+  AuthUpdateAvatar(this.avatarUrl);
+}

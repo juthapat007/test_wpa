@@ -313,13 +313,17 @@ class _TextBubble extends StatelessWidget {
             ),
             if (isMe) ...[
               const SizedBox(width: 4),
+              // Icon(
+              //   message.isRead ? Icons.done_all : Icons.done,
+              //   size: 14,
+              //   color: message.isRead
+              //       ? Colors.lightBlueAccent
+              //       : Colors.white.withValues(alpha: 0.8),
+              // ),
               Icon(
-                message.isRead ? Icons.done_all : Icons.done,
-                size: 14,
-                color: message.isRead
-                    ? Colors.lightBlueAccent
-                    : Colors.white.withValues(alpha: 0.8),
-              ),
+  message.isRead ? Icons.done_all : Icons.done, 
+  color: message.isRead ? Colors.lightBlueAccent : Colors.white,
+),
               if (message.isRead) ...[
                 const SizedBox(width: 3),
                 Text(

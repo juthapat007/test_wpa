@@ -24,7 +24,7 @@ class _NotificationPageState extends State<NotificationPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     ReadContext(
       context,
     ).read<NotificationBloc>().add(LoadNotifications(type: 'system'));
@@ -167,13 +167,10 @@ class _PendingBadgeDot extends StatelessWidget {
                 connState.requests.any((r) => r.isPending);
 
             final hasAccepted =
-                notifState is NotificationLoaded &&
-                notifState.notifications.any(
-                  (n) =>
-                      n.type == 'connection_request' &&
-                      n.notifiable?.status == 'accepted' &&
-                      n.isUnread,
-                );
+    notifState is NotificationLoaded &&
+    notifState.notifications.any(
+      (n) => n.type == 'connection_accepted' && n.isUnread,
+    );
 
             if (!hasPending && !hasAccepted) return const SizedBox.shrink();
 

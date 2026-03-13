@@ -312,7 +312,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
               schedules: schedules,
               onTimeSlotChanged: (time) {
                 print(
-                  '⏰ onTimeSlotChanged: time=$time date=${tableState.response.date}',
+                  'onTimeSlotChanged: time=$time date=${tableState.response.date}',
                 );
                 _userSelectedTime = true;
                 Modular.get<TableBloc>().add(

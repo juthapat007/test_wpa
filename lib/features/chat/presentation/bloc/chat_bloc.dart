@@ -251,48 +251,58 @@ StreamSubscription? _typingSubscription;
       ),
     );
   }
-
   Future<void> _onSelectChatRoom(
-    SelectChatRoom event,
-    Emitter<ChatState> emit,
-  ) async {
-    emit(ChatLoading());
+  SelectChatRoom event,
+  Emitter<ChatState> emit,
+) async {
+  emit(ChatLoading());
+  try {
+    _selectedRoom = event.room;
+    _currentPage = 1;
+    _hasMoreMessages = true;
+
     try {
-      _selectedRoom = event.room;
-      _currentPage = 1;
-      _hasMoreMessages = true;
-
-      try {
-        await (chatRepository as ChatRepositoryImpl).enterRoom(event.room.id);
-      } catch (e) {
-        log.w('Failed to enter room', error: e);
-      }
-
-      final response = await chatRepository.getChatHistory(
-        event.room.participantId,
-        page: 1,
-        limit: 50,
-      );
-
-      _messages = response['messages'];
-      final totalPages = response['totalPages'] ?? 1;
-      _hasMoreMessages = _currentPage < totalPages;
-
-      if (event.room.unreadCount > 0) {
-        add(MarkAsRead(event.room.participantId));
-      }
-      emit(_buildRoomState());
+      await (chatRepository as ChatRepositoryImpl).enterRoom(event.room.id);
     } catch (e) {
-      log.e('Failed to load chat history', error: e);
-      emit(ChatError('Failed to load chat history: $e'));
-      emit(
-        ChatRoomsLoaded(
-          rooms: _chatRooms,
-          isWebSocketConnected: _isWebSocketConnected,
-        ),
-      );
+      log.w('Failed to enter room', error: e);
     }
+
+    final response = await chatRepository.getChatHistory(
+      event.room.participantId,
+      page: 1,
+      limit: 50,
+    );
+
+    _messages = response['messages'];
+    final totalPages = response['totalPages'] ?? 1;
+    _hasMoreMessages = _currentPage < totalPages;
+
+    // แก้ตรงนี้ — await ตรงๆ แทน add event
+    try {
+      await chatRepository.markAsRead(event.room.participantId);
+      _chatRooms = _chatRooms.map((room) {
+        return room.participantId == event.room.participantId
+            ? room.copyWith(unreadCount: 0)
+            : room;
+      }).toList();
+      _selectedRoom = _selectedRoom!.copyWith(unreadCount: 0);
+      log.i('[SelectRoom] markAsRead sent for ${event.room.participantId}');
+    } catch (e) {
+      log.w('Failed to mark as read on enter', error: e);
+    }
+
+    emit(_buildRoomState());
+  } catch (e) {
+    log.e('Failed to load chat history', error: e);
+    emit(ChatError('Failed to load chat history: $e'));
+    emit(
+      ChatRoomsLoaded(
+        rooms: _chatRooms,
+        isWebSocketConnected: _isWebSocketConnected,
+      ),
+    );
   }
+}
 
   Future<void> _onCreateChatRoom(
     CreateChatRoom event,
@@ -466,16 +476,16 @@ StreamSubscription? _typingSubscription;
       log.w('Failed to mark as read', error: e);
     }
   }
+
 void _onMessageReadReceived(
   MessageReadReceived event,
   Emitter<ChatState> emit,
 ) {
-  // Guard: ถ้ายังไม่รู้ userId ให้ mark all messages ที่ยังไม่ read
+  log.i('[ReadReceipt] messageId=${event.messageId} currentUserId=$_currentUserId');
+  log.i('[ReadReceipt] total messages=${_messages.length}');
+
   final myId = _currentUserId;
-  if (myId == null || myId == '0') {
-    log.w('[ReadReceipt] currentUserId not loaded yet, skipping');
-    return; // หรือจะ mark all แบบ fallback ก็ได้
-  }
+  if (myId == null || myId == '0') return;
 
   bool hasChanges = false;
   _messages = _messages.map((m) {
@@ -492,41 +502,9 @@ void _onMessageReadReceived(
     return m;
   }).toList();
 
+  log.i('[ReadReceipt] hasChanges=$hasChanges');
   if (hasChanges && _selectedRoom != null) emit(_buildRoomState());
 }
-  // void _onMessageReadReceived(
-  //   MessageReadReceived event,
-  //   Emitter<ChatState> emit,
-  // ) {
-  //   log.i(
-  //     '[ReadReceipt] messageId=${event.messageId} currentUserId=$_currentUserId',
-  //   );
-  //   log.i('[ReadReceipt] total messages=${_messages.length}');
-  //   for (final m in _messages) {
-  //     log.i(
-  //       '[ReadReceipt] msg id=${m.id} senderId=${m.senderId} isRead=${m.isRead}',
-  //     );
-  //   }
-
-  //   bool hasChanges = false;
-  //   _messages = _messages.map((m) {
-  //     if (!m.isRead && m.senderId == (_currentUserId ?? '')) {
-  //       if (event.messageId == '0' || event.messageId == 'all') {
-  //         hasChanges = true;
-  //         return m.copyWith(isRead: true);
-  //       }
-  //       if (m.id == event.messageId) {
-  //         hasChanges = true;
-  //         return m.copyWith(isRead: true);
-  //       }
-  //     }
-  //     return m;
-  //   }).toList();
-
-  //   log.i('[ReadReceipt] hasChanges=$hasChanges');
-  //   if (hasChanges && _selectedRoom != null) emit(_buildRoomState());
-  // }
-
   void _onWebSocketMessageDeleted(
     WebSocketMessageDeleted event,
     Emitter<ChatState> emit,
@@ -794,20 +772,20 @@ void _onMessageReadReceived(
     await _typingSubscription?.cancel();
 
   }
-
-  Future<void> _initializeCurrentUserId() async {
-    try {
-      const storage = FlutterSecureStorage();
-      final userDataJson = await storage.read(key: 'user_data');
-      if (userDataJson != null) {
-        final userData = jsonDecode(userDataJson);
-        _currentUserId = userData['id'].toString();
-        _currentUserName = userData['name'] ?? userData['full_name'] ?? 'Me';
-      }
-    } catch (e) {
-      log.e('Failed to get current user ID', error: e);
+Future<void> _initializeCurrentUserId() async {
+  try {
+    const storage = FlutterSecureStorage();
+    final userDataJson = await storage.read(key: 'user_data');
+    if (userDataJson != null) {
+      final userData = jsonDecode(userDataJson);
+      _currentUserId = userData['id'].toString();
+      _currentUserName = userData['name'] ?? userData['full_name'] ?? 'Me';
     }
+    log.i('[Init] currentUserId=$_currentUserId name=$_currentUserName');
+  } catch (e) {
+    log.e('Failed to get current user ID', error: e);
   }
+}
 
   @override
   Future<void> close() async {

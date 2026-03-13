@@ -344,25 +344,8 @@ class ChatWebSocketService with WidgetsBindingObserver {
         log.i('[WS] room_deleted: roomId=$roomId');
         _roomDeletedController.add(roomId);
 
-case 'typing_start':
-case 'typing_started':
-  final senderId = (message['sender_id'] ?? message['user_id'] ?? message['from_id'])
-      ?.toString();
-  if (senderId != null) {
-    _typingController.add(TypingEvent(userId: senderId, isTyping: true));
-    log.i('[WS] typing_start from $senderId');
-  }
-  break;
 
-case 'typing_stop':
-case 'typing_stopped':
-  final senderId = (message['sender_id'] ?? message['user_id'] ?? message['from_id'])
-      ?.toString();
-  if (senderId != null) {
-    _typingController.add(TypingEvent(userId: senderId, isTyping: false));
-    log.i('[WS] typing_stop from $senderId');
-  }
-  break;
+
    case 'member_left':
         final delegateId = (message['delegate_id'] ?? '').toString();
         log.i('[WS] member_left: delegate=$delegateId');

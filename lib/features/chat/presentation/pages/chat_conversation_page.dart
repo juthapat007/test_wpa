@@ -13,18 +13,19 @@ class ChatConversationPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocListener<ChatBloc, ChatState>(
       listenWhen: (_, curr) => curr is ConversationDeleted,
-      listener: (context, state) {
-        if (state is ConversationDeleted) {
-          Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Conversation cleared (${state.deletedCount} messages)',
-              ),
-            ),
-          );
-        }
-      },
+  listener: (context, state) {
+  if (state is ConversationDeleted) {
+    Navigator.of(context).pop();  // pop กลับไปหน้า list
+    // list rebuild เองจาก buildWhen แล้ว ไม่ต้อง add event เพิ่ม
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Conversation cleared (${state.deletedCount} messages)',
+        ),
+      ),
+    );
+  }
+},
       child: WillPopScope(
         onWillPop: () async {
           ReadContext(context).read<ChatBloc>().add(BackToRoomList());

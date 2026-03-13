@@ -20,6 +20,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthForgotPassword>(_onForgotPassword);
     on<AuthResetPassword>(_onResetPassword);
     on<AuthChangePassword>(_onChangePassword);
+  on<AuthUpdateAvatar>(_onUpdateAvatar);
   }
 
   Future<void> _onLoginRequested(
@@ -45,8 +46,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       // if (fcmToken != null) {
       //   await authRepository.registerDeviceToken(fcmToken);
       // }
-
-      //fcm
+//fcm
       emit(
         AuthAuthenticated(
           avatarUrl: result.user?.avatarUrl,
@@ -126,4 +126,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(ChangePasswordError(e.toString()));
     }
   }
+  void _onUpdateAvatar(AuthUpdateAvatar event, Emitter<AuthState> emit) {
+  if (state is AuthAuthenticated) {
+    final current = state as AuthAuthenticated;
+    emit(AuthAuthenticated(
+      avatarUrl: event.avatarUrl,
+      name: current.name,
+      userId: current.userId,
+    ));
+  }
+}
 }

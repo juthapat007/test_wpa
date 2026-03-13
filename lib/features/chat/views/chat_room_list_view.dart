@@ -27,21 +27,25 @@ class ChatRoomListView extends StatelessWidget {
       buildWhen: (_, curr) =>
           curr is ChatLoading ||
           curr is ChatRoomsLoaded ||
+          curr is ConversationDeleted ||
           curr is ChatInitial ||
           curr is ChatError,
-      builder: (context, state) {
-        if (state is ChatLoading || state is ChatInitial) {
-          return const Center(child: CircularProgressIndicator());
-        }
+   builder: (context, state) {
+  if (state is ChatLoading || state is ChatInitial) {
+    return const Center(child: CircularProgressIndicator());
+  }
 
-        if (state is ChatRoomsLoaded) {
-          return _RoomList(rooms: state.rooms);
-        }
+  if (state is ChatRoomsLoaded) {
+    return _RoomList(rooms: state.rooms);
+  }
 
-        // ChatError ถูก handle ใน listener แล้ว
-        // แต่ถ้า state เป็น error และยังไม่มี rooms → แสดง empty
-        return const _EmptyRooms();
-      },
+  // เพิ่มตรงนี้
+  if (state is ConversationDeleted) {
+    return _RoomList(rooms: state.rooms);
+  }
+
+  return const _EmptyRooms();
+},
     );
   }
 }
