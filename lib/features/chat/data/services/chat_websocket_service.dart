@@ -278,8 +278,7 @@ class ChatWebSocketService with WidgetsBindingObserver {
         case 'confirm_subscription':
           log.d('Subscription confirmed: ${data['identifier']}');
           break;
-
-        case 'disconnect':
+ case 'disconnect':
           log.w('WebSocket disconnect by server');
           _onDisconnected();
           break;
@@ -345,14 +344,51 @@ class ChatWebSocketService with WidgetsBindingObserver {
         log.i('[WS] room_deleted: roomId=$roomId');
         _roomDeletedController.add(roomId);
 
-      case 'member_left':
+case 'typing_start':
+case 'typing_started':
+  final senderId = (message['sender_id'] ?? message['user_id'] ?? message['from_id'])
+      ?.toString();
+  if (senderId != null) {
+    _typingController.add(TypingEvent(userId: senderId, isTyping: true));
+    log.i('[WS] typing_start from $senderId');
+  }
+  break;
+
+case 'typing_stop':
+case 'typing_stopped':
+  final senderId = (message['sender_id'] ?? message['user_id'] ?? message['from_id'])
+      ?.toString();
+  if (senderId != null) {
+    _typingController.add(TypingEvent(userId: senderId, isTyping: false));
+    log.i('[WS] typing_stop from $senderId');
+  }
+  break;
+   case 'member_left':
         final delegateId = (message['delegate_id'] ?? '').toString();
         log.i('[WS] member_left: delegate=$delegateId');
-      // TODO: handle เมื่อ implement group chat
 
-      case 'announcement':
-        log.d('Announcement: ${message['content']}');
+      case 'typing_start' || 'typing_started':
+        final senderId = (message['sender_id'] ??
+                message['user_id'] ??
+                message['from_id'])
+            ?.toString();
+        if (senderId != null) {
+          _typingController.add(TypingEvent(userId: senderId, isTyping: true));
+          log.i('[WS] typing_start from $senderId');
+        }
+
+      case 'typing_stop' || 'typing_stopped':
+        final senderId = (message['sender_id'] ??
+                message['user_id'] ??
+                message['from_id'])
+            ?.toString();
+        if (senderId != null) {
+          _typingController.add(TypingEvent(userId: senderId, isTyping: false));
+          log.i('[WS] typing_stop from $senderId');
+        }
+
       default:
+        log.w('[WS UNKNOWN] type=$type | keys=${message.keys.toList()}');
         if (message.containsKey('sender') && message.containsKey('content')) {
           _handleNewMessage(message);
         } else if (message.containsKey('message_ids')) {

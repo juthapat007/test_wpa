@@ -1,7 +1,6 @@
-// lib/features/scan/views/qr_scanner_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 
@@ -9,16 +8,17 @@ class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
 
   @override
-  State<ScannerScreen> createState() => _QrScannerScreenState();
+  State<ScannerScreen> createState() => _ScannerScreenState();
 }
 
-class _QrScannerScreenState extends State<ScannerScreen> {
+class _ScannerScreenState extends State<ScannerScreen> {
   final MobileScannerController _controller = MobileScannerController(
     detectionSpeed: DetectionSpeed.noDuplicates,
     facing: CameraFacing.back,
     torchEnabled: false,
   );
 
+  final ImagePicker _imagePicker = ImagePicker();
   bool _isProcessing = false;
   bool _isTorchOn = false;
 
@@ -36,14 +36,10 @@ class _QrScannerScreenState extends State<ScannerScreen> {
   }
 
   void _onDetect(BarcodeCapture capture) {
-    //เอาภาพมาจากกล้องไง
     if (_isProcessing) return;
-    //เอาไวกันการ pop หน้าซ้ำๆได้ค่าเดิมหลายรอบ ถ้าถูกมันจะยิงค่าไป setstate เลย
 
     final List<Barcode> barcodes = capture.barcodes;
-    //1ภาพอาจจะมีหลาย QR code เลยให้คืนค่า List<Barcode>
     for (final barcode in barcodes) {
-      //วนดู loop barcode
       if (barcode.rawValue != null) {
         setState(() {
           _isProcessing = true;
@@ -52,6 +48,69 @@ class _QrScannerScreenState extends State<ScannerScreen> {
         Navigator.pop(context, barcode.rawValue);
         break;
       }
+    }
+  }
+
+  // เพิ่มฟังก์ชันเลือกรูปจาก Gallery
+  Future<void> _pickImageFromGallery() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+      );
+
+      if (image == null) return;
+
+      setState(() {
+        _isProcessing = true;
+      });
+
+      // วิเคราะห์ QR Code จากรูป
+      final BarcodeCapture? capture = await _controller.analyzeImage(image.path);
+
+      if (!mounted) return;
+
+      if (capture != null && capture.barcodes.isNotEmpty) {
+        final barcode = capture.barcodes.first;
+        if (barcode.rawValue != null) {
+          Navigator.pop(context, barcode.rawValue);
+          return;
+        }
+      }
+
+      // ถ้าไม่เจอ QR Code
+      setState(() {
+        _isProcessing = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: const [
+              Icon(Icons.error_outline, color: Colors.white),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text('ไม่พบ QR Code ในรูปภาพนี้'),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      setState(() {
+        _isProcessing = false;
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error occurred: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
@@ -64,24 +123,22 @@ class _QrScannerScreenState extends State<ScannerScreen> {
           MobileScanner(
             controller: _controller,
             onDetect: _onDetect,
-            errorBuilder: (BuildContext context, MobileScannerException error) {
-              return Center(
-                child: Text(
-                  'Camera error: ${error.errorCode}',
-                  style: const TextStyle(color: Colors.red),
-                ),
-              );
+            errorBuilder: (context, error) {
+              return _buildErrorView('Camera error: ${error.errorCode}');
             },
           ),
 
-          // Overlay with scanning frame
+          if (_isProcessing)
+            Container(
+              color: Colors.black54,
+              child: const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            ),
+
           _buildScannerOverlay(),
-
-          // Top Controls
           _buildTopControls(),
-
-          // Bottom Instructions
-          _buildBottomInstructions(),
+          _buildBottomControls(),
         ],
       ),
     );
@@ -98,7 +155,6 @@ class _QrScannerScreenState extends State<ScannerScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // Close Button
             Container(
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.5),
@@ -109,8 +165,6 @@ class _QrScannerScreenState extends State<ScannerScreen> {
                 onPressed: () => Navigator.pop(context),
               ),
             ),
-
-            // Torch Button
             Container(
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.5),
@@ -131,7 +185,7 @@ class _QrScannerScreenState extends State<ScannerScreen> {
     );
   }
 
-  Widget _buildBottomInstructions() {
+  Widget _buildBottomControls() {
     return Positioned(
       bottom: 0,
       left: 0,
@@ -154,17 +208,37 @@ class _QrScannerScreenState extends State<ScannerScreen> {
               Text(
                 'Scan QR Code',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
               const SizedBox(height: space.s),
               Text(
                 'Place the QR Code within the frame to scan',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: Colors.white70),
                 textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: space.l),
+              
+              // ปุ่มเลือกรูปจาก Gallery
+              ElevatedButton.icon(
+                onPressed: _isProcessing ? null : _pickImageFromGallery,
+                icon: const Icon(Icons.photo_library),
+                label: const Text('Select from Gallery'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: space.xl,
+                    vertical: space.m,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               ),
             ],
           ),
@@ -185,17 +259,18 @@ class _QrScannerScreenState extends State<ScannerScreen> {
             Text(
               'ไม่สามารถเข้าถึงกล้องได้',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: space.m),
             Text(
               error,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: Colors.white70),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: space.xl),
@@ -217,7 +292,6 @@ class _QrScannerScreenState extends State<ScannerScreen> {
   }
 }
 
-// Custom Painter สำหรับวาด Scanning Frame
 class ScannerOverlayPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -226,7 +300,6 @@ class ScannerOverlayPainter extends CustomPainter {
     final double top = (size.height - scanAreaSize) / 2;
     final Rect scanArea = Rect.fromLTWH(left, top, scanAreaSize, scanAreaSize);
 
-    // Draw semi-transparent overlay
     final Paint overlayPaint = Paint()
       ..color = Colors.black.withValues(alpha: 0.6);
 
@@ -238,7 +311,6 @@ class ScannerOverlayPainter extends CustomPainter {
       overlayPaint,
     );
 
-    // Draw corner brackets
     final Paint cornerPaint = Paint()
       ..color = AppColors.primary
       ..strokeWidth = 4
@@ -248,7 +320,6 @@ class ScannerOverlayPainter extends CustomPainter {
     const double cornerLength = 30;
     const double cornerRadius = 20;
 
-    // Top-left corner
     canvas.drawPath(
       Path()
         ..moveTo(left + cornerRadius, top)
@@ -258,7 +329,6 @@ class ScannerOverlayPainter extends CustomPainter {
       cornerPaint,
     );
 
-    // Top-right corner
     canvas.drawPath(
       Path()
         ..moveTo(left + scanAreaSize - cornerLength, top)
@@ -268,7 +338,6 @@ class ScannerOverlayPainter extends CustomPainter {
       cornerPaint,
     );
 
-    // Bottom-left corner
     canvas.drawPath(
       Path()
         ..moveTo(left, top + scanAreaSize - cornerLength)
@@ -278,7 +347,6 @@ class ScannerOverlayPainter extends CustomPainter {
       cornerPaint,
     );
 
-    // Bottom-right corner
     canvas.drawPath(
       Path()
         ..moveTo(left + scanAreaSize, top + scanAreaSize - cornerLength)
@@ -288,7 +356,6 @@ class ScannerOverlayPainter extends CustomPainter {
       cornerPaint,
     );
 
-    // Draw scanning line animation (optional)
     final Paint linePaint = Paint()
       ..color = AppColors.primary.withValues(alpha: 0.5)
       ..strokeWidth = 2;

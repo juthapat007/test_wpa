@@ -40,13 +40,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       }
 
-      final fcmToken = await FirebaseMessaging.instance.getToken();
-      print('FCM Token: $fcmToken');
-      if (fcmToken != null) {
-        await authRepository.registerDeviceToken(fcmToken);
-      }
+      // final fcmToken = await FirebaseMessaging.instance.getToken();
+      // print('FCM Token: $fcmToken');
+      // if (fcmToken != null) {
+      //   await authRepository.registerDeviceToken(fcmToken);
+      // }
 
-      /// fcm
+      //fcm
       emit(
         AuthAuthenticated(
           avatarUrl: result.user?.avatarUrl,

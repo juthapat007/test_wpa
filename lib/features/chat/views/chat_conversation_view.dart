@@ -9,6 +9,7 @@ import 'package:test_wpa/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:test_wpa/features/chat/presentation/widgets/chat_input_field.dart';
 import 'package:test_wpa/features/chat/presentation/widgets/chat_message_bubble.dart';
 import 'package:test_wpa/features/chat/presentation/widgets/empty_state_widget.dart';
+import 'package:test_wpa/features/chat/presentation/widgets/typing_indicator.dart';
 
 class ChatConversationView extends StatefulWidget {
   const ChatConversationView({super.key});
@@ -22,6 +23,11 @@ class _ChatConversationViewState extends State<ChatConversationView> {
   final _scrollController = ScrollController();
   bool _isLoadingMore = false;
   Timer? _typingTimer;
+
+  bool _extractIsTyping(ChatState state) => switch (state) {
+        ChatRoomSelected(:final isTyping) => isTyping,
+        _ => false,
+      };
 
   @override
   void initState() {
@@ -64,14 +70,18 @@ class _ChatConversationViewState extends State<ChatConversationView> {
 
   void _scrollToBottom() {
     if (!_scrollController.hasClients) return;
+    if (_scrollController.positions.isEmpty) return;
+
     Future.delayed(const Duration(milliseconds: 100), () {
-      if (_scrollController.hasClients) {
+      if (!_scrollController.hasClients) return;
+      if (_scrollController.positions.isEmpty) return;
+      try {
         _scrollController.animateTo(
           0.0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
-      }
+      } catch (_) {}
     });
   }
 
@@ -90,6 +100,7 @@ class _ChatConversationViewState extends State<ChatConversationView> {
     _messageController.clear();
     _scrollToBottom();
   }
+
   // ─── Typing Indicator ─────────────────────────────────────────────────────
 
   void _onTyping() {
@@ -107,6 +118,7 @@ class _ChatConversationViewState extends State<ChatConversationView> {
       );
     });
   }
+
   // ─── Send Image ───────────────────────────────────────────────────────────
 
   void _sendImage(String imageBase64) {
@@ -187,6 +199,7 @@ class _ChatConversationViewState extends State<ChatConversationView> {
 
         return Column(
           children: [
+            // ── Message list ──────────────────────────────────────────────
             Expanded(
               child: messages.isEmpty
                   ? const EmptyStateWidget(
@@ -214,21 +227,27 @@ class _ChatConversationViewState extends State<ChatConversationView> {
                           isMe: isMe,
                           onEdit: isMe && message.type == MessageType.text
                               ? (newContent) => context.read<ChatBloc>().add(
-                                  UpdateMessageLocal(
-                                    messageId: message.id,
-                                    newContent: newContent,
-                                  ),
-                                )
+                                    UpdateMessageLocal(
+                                      messageId: message.id,
+                                      newContent: newContent,
+                                    ),
+                                  )
                               : null,
                           onDelete: isMe
                               ? () => context.read<ChatBloc>().add(
-                                  DeleteMessageLocal(message.id),
-                                )
+                                    DeleteMessageLocal(message.id),
+                                  )
                               : null,
                         );
                       },
                     ),
             ),
+
+            // ── Typing indicator (อยู่นอก Expanded แล้ว) ─────────────────
+            if (_extractIsTyping(state))
+              TypingIndicator(userName: room.participantName),
+
+            // ── Input ─────────────────────────────────────────────────────
             ChatInputField(
               controller: _messageController,
               onSend: _sendMessage,
@@ -245,32 +264,32 @@ class _ChatConversationViewState extends State<ChatConversationView> {
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
   ChatRoom? _extractRoom(ChatState state) => switch (state) {
-    ChatRoomSelected(:final room) => room,
-    LoadingMoreMessages(:final room) => room,
-    MessageSending(:final room) => room,
-    MessageSent(:final room) => room,
-    NewMessageReceived(:final room) => room,
-    _ => null,
-  };
+        ChatRoomSelected(:final room) => room,
+        LoadingMoreMessages(:final room) => room,
+        MessageSending(:final room) => room,
+        MessageSent(:final room) => room,
+        NewMessageReceived(:final room) => room,
+        _ => null,
+      };
 
   List<ChatMessage> _extractMessages(ChatState state) => switch (state) {
-    ChatRoomSelected(:final messages) => messages,
-    LoadingMoreMessages(:final messages) => messages,
-    MessageSending(:final messages) => messages,
-    MessageSent(:final messages) => messages,
-    NewMessageReceived(:final messages) => messages,
-    _ => [],
-  };
+        ChatRoomSelected(:final messages) => messages,
+        LoadingMoreMessages(:final messages) => messages,
+        MessageSending(:final messages) => messages,
+        MessageSent(:final messages) => messages,
+        NewMessageReceived(:final messages) => messages,
+        _ => [],
+      };
 
   bool _extractHasMore(ChatState state) => switch (state) {
-    ChatRoomSelected(:final hasMoreMessages) => hasMoreMessages,
-    LoadingMoreMessages() => true,
-    _ => false,
-  };
+        ChatRoomSelected(:final hasMoreMessages) => hasMoreMessages,
+        LoadingMoreMessages() => true,
+        _ => false,
+      };
 
   int _extractCurrentPage(ChatState state) => switch (state) {
-    ChatRoomSelected(:final currentPage) => currentPage,
-    LoadingMoreMessages(:final currentPage) => currentPage,
-    _ => 1,
-  };
+        ChatRoomSelected(:final currentPage) => currentPage,
+        LoadingMoreMessages(:final currentPage) => currentPage,
+        _ => 1,
+      };
 }

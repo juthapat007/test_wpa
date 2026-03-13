@@ -21,6 +21,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   StreamSubscription? _messageDeletedSubscription;
   StreamSubscription? _messageUpdatedSubscription;
   StreamSubscription? _roomDeletedSubscription;
+StreamSubscription? _typingSubscription;
 
   List<ChatRoom> _chatRooms = [];
   ChatRoom? _selectedRoom;
@@ -149,6 +150,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       log.i('[Bloc] room_deleted received: $roomId → back to list');
       add(BackToRoomList());
     });
+    _typingSubscription = chatRepository.typingStream.listen((event) {
+  add(event.isTyping
+      ? TypingStarted(event.userId)
+      : TypingStopped(event.userId));
+});
   }
 
   // ─── Typing ───────────────────────────────────────────────────────────────
@@ -460,40 +466,66 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       log.w('Failed to mark as read', error: e);
     }
   }
-
-  void _onMessageReadReceived(
-    MessageReadReceived event,
-    Emitter<ChatState> emit,
-  ) {
-    // 🔍 DEBUG — ลบออกหลัง fix แล้ว
-    log.i(
-      '[ReadReceipt] messageId=${event.messageId} currentUserId=$_currentUserId',
-    );
-    log.i('[ReadReceipt] total messages=${_messages.length}');
-    for (final m in _messages) {
-      log.i(
-        '[ReadReceipt] msg id=${m.id} senderId=${m.senderId} isRead=${m.isRead}',
-      );
-    }
-
-    bool hasChanges = false;
-    _messages = _messages.map((m) {
-      if (!m.isRead && m.senderId == (_currentUserId ?? '')) {
-        if (event.messageId == '0' || event.messageId == 'all') {
-          hasChanges = true;
-          return m.copyWith(isRead: true);
-        }
-        if (m.id == event.messageId) {
-          hasChanges = true;
-          return m.copyWith(isRead: true);
-        }
-      }
-      return m;
-    }).toList();
-
-    log.i('[ReadReceipt] hasChanges=$hasChanges');
-    if (hasChanges && _selectedRoom != null) emit(_buildRoomState());
+void _onMessageReadReceived(
+  MessageReadReceived event,
+  Emitter<ChatState> emit,
+) {
+  // Guard: ถ้ายังไม่รู้ userId ให้ mark all messages ที่ยังไม่ read
+  final myId = _currentUserId;
+  if (myId == null || myId == '0') {
+    log.w('[ReadReceipt] currentUserId not loaded yet, skipping');
+    return; // หรือจะ mark all แบบ fallback ก็ได้
   }
+
+  bool hasChanges = false;
+  _messages = _messages.map((m) {
+    if (!m.isRead && m.senderId == myId) {
+      if (event.messageId == '0' || event.messageId == 'all') {
+        hasChanges = true;
+        return m.copyWith(isRead: true);
+      }
+      if (m.id == event.messageId) {
+        hasChanges = true;
+        return m.copyWith(isRead: true);
+      }
+    }
+    return m;
+  }).toList();
+
+  if (hasChanges && _selectedRoom != null) emit(_buildRoomState());
+}
+  // void _onMessageReadReceived(
+  //   MessageReadReceived event,
+  //   Emitter<ChatState> emit,
+  // ) {
+  //   log.i(
+  //     '[ReadReceipt] messageId=${event.messageId} currentUserId=$_currentUserId',
+  //   );
+  //   log.i('[ReadReceipt] total messages=${_messages.length}');
+  //   for (final m in _messages) {
+  //     log.i(
+  //       '[ReadReceipt] msg id=${m.id} senderId=${m.senderId} isRead=${m.isRead}',
+  //     );
+  //   }
+
+  //   bool hasChanges = false;
+  //   _messages = _messages.map((m) {
+  //     if (!m.isRead && m.senderId == (_currentUserId ?? '')) {
+  //       if (event.messageId == '0' || event.messageId == 'all') {
+  //         hasChanges = true;
+  //         return m.copyWith(isRead: true);
+  //       }
+  //       if (m.id == event.messageId) {
+  //         hasChanges = true;
+  //         return m.copyWith(isRead: true);
+  //       }
+  //     }
+  //     return m;
+  //   }).toList();
+
+  //   log.i('[ReadReceipt] hasChanges=$hasChanges');
+  //   if (hasChanges && _selectedRoom != null) emit(_buildRoomState());
+  // }
 
   void _onWebSocketMessageDeleted(
     WebSocketMessageDeleted event,
@@ -759,6 +791,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     await _messageDeletedSubscription?.cancel();
     await _messageUpdatedSubscription?.cancel();
     await _roomDeletedSubscription?.cancel();
+    await _typingSubscription?.cancel();
+
   }
 
   Future<void> _initializeCurrentUserId() async {
