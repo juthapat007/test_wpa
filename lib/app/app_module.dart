@@ -47,7 +47,6 @@ import 'package:test_wpa/features/schedules/data/services/schedule_others_api.da
 import 'package:test_wpa/features/schedules/data/repository/schedule_others_repository_impl.dart';
 import 'package:test_wpa/features/schedules/domain/repositories/schedule_others_repository.dart';
 import 'package:test_wpa/features/schedules/presentation/views/attendance_status.dart';
-
 // Search
 import 'package:test_wpa/features/search/data/repository/delegate_repository_impl.dart';
 import 'package:test_wpa/features/search/data/services/delegate_api.dart';

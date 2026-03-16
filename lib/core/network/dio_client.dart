@@ -50,13 +50,14 @@ import 'package:test_wpa/core/interceptors/auth_interceptor.dart';
 
 //   //สว่น dio ตัวนี้จะถูกใช้ในแต่ละ feature
 // }
+
 class DioClient {
   static const webAppUrl = 'https://wpaapp2026.web.app';
   static final DioClient _instance = DioClient._internal();
   factory DioClient() => _instance;
 
   DioClient._internal() {
-    // ✅ ใส่ interceptor ตอนสร้างเลย ไม่ต้องรอ init()
+    dio.interceptors.add(setupLogger());
     dio.interceptors.add(AuthInterceptor());
   }
 
@@ -79,6 +80,7 @@ class DioClient {
         receiveTimeout: const Duration(seconds: 60),
       ),
     );
+    dio.interceptors.add(setupLogger());
     dio.interceptors.add(AuthInterceptor());
     return dio;
   }
