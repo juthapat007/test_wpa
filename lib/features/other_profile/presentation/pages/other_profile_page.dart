@@ -44,7 +44,6 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         ],
         child: BlocBuilder<ProfileDetailBloc, ProfileDetailState>(
           builder: (context, state) {
-            if (state is ProfileDetailLoaded) _lastLoaded = state;
             final loaded = _lastLoaded;
 
             if (state is ProfileDetailLoading && loaded == null) {
@@ -55,8 +54,9 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
             if (state is ProfileDetailError && loaded == null) {
               return _buildErrorView(context, state.message);
             }
-            if (loaded == null)
+            if (loaded == null) {
               return const Center(child: CircularProgressIndicator());
+            }
 
             return SingleChildScrollView(
               child: Column(
@@ -80,11 +80,17 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   }
 
   // ─── Listeners ────────────────────────────────────────────────────────────
-
   void _onProfileStateChanged(BuildContext context, ProfileDetailState state) {
     if (state is ProfileDetailLoaded) {
-      _lastLoaded = state;
+      setState(() {
+        _lastLoaded = state;
+      });
+    } else if (state is FriendRequestSending) {
     } else if (state is FriendRequestSuccess) {
+      ReadContext(
+        context,
+      ).read<ProfileDetailBloc>().add(LoadProfileDetail(widget.delegateId));
+
       showDialog(
         context: context,
         builder: (_) => AppDialog(
@@ -115,6 +121,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   bool _isNavigatingToChat = false;
   void _onChatStateChanged(BuildContext context, ChatState state) {
     if (state is ChatRoomSelected && !_isNavigatingToChat) {
+      _isNavigatingToChat = true;
       Modular.to.pushNamed('/chat/room').then((_) {
         if (mounted) _isNavigatingToChat = false;
       });

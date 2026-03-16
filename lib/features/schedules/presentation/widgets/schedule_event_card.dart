@@ -9,9 +9,9 @@ import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status
 import 'package:test_wpa/features/schedules/utils/schedule_card_helper.dart';
 
 /// Card แสดงข้อมูล schedule ทั้ง 3 type:
-///   - [EventCardType.meeting]   → white card with status badge
-///   - [EventCardType.breakTime] → amber card with status badge
-///   - [EventCardType.empty]     → blue card ("No Meeting")
+///   - [EventCardType.meeting]   ==> white card with status badge
+///   - [EventCardType.breakTime] ==> amber card with status badge
+///   - [EventCardType.empty]     ==> blue card ("No Meeting")
 class ScheduleEventCard extends StatelessWidget {
   final Schedule? schedule;
   final EventCardType type;

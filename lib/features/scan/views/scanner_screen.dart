@@ -65,7 +65,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
       });
 
       // วิเคราะห์ QR Code จากรูป
-      final BarcodeCapture? capture = await _controller.analyzeImage(image.path);
+      final BarcodeCapture? capture = await _controller.analyzeImage(
+        image.path,
+      );
 
       if (!mounted) return;
 
@@ -88,9 +90,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
             children: const [
               Icon(Icons.error_outline, color: Colors.white),
               SizedBox(width: 8),
-              Expanded(
-                child: Text('ไม่พบ QR Code ในรูปภาพนี้'),
-              ),
+              Expanded(child: Text('No QR Code found in this image')),
             ],
           ),
           backgroundColor: AppColors.error,
@@ -208,21 +208,20 @@ class _ScannerScreenState extends State<ScannerScreen> {
               Text(
                 'Scan QR Code',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: space.s),
               Text(
                 'Place the QR Code within the frame to scan',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: Colors.white70),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: space.l),
-              
+
               // ปุ่มเลือกรูปจาก Gallery
               ElevatedButton.icon(
                 onPressed: _isProcessing ? null : _pickImageFromGallery,
@@ -259,18 +258,17 @@ class _ScannerScreenState extends State<ScannerScreen> {
             Text(
               'ไม่สามารถเข้าถึงกล้องได้',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: space.m),
             Text(
               error,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: Colors.white70),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: space.xl),

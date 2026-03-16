@@ -57,7 +57,7 @@ class DateTimeHelper {
   // Parsers
   // ========================================
 
-  /// Parse ISO datetime string → local DateTime
+  /// Parse ISO datetime string ==> local DateTime
   static DateTime parseFlexibleDateTime(String time, String date) {
     // 1. ISO format — "2026-02-05T09:00:00.000Z"
     final isoResult = DateTime.tryParse(time);
@@ -87,7 +87,7 @@ class DateTimeHelper {
     return DateTime.now();
   }
 
-  /// Parse date string → DateTime ("2026-02-05" หรือ "05/02/2026")
+  /// Parse date string ==> DateTime ("2026-02-05" หรือ "05/02/2026")
   static DateTime parseSafeDate(String dateString) {
     final result = DateTime.tryParse(dateString);
     if (result != null) return result;

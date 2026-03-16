@@ -24,8 +24,8 @@ class ChatRoomCard extends StatelessWidget {
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        onTap: onTap, // กดธรรมดา → เปิด chat
-        onLongPress: onProfileTap, // กดค้าง → ไป profile
+        onTap: onTap, // กดธรรมดา ==> เปิด chat
+        onLongPress: onProfileTap, // กดค้าง ==> ไป profile
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -261,7 +261,8 @@ class _AuthenticatedAvatarState extends State<_AuthenticatedAvatar> {
 
     // ถ้าเป็น ui-avatars.com หรือ http อื่นๆ ที่ไม่ต้อง auth
     final needsAuth =
-        hasUrl && widget.imageUrl!.contains('wpadocker-production.up.railway.app');
+        hasUrl &&
+        widget.imageUrl!.contains('wpadocker-production.up.railway.app');
 
     if (!hasUrl) return _buildFallback();
 

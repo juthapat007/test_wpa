@@ -277,8 +277,11 @@ class AppModule extends Module {
     r.child(
       '/scan',
       child: (_) => AppShell(
-        child: BlocProvider.value(
-          value: Modular.get<ScanBloc>(),
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: Modular.get<ScanBloc>()),
+            BlocProvider.value(value: Modular.get<ProfileBloc>()),
+          ],
           child: const Scan(),
         ),
       ),

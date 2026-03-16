@@ -7,6 +7,8 @@ import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/network/dio_client.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
+import 'package:test_wpa/features/profile/presentation/bloc/profile_bloc.dart';
+import 'package:test_wpa/features/profile/presentation/bloc/profile_state.dart';
 import 'package:test_wpa/features/scan/presentation/bloc/scan_bloc.dart';
 import 'package:test_wpa/features/scan/views/scanner_screen.dart';
 import 'package:test_wpa/features/widgets/app_scaffold.dart';
@@ -34,12 +36,11 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
 
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
-
+  //Lifecycle
   @override
   void initState() {
     super.initState();
     _loadUserData();
-
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 150),
       vsync: this,
@@ -54,7 +55,9 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
     _animationController.dispose();
     super.dispose();
   }
+  //ถ้าwidget ถูก destroy แต่ controller ยังอยู่มันจะยังrender frame ต่อทำให้ memory leak ค่ะ
 
+  //Logic
   Future<void> _loadUserData() async {
     final id = await _storage.read(key: 'delegate_id');
     final userDataStr = await _storage.read(key: 'user_data');
@@ -75,9 +78,9 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
     setState(() {
       _delegateId = id;
       _userName = name;
-      _userTitle = title; 
-      _userCompany = company; 
-      _userTeam = team; 
+      _userTitle = title;
+      _userCompany = company;
+      _userTeam = team;
     });
 
     if (id != null && mounted) {
@@ -87,15 +90,17 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
 
   Future<void> _openScanner() async {
     _animationController.forward().then((_) => _animationController.reverse());
-
+    //animation
     final result = await Navigator.push<String>(
       context,
       MaterialPageRoute(builder: (context) => const ScannerScreen()),
     );
+    //เปิดหน้า scanner
 
     if (result != null && mounted) {
       _navigateToOtherProfile(result);
     }
+    //อันนี้เอาไว้จับว่ามีข้อมูลเข้ามามั้ย
   }
 
   void _navigateToOtherProfile(String qrData) {
@@ -196,22 +201,34 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
       currentIndex: 2,
       backgroundColor: AppColors.background,
       appBarStyle: AppBarStyle.elegant,
-      body: _delegateId == null
-          ? const Center(child: CircularProgressIndicator())
-          : BlocBuilder<ScanBloc, ScanState>(
-              builder: (context, state) {
-                if (state is ScanLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (state is ScanError) {
-                  return _buildErrorState(state.message);
-                }
-                if (state is ScanLoaded) {
-                  return _buildQrCodeView(state.qrCodeBase64);
-                }
-                return _buildEmptyState();
-              },
-            ),
+      body: BlocListener<ProfileBloc, ProfileState>(
+        listener: (context, profileState) {
+          if (profileState is ProfileLoaded) {
+            setState(() {
+              _userName = profileState.profile.name;
+              _userTitle = profileState.profile.title;
+              // _userCompany = profileState.profile.company?.name;
+              // _userTeam = profileState.profile.team?.name;
+            });
+          }
+        },
+        child: _delegateId == null
+            ? const Center(child: CircularProgressIndicator())
+            : BlocBuilder<ScanBloc, ScanState>(
+                builder: (context, state) {
+                  if (state is ScanLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (state is ScanError) {
+                    return _buildErrorState(state.message);
+                  }
+                  if (state is ScanLoaded) {
+                    return _buildQrCodeView(state.qrCodeBase64);
+                  }
+                  return _buildEmptyState();
+                },
+              ),
+      ),
     );
   }
 
@@ -386,93 +403,32 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
   }
 
   // ========== Share QR ==========
-  
-Future<void> _shareQrCode() async {
-  if (_currentQrBase64 == null) return;
 
-  try {
-    final base64String = _currentQrBase64!.contains(',')
-        ? _currentQrBase64!.split(',').last
-        : _currentQrBase64!;
-    final bytes = base64Decode(base64String);
+  Future<void> _shareQrCode() async {
+    if (_currentQrBase64 == null) return;
 
-    final tempDir = await getTemporaryDirectory();
-    final file = File('${tempDir.path}/qr_code_${_delegateId}.png');
-    await file.writeAsBytes(bytes);
-    await Share.shareXFiles([XFile(file.path)]);
-    
-  } catch (e) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Error occurred: $e'),
-        backgroundColor: AppColors.error,
-      ),
-    );
+    try {
+      final base64String = _currentQrBase64!.contains(',')
+          ? _currentQrBase64!.split(',').last
+          : _currentQrBase64!;
+      final bytes = base64Decode(base64String);
+
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/qr_code_${_delegateId}.png');
+      await file.writeAsBytes(bytes);
+      await Share.shareXFiles([XFile(file.path)]);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error occurred: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
-}
-
 
   // ========== Search Dialog ==========
-  void _openSearchDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        final controller = TextEditingController();
-        return AlertDialog(
-          title: const Text('Search by ID'),
-          content: TextField(
-            controller: controller,
-            keyboardType: TextInputType.number,
-            autofocus: true,
-            decoration: InputDecoration(
-              hintText: 'Enter Delegate ID',
-              prefixIcon: const Icon(Icons.person_search_rounded),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            onSubmitted: (_) {
-              final id = int.tryParse(controller.text.trim());
-              if (id != null) {
-                Navigator.pop(ctx);
-                Modular.to.pushNamed(
-                  '/other_profile',
-                  arguments: {'delegate_id': id},
-                );
-              }
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onPressed: () {
-                final id = int.tryParse(controller.text.trim());
-                if (id != null) {
-                  Navigator.pop(ctx);
-                  Modular.to.pushNamed(
-                    '/other_profile',
-                    arguments: {'delegate_id': id},
-                  );
-                }
-              },
-              child: const Text('Search'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   Widget _buildQrCodeImage(String qrCodeBase64) {
     try {
@@ -517,7 +473,7 @@ Future<void> _shareQrCode() async {
           ),
           const SizedBox(height: space.s),
           Text(
-            'กรุณาลองใหม่อีกครั้ง',
+            'Please try again',
             style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
         ],
@@ -546,7 +502,7 @@ Future<void> _shareQrCode() async {
             ),
             const SizedBox(height: space.xl),
             Text(
-              'ไม่พบ QR Code',
+              'not found QR Code',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 color: AppColors.textSecondary,
                 fontWeight: FontWeight.w600,
@@ -554,7 +510,7 @@ Future<void> _shareQrCode() async {
             ),
             const SizedBox(height: space.m),
             Text(
-              'กรุณาลองใหม่อีกครั้ง หรือติดต่อเจ้าหน้าที่',
+              'Please try again or contact the staff',
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),

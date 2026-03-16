@@ -19,7 +19,7 @@ class DelegateListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       onTap: () {
-        if (delegate.delegateId == myDelegateId) return; // ดักตัวเอง
+        if (delegate.delegateId == myDelegateId) return; // ดักกดตัวเอง
         Modular.to.pushNamed(
           '/other_profile',
           arguments: {'delegate_id': delegate.delegateId},

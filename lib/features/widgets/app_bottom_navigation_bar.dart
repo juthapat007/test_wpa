@@ -28,7 +28,7 @@ class AppBottomNavigationBar extends StatelessWidget {
       unselectedItemColor: AppColors.textSecondary,
       type: BottomNavigationBarType.fixed,
       items: bottomNavItems.map((item) {
-        // ─── Connection tab → badge จำนวน unread chat ───────────────────
+        // ─── Connection tab ==> badge จำนวน unread chat ───────────────────
         if (item.route == '/chat') {
           return BottomNavigationBarItem(
             icon: _ChatBadgeIcon(icon: item.icon, isActive: false),

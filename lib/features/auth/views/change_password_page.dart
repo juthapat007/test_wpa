@@ -50,7 +50,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             label: 'Cancel',
             onPressed: () => Navigator.pop(dialogContext),
             backgroundColor: AppColors.surface,
-            // ไม่ต้องใส่อะไรเพิ่ม → ใช้ default style
           ),
           AppDialogAction(
             label: 'Confirm',
@@ -90,10 +89,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   label: 'OK',
                   isPrimary: true,
                   onPressed: () {
-                    Navigator.pop(dialogContext); // ปิด dialog
+                    Navigator.pop(dialogContext); 
                     Navigator.of(
                       dialogContext,
-                    ).pop(); // ออกจาก change_password_page
+                    ).pop(); // เอา route ออกจาก change_password_page(stack)
                   },
                   textColor: AppColors.surface,
                   backgroundColor: null,

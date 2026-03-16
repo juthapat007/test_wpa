@@ -48,7 +48,7 @@ class ProfileDetailBloc extends Bloc<ProfileDetailEvent, ProfileDetailState> {
       }
 
       emit(ProfileDetailLoaded(profile));
-      // โหลด schedule ทันที (ไม่ส่ง date → backend คืน default)
+      // โหลด schedule ทันที (ไม่ส่ง date ==> backend คืน default)
       add(LoadScheduleOthers(event.delegateId));
     } catch (e) {
       emit(ProfileDetailError('Cannot load profile: $e'));

@@ -181,11 +181,16 @@ class _ChatButton extends StatelessWidget {
     return IconButton(
       icon: const Icon(Icons.chat_bubble_outline, color: AppColors.primary),
       tooltip: 'Send message',
+      // onPressed: () {
+      //   ReadContext(context).read<ChatBloc>().add(
+      //     CreateChatRoom(delegate.id.toString(), delegate.name),
+      //   );
+      //   Modular.to.pushNamed('/chat/room');
+      // },
       onPressed: () {
         ReadContext(context).read<ChatBloc>().add(
           CreateChatRoom(delegate.id.toString(), delegate.name),
         );
-        Modular.to.pushNamed('/chat/room');
       },
     );
   }

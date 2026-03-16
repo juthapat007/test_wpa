@@ -33,7 +33,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         email: event.email,
         password: event.password,
       );
-      await DioClient().init();
       final storage = Modular.get<FlutterSecureStorage>();
       final token = await storage.read(key: 'auth_token');
       if (token != null) {
@@ -41,11 +40,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       }
 
-      // final fcmToken = await FirebaseMessaging.instance.getToken();
-      // print('FCM Token: $fcmToken');
-      // if (fcmToken != null) {
-      //   await authRepository.registerDeviceToken(fcmToken);
-      // }
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      print('FCM Token: $fcmToken');
+      if (fcmToken != null) {
+        await authRepository.registerDeviceToken(fcmToken);
+      }
 //fcm
       emit(
         AuthAuthenticated(

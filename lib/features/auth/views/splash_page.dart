@@ -3,6 +3,7 @@ import 'package:flutter_modular/flutter_modular.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:test_wpa/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:test_wpa/features/notification/presentation/bloc/notification_bloc.dart';
+import 'package:test_wpa/core/services/notification_service.dart';
 
 // ต้องเพิ่ม Splash Screen ที่คอยเช็ค token ก่อน แล้วค่อย redirect(เปล่ี่ยนเส้นทาง)
 class SplashPage extends StatefulWidget {
@@ -24,15 +25,21 @@ class _SplashPageState extends State<SplashPage> {
     final token = await storage.read(key: 'auth_token');
 
     if (token != null) {
-      //===================================================================
       Modular.get<ChatBloc>()
         ..add(ConnectWebSocket())
         ..add(LoadChatRooms());
       Modular.get<NotificationBloc>().add(LoadUnreadCount());
-      //===================================================================
-      Modular.to.navigate('/meeting'); // มี token → เข้าแอปเลย
+
+      final pending = NotificationService.pendingPayload;
+      if (pending != null) {
+        await Future.delayed(const Duration(milliseconds: 300));
+        NotificationService.handlePendingPayload(pending);
+        return; // ไม่ต้อง navigate('/meeting')
+      }
+
+      Modular.to.navigate('/meeting');
     } else {
-      Modular.to.navigate('/login'); // ไม่มี token ==> ไป login
+      Modular.to.navigate('/login');
     }
   }
 

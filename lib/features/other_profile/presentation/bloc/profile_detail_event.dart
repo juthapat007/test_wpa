@@ -8,31 +8,31 @@ class LoadProfileDetail extends ProfileDetailEvent {
   LoadProfileDetail(this.delegateId);
 }
 
-/// ส่งคำขอเพื่อน → POST /api/v1/requests
+/// ส่งคำขอเพื่อน ==> POST /api/v1/requests
 class SendFriendRequest extends ProfileDetailEvent {
   final int delegateId;
   SendFriendRequest(this.delegateId);
 }
 
-/// ยกเลิกคำขอที่เราส่งออกไป → DELETE /api/v1/requests/:target_id/cancel
+/// ยกเลิกคำขอที่เราส่งออกไป ==> DELETE /api/v1/requests/:target_id/cancel
 class CancelFriendRequest extends ProfileDetailEvent {
   final int requestId;
   CancelFriendRequest(this.requestId);
 }
 
-/// ยอมรับคำขอ → PATCH /api/v1/requests/:id/accept
+/// ยอมรับคำขอ ==> PATCH /api/v1/requests/:id/accept
 class AcceptFriendRequest extends ProfileDetailEvent {
   final int requestId;
   AcceptFriendRequest(this.requestId);
 }
 
-/// ปฏิเสธคำขอ → PATCH /api/v1/requests/:id/reject
+/// ปฏิเสธคำขอ ==> PATCH /api/v1/requests/:id/reject
 class RejectFriendRequest extends ProfileDetailEvent {
   final int requestId;
   RejectFriendRequest(this.requestId);
 }
 
-/// ยกเลิกการเป็นเพื่อน → DELETE /api/v1/connections/:delegateId
+/// ยกเลิกการเป็นเพื่อน ==> DELETE /api/v1/connections/:delegateId
 class UnfriendRequest extends ProfileDetailEvent {
   final int delegateId;
   UnfriendRequest(this.delegateId);

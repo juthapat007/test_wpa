@@ -10,9 +10,3 @@ final class LoadQrCode extends ScanEvent {
   LoadQrCode(this.delegateId);
 }
 
-/// Event สำหรับ refresh QR Code
-final class RefreshQrCode extends ScanEvent {
-  final String delegateId;
-
-  RefreshQrCode(this.delegateId);
-}

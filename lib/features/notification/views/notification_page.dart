@@ -167,10 +167,10 @@ class _PendingBadgeDot extends StatelessWidget {
                 connState.requests.any((r) => r.isPending);
 
             final hasAccepted =
-    notifState is NotificationLoaded &&
-    notifState.notifications.any(
-      (n) => n.type == 'connection_accepted' && n.isUnread,
-    );
+                notifState is NotificationLoaded &&
+                notifState.notifications.any(
+                  (n) => n.type == 'connection_accepted' && n.isUnread,
+                );
 
             if (!hasPending && !hasAccepted) return const SizedBox.shrink();
 
@@ -254,7 +254,7 @@ class _SystemNotificationsTab extends StatelessWidget {
     );
   }
 
-  // _handleTap → dispatch MarkNotificationRead
+  // _handleTap ==> dispatch MarkNotificationRead
   void _handleTap(BuildContext context, NotificationItem item) {
     if (item.isUnread) {
       ReadContext(
@@ -1223,7 +1223,7 @@ class _ActionButton extends StatelessWidget {
           style: const TextStyle(
             fontSize: 13,
             color: Colors.white,
-          ), // ลด 14 → 13
+          ), // ลด 14 ==> 13
         ),
       ),
     );

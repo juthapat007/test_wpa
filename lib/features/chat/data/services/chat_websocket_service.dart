@@ -89,7 +89,7 @@ class ChatWebSocketService with WidgetsBindingObserver {
     switch (state) {
       case AppLifecycleState.resumed:
         _isAppInForeground = true;
-        log.i('[Lifecycle] App resumed → foreground');
+        log.i('[Lifecycle] App resumed ==> foreground');
         if (!_isConnected && _lastToken != null) {
           _reconnectAttempts = 0;
           connect(_lastToken!);
@@ -98,7 +98,7 @@ class ChatWebSocketService with WidgetsBindingObserver {
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
         _isAppInForeground = false;
-        log.i('[Lifecycle] App backgrounded → cancel timers');
+        log.i('[Lifecycle] App backgrounded ==> cancel timers');
         _cancelTimers();
         _reconnectTimer?.cancel();
 
@@ -123,7 +123,8 @@ class ChatWebSocketService with WidgetsBindingObserver {
         await _channel!.sink.close();
         _channel = null;
       }
-      final wsUrl = 'wss://wpadocker-production.up.railway.app/cable?token=$token';
+      final wsUrl =
+          'wss://wpadocker-production.up.railway.app/cable?token=$token';
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
       _channel!.stream.listen(
         _handleMessage,
@@ -187,7 +188,7 @@ class ChatWebSocketService with WidgetsBindingObserver {
       final elapsed = DateTime.now().difference(_lastPingReceived!);
       if (elapsed > _watchdogTimeout) {
         log.w(
-          '[Watchdog] No ping from server for ${elapsed.inSeconds}s → reconnecting',
+          '[Watchdog] No ping from server for ${elapsed.inSeconds}s ==> reconnecting',
         );
         _onDisconnected();
       }
@@ -213,7 +214,7 @@ class ChatWebSocketService with WidgetsBindingObserver {
 
     // ถ้าอยู่ background ==> ไม่ schedule เลย รอ resumed แทน
     if (!_isAppInForeground) {
-      log.i('[Reconnect] App in background → skip, will reconnect on resume');
+      log.i('[Reconnect] App in background ==> skip, will reconnect on resume');
       return;
     }
 
@@ -278,7 +279,7 @@ class ChatWebSocketService with WidgetsBindingObserver {
         case 'confirm_subscription':
           log.d('Subscription confirmed: ${data['identifier']}');
           break;
- case 'disconnect':
+        case 'disconnect':
           log.w('WebSocket disconnect by server');
           _onDisconnected();
           break;
@@ -304,7 +305,7 @@ class ChatWebSocketService with WidgetsBindingObserver {
       '[WS RAW] type=$type | keys=${message.keys.toList()} | data=${jsonEncode(message)}',
     );
     if (type == 'new_notification') {
-      log.i('[ChatWS] → NotificationWS: ${message['notification']?['type']}');
+      log.i('[ChatWS] ==> NotificationWS: ${message['notification']?['type']}');
       NotificationWebSocketService.instance.handleIncomingEvent(message);
       return;
     }
@@ -344,27 +345,23 @@ class ChatWebSocketService with WidgetsBindingObserver {
         log.i('[WS] room_deleted: roomId=$roomId');
         _roomDeletedController.add(roomId);
 
-
-
-   case 'member_left':
+      case 'member_left':
         final delegateId = (message['delegate_id'] ?? '').toString();
         log.i('[WS] member_left: delegate=$delegateId');
 
       case 'typing_start' || 'typing_started':
-        final senderId = (message['sender_id'] ??
-                message['user_id'] ??
-                message['from_id'])
-            ?.toString();
+        final senderId =
+            (message['sender_id'] ?? message['user_id'] ?? message['from_id'])
+                ?.toString();
         if (senderId != null) {
           _typingController.add(TypingEvent(userId: senderId, isTyping: true));
           log.i('[WS] typing_start from $senderId');
         }
 
       case 'typing_stop' || 'typing_stopped':
-        final senderId = (message['sender_id'] ??
-                message['user_id'] ??
-                message['from_id'])
-            ?.toString();
+        final senderId =
+            (message['sender_id'] ?? message['user_id'] ?? message['from_id'])
+                ?.toString();
         if (senderId != null) {
           _typingController.add(TypingEvent(userId: senderId, isTyping: false));
           log.i('[WS] typing_stop from $senderId');

@@ -41,36 +41,54 @@ class _ChatRoomListWidgetState extends State<ChatRoomListWidget>
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      title: 'Connection',
-      currentIndex: 3,
-      appBarStyle: AppBarStyle.elegant,
-      backgroundColor: color.AppColors.background,
+    return BlocListener<ChatBloc, ChatState>(
+      listenWhen: (prev, curr) {
+        // navigate เฉพาะตอนที่ prev ไม่ใช่ room state เลย
+        // ป้องกัน push ซ้ำตอนอยู่ในห้องแล้ว
+        final wasInRoom =
+            prev is ChatRoomSelected ||
+            prev is MessageSending ||
+            prev is MessageSent ||
+            prev is NewMessageReceived ||
+            prev is LoadingMoreMessages;
 
-      body: Column(
-        children: [
-          TabBar(
-            controller: _tabController,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: AppColors.textSecondary,
-            indicatorColor: AppColors.primary,
-            indicatorWeight: 3,
-            labelStyle: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
-            tabs: const [
-              Tab(text: 'Messages'),
-              Tab(text: 'Friends'),
-            ],
-          ),
-          Expanded(
-            child: TabBarView(
+        return curr is ChatRoomSelected && !wasInRoom;
+      },
+      listener: (context, state) {
+        if (state is ChatRoomSelected) {
+          Modular.to.pushNamed('/chat/room');
+        }
+      },
+      child: AppScaffold(
+        title: 'Connection',
+        currentIndex: 3,
+        appBarStyle: AppBarStyle.elegant,
+        backgroundColor: color.AppColors.background,
+        body: Column(
+          children: [
+            TabBar(
               controller: _tabController,
-              children: const [ChatRoomListView(), FriendsListView()],
+              labelColor: AppColors.primary,
+              unselectedLabelColor: AppColors.textSecondary,
+              indicatorColor: AppColors.primary,
+              indicatorWeight: 3,
+              labelStyle: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+              tabs: const [
+                Tab(text: 'Messages'),
+                Tab(text: 'Friends'),
+              ],
             ),
-          ),
-        ],
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: const [ChatRoomListView(), FriendsListView()],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

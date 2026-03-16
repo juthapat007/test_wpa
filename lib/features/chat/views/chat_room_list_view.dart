@@ -30,22 +30,22 @@ class ChatRoomListView extends StatelessWidget {
           curr is ConversationDeleted ||
           curr is ChatInitial ||
           curr is ChatError,
-   builder: (context, state) {
-  if (state is ChatLoading || state is ChatInitial) {
-    return const Center(child: CircularProgressIndicator());
-  }
+      builder: (context, state) {
+        if (state is ChatLoading || state is ChatInitial) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-  if (state is ChatRoomsLoaded) {
-    return _RoomList(rooms: state.rooms);
-  }
+        if (state is ChatRoomsLoaded) {
+          return _RoomList(rooms: state.rooms);
+        }
 
-  // เพิ่มตรงนี้
-  if (state is ConversationDeleted) {
-    return _RoomList(rooms: state.rooms);
-  }
+        // เพิ่มตรงนี้
+        if (state is ConversationDeleted) {
+          return _RoomList(rooms: state.rooms);
+        }
 
-  return const _EmptyRooms();
-},
+        return const _EmptyRooms();
+      },
     );
   }
 }
@@ -72,7 +72,6 @@ class _RoomList extends StatelessWidget {
             room: room,
             onTap: () {
               ReadContext(context).read<ChatBloc>().add(SelectChatRoom(room));
-              Modular.to.pushNamed('/chat/room');
             },
             onProfileTap: () {
               final id = int.tryParse(room.participantId);
