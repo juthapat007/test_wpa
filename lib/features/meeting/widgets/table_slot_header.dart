@@ -11,6 +11,7 @@ class TableSlotHeader extends StatelessWidget {
   final Map<String, TimeSlotType> slotTypeMap;
   final ValueChanged<String>? onTimeSlotChanged;
   final List<Schedule> schedules;
+  final DateTime? currentTime;
 
   const TableSlotHeader({
     super.key,
@@ -18,30 +19,26 @@ class TableSlotHeader extends StatelessWidget {
     required this.slotTypeMap,
     this.onTimeSlotChanged,
     this.schedules = const [],
+    this.currentTime,
   });
 
   @override
   Widget build(BuildContext context) {
-    final currentTime = response.time;
+    // ✅ ใช้เวลาจริงจากเครื่อง
+    final now = currentTime ?? DateTime.now();
+    final timeDisplay = DateTimeHelper.formatTime24(now);
+    final dateText = DateTimeHelper.formatFullDate(now);
+
+    // ✅ เปลี่ยนชื่อให้ไม่ชนกับ parameter
+    final responseTime = response.time;
     final timesToday = response.timesToday;
     final date = response.date;
-    final currentIndex = timesToday.indexOf(currentTime);
+    final currentIndex = timesToday.indexOf(responseTime);
     final nextTime = (currentIndex >= 0 && currentIndex + 1 < timesToday.length)
         ? timesToday[currentIndex + 1]
         : null;
 
-    final timeDisplay = nextTime != null
-        ? DateTimeHelper.formatTimeRange12(
-            DateTimeHelper.parseFlexibleDateTime(currentTime, date),
-            DateTimeHelper.parseFlexibleDateTime(nextTime, date),
-          )
-        : DateTimeHelper.formatTime12(
-            DateTimeHelper.parseFlexibleDateTime(currentTime, date),
-          );
-
-    final dateText = DateTimeHelper.formatFullDate(
-      DateTimeHelper.parseSafeDate(date),
-    );
+    // ✅ ลบ timeDisplay และ dateText ซ้ำออก ใช้อันข้างบนแทน
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -358,14 +355,14 @@ class _TimeSlotSheetState extends State<_TimeSlotSheet> {
                         date,
                       );
                       final label = nextTime != null
-                          ? DateTimeHelper.formatTimeRange12(
+                          ? DateTimeHelper.formatTimeRange24(
                               parsedStart,
                               DateTimeHelper.parseFlexibleDateTime(
                                 nextTime,
                                 date,
                               ),
                             )
-                          : DateTimeHelper.formatTime12(parsedStart);
+                          : DateTimeHelper.formatTime24(parsedStart);
 
                       final lookupKey = DateTimeHelper.formatApiTime12(
                         parsedStart,

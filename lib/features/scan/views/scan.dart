@@ -28,8 +28,6 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
   String? _delegateId;
   String? _userName;
   String? _userTitle;
-  String? _userCompany;
-  String? _userTeam;
   String? _currentQrBase64;
 
   final _storage = const FlutterSecureStorage();
@@ -40,7 +38,6 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _loadUserData();
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 150),
       vsync: this,
@@ -48,6 +45,34 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncNameFromBloc();
+    if (_delegateId == null) {
+      _loadUserData();
+    }
+  }
+
+  void _syncNameFromBloc() {
+    final profileState = ReadContext(context).read<ProfileBloc>().state;
+    if (profileState is ProfileLoaded) {
+      setState(() {
+        _userName = profileState.profile.name;
+        _userTitle = profileState.profile.title;
+      });
+    }
+  }
+
+  Future<void> _loadDelegateId() async {
+    final id = await _storage.read(key: 'delegate_id');
+    if (!mounted) return;
+    setState(() => _delegateId = id);
+    if (id != null) {
+      ReadContext(context).read<ScanBloc>().add(LoadQrCode(id));
+    }
   }
 
   @override
@@ -79,8 +104,6 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
       _delegateId = id;
       _userName = name;
       _userTitle = title;
-      _userCompany = company;
-      _userTeam = team;
     });
 
     if (id != null && mounted) {
@@ -202,13 +225,12 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
       backgroundColor: AppColors.background,
       appBarStyle: AppBarStyle.elegant,
       body: BlocListener<ProfileBloc, ProfileState>(
+        listenWhen: (prev, curr) => curr is ProfileLoaded,
         listener: (context, profileState) {
           if (profileState is ProfileLoaded) {
             setState(() {
               _userName = profileState.profile.name;
               _userTitle = profileState.profile.title;
-              // _userCompany = profileState.profile.company?.name;
-              // _userTeam = profileState.profile.team?.name;
             });
           }
         },
@@ -219,12 +241,10 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
                   if (state is ScanLoading) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  if (state is ScanError) {
+                  if (state is ScanError)
                     return _buildErrorState(state.message);
-                  }
-                  if (state is ScanLoaded) {
+                  if (state is ScanLoaded)
                     return _buildQrCodeView(state.qrCodeBase64);
-                  }
                   return _buildEmptyState();
                 },
               ),

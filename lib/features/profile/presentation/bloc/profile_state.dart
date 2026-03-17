@@ -12,8 +12,8 @@ class ProfileLoading extends ProfileState {}
 
 class ProfileLoaded extends ProfileState {
   final ProfileViewModel profile;
-  final bool wasUpdated; // แสดงว่าเพิ่ง update เสร็จ
-  final String? updateError; // error message ถ้า update ไม่สำเร็จ
+  final bool wasUpdated; 
+  final String? updateError; 
 
   const ProfileLoaded(
     this.profile, {

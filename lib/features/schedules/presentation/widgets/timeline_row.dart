@@ -21,7 +21,7 @@ class TimelineRow extends StatelessWidget {
     this.isSelected = false,
   });
   String _formatTime(DateTime dateTime) {
-    return DateTimeHelper.formatTime12(dateTime);
+    return DateTimeHelper.formatTime24(dateTime);
   }
 
   //เอามาบอกว่าเช้า บ่าย เย็น อะไรแบบนี้ — เอาไว้แสดงใต้เวลาตรงข้างบนอีกที

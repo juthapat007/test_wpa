@@ -44,8 +44,8 @@ class MeetingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final helper = ScheduleCardHelper(schedule);
-    final startTime = DateTimeHelper.formatTime12(schedule.startAt);
-    final endTime = DateTimeHelper.formatTime12(schedule.endAt);
+    final startTime = DateTimeHelper.formatTime24(schedule.startAt);
+    final endTime = DateTimeHelper.formatTime24(schedule.endAt);
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
@@ -75,7 +75,9 @@ class MeetingCard extends StatelessWidget {
                     ),
                     if (schedule.tableNumber != null)
                       Text(
-                        '${schedule.tableNumber}',
+                        schedule.tableNumber!.toLowerCase().startsWith('booth')
+                            ? schedule.tableNumber!
+                            : 'Table ${schedule.tableNumber}',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -145,10 +147,10 @@ class EmptySlotCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final startTime = schedule != null
-        ? DateTimeHelper.formatTime12(schedule!.startAt)
+        ? DateTimeHelper.formatTime24(schedule!.startAt)
         : null;
     final endTime = schedule != null
-        ? DateTimeHelper.formatTime12(schedule!.endAt)
+        ? DateTimeHelper.formatTime24(schedule!.endAt)
         : null;
 
     return Container(

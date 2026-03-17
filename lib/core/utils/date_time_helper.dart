@@ -24,11 +24,15 @@ class DateTimeHelper {
     return '${fmt.format(startAt.toLocal())} - ${fmt.format(endAt.toLocal())}';
   }
 
+  static String formatTime24(DateTime dateTime) {
+    return DateFormat('HH:mm').format(dateTime);
+  }
+
   /// "09:30–10:15"
-  // static String formatTimeRange24(DateTime startAt, DateTime endAt) {
-  //   final fmt = DateFormat('HH:mm');
-  //   return '${fmt.format(startAt)}–${fmt.format(endAt)}';
-  // }
+  static String formatTimeRange24(DateTime startAt, DateTime endAt) {
+    final fmt = DateFormat('HH:mm');
+    return '${fmt.format(startAt.toLocal())}–${fmt.format(endAt.toLocal())}';
+  }
 
   /// "Mon, 5 Feb 2026  •  09:30–10:15"
   static String formatDateTimeRange(

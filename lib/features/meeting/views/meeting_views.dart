@@ -310,6 +310,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
                   : {},
               currentSchedule: currentSchedule,
               schedules: schedules,
+              currentTime: _currentTime,
               onTimeSlotChanged: (time) {
                 print(
                   'onTimeSlotChanged: time=$time date=${tableState.response.date}',

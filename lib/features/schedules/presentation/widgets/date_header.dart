@@ -35,7 +35,7 @@ class _DateHeaderState extends State<DateHeader> {
   @override
   Widget build(BuildContext context) {
     final dateText = DateTimeHelper.formatFullDate(_now);
-    final timeText = DateTimeHelper.formatTime12(_now);
+    final timeText = DateTimeHelper.formatTime24(_now);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),

@@ -68,8 +68,8 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     Image.asset(
                       'assets/images/logo.png',
-                      width: 200,
-                      height: 200,
+                      width: 150,
+                      height: 150,
                     ),
                     const Text(
                       'Secure Delegate Login',

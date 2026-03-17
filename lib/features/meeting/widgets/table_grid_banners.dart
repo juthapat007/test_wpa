@@ -8,24 +8,28 @@ import 'package:test_wpa/features/meeting/domain/entities/table_view_entities.da
 
 class MyTableBanner extends StatelessWidget {
   final TableViewResponse response;
+  final DateTime? currentTime;
 
-  const MyTableBanner({super.key, required this.response});
+  const MyTableBanner({super.key, required this.response, this.currentTime});
 
   @override
   Widget build(BuildContext context) {
-    final currentTime = response.time;
+    final now = currentTime ?? DateTime.now();
+    final timeDisplay = DateTimeHelper.formatTime24(now);
+
+    final responseTime = response.time;
     final timesToday = response.timesToday;
-    final currentIndex = timesToday.indexOf(currentTime);
+    final currentIndex = timesToday.indexOf(responseTime);
     final nextTime = (currentIndex >= 0 && currentIndex + 1 < timesToday.length)
         ? timesToday[currentIndex + 1]
         : null;
     final timeRange = nextTime != null
-        ? DateTimeHelper.formatTimeRange12(
-            DateTimeHelper.parseFlexibleDateTime(currentTime, response.date),
+        ? DateTimeHelper.formatTimeRange24(
+            DateTimeHelper.parseFlexibleDateTime(responseTime, response.date),
             DateTimeHelper.parseFlexibleDateTime(nextTime, response.date),
           )
-        : DateTimeHelper.formatTime12(
-            DateTimeHelper.parseFlexibleDateTime(currentTime, response.date),
+        : DateTimeHelper.formatTime24(
+            DateTimeHelper.parseFlexibleDateTime(responseTime, response.date),
           );
 
     return Container(
@@ -176,12 +180,12 @@ class NoTableCard extends StatelessWidget {
         ? timesToday[currentIndex + 2]
         : null;
     final nextTimeRange = (nextSlot != null && nextNextSlot != null)
-        ? DateTimeHelper.formatTimeRange12(
+        ? DateTimeHelper.formatTimeRange24(
             DateTimeHelper.parseFlexibleDateTime(nextSlot, date),
             DateTimeHelper.parseFlexibleDateTime(nextNextSlot, date),
           )
         : nextSlot != null
-        ? DateTimeHelper.formatTime12(
+        ? DateTimeHelper.formatTime24(
             DateTimeHelper.parseFlexibleDateTime(nextSlot, date),
           )
         : null;

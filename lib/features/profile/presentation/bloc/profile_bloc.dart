@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:test_wpa/features/profile/domain/repositories/profile_repository.dart';
 import 'package:test_wpa/features/profile/mapper/profile_mapper.dart';
 import 'package:test_wpa/features/profile/presentation/bloc/profile_event.dart';
@@ -74,9 +77,15 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       // โหลดข้อมูลใหม่จาก API
       final updatedProfile = await profileRepository.getProfile();
 
-      print('Profile reloaded successfully');
+      final storage = Modular.get<FlutterSecureStorage>();
+      final userDataStr = await storage.read(key: 'user_data');
+      if (userDataStr != null) {
+        final userData = jsonDecode(userDataStr) as Map<String, dynamic>;
+        userData['name'] = updatedProfile.toViewModel().name;
+        userData['title'] = updatedProfile.toViewModel().title;
+        await storage.write(key: 'user_data', value: jsonEncode(userData));
+      }
 
-      // Emit เฉพาะ ProfileLoaded state เดียว พร้อม success flag
       emit(ProfileLoaded(updatedProfile.toViewModel(), wasUpdated: true));
     } catch (e) {
       print(' Update profile error: $e');
@@ -92,29 +101,34 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   }
 
   Future<void> _onUpdateAvatar(
-  UpdateAvatar event,
-  Emitter<ProfileState> emit,
-) async {
-  if (state is! ProfileLoaded) return;
-  final currentProfile = (state as ProfileLoaded).profile;
-  final fileSize = await event.imageFile.length();
-  if (fileSize > 4 * 1024 * 1024) {
-    emit(ProfileLoaded(currentProfile, updateError: 'Image must be smaller than 4MB'));
-    return;
-  }
+    UpdateAvatar event,
+    Emitter<ProfileState> emit,
+  ) async {
+    if (state is! ProfileLoaded) return;
+    final currentProfile = (state as ProfileLoaded).profile;
+    final fileSize = await event.imageFile.length();
+    if (fileSize > 4 * 1024 * 1024) {
+      emit(
+        ProfileLoaded(
+          currentProfile,
+          updateError: 'Image must be smaller than 4MB',
+        ),
+      );
+      return;
+    }
 
-  try {
-    await profileApi.uploadAvatar(event.imageFile);
-    final updatedProfile = await profileRepository.getProfile();
-    
-    Modular.get<AuthBloc>().add(
-      AuthUpdateAvatar(updatedProfile.avatarUrl),
-    );
-    
-    emit(ProfileLoaded(updatedProfile.toViewModel(), wasUpdated: true));
-  } catch (e) {
-    print('Upload avatar error: $e');
-    emit(ProfileLoaded(currentProfile, updateError: 'Failed to upload avatar.'));
+    try {
+      await profileApi.uploadAvatar(event.imageFile);
+      final updatedProfile = await profileRepository.getProfile();
+
+      Modular.get<AuthBloc>().add(AuthUpdateAvatar(updatedProfile.avatarUrl));
+
+      emit(ProfileLoaded(updatedProfile.toViewModel(), wasUpdated: true));
+    } catch (e) {
+      print('Upload avatar error: $e');
+      emit(
+        ProfileLoaded(currentProfile, updateError: 'Failed to upload avatar.'),
+      );
+    }
   }
-}
 }

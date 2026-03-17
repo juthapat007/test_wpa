@@ -22,6 +22,7 @@ class TableGridWidget extends StatefulWidget {
   final Map<String, TimeSlotType> slotTypeMap;
   final List<Schedule> schedules;
   final int myDelegateId;
+  final DateTime? currentTime;
 
   const TableGridWidget({
     super.key,
@@ -31,6 +32,7 @@ class TableGridWidget extends StatefulWidget {
     this.slotTypeMap = const {},
     this.schedules = const [],
     required this.myDelegateId,
+    this.currentTime,
   });
 
   @override
@@ -70,6 +72,7 @@ class _TableGridWidgetState extends State<TableGridWidget> {
             slotTypeMap: widget.slotTypeMap,
             schedules: widget.schedules,
             onTimeSlotChanged: widget.onTimeSlotChanged,
+            currentTime: widget.currentTime,
           ),
           const SizedBox(height: 12),
           if (hasNoTables)
@@ -80,7 +83,11 @@ class _TableGridWidgetState extends State<TableGridWidget> {
           else ...[
             if (widget.currentSchedule?.type == 'event')
               BreakTimeBanner(title: widget.currentSchedule?.title),
-            if (!hasNoAssignment) MyTableBanner(response: widget.response),
+            if (!hasNoAssignment)
+              MyTableBanner(
+                response: widget.response,
+                currentTime: widget.currentTime,
+              ),
             if (hasNoAssignment) const NoAssignmentBanner(),
             const SizedBox(height: 12),
             _buildZoomableGrid(regularTables),
@@ -137,7 +144,10 @@ class _TableGridWidgetState extends State<TableGridWidget> {
         ((screenWidth - (padding * 2) - ((columns - 1) * spacing)) / columns)
             .clamp(40.0, 60.0);
 
-    Widget buildGrid({double? forceCellSize}) {
+    Widget buildGrid({
+      double? forceCellSize,
+      void Function(String)? onCellTap,
+    }) {
       final cs = forceCellSize ?? cellSize;
       return Container(
         width: (columns * cs) + ((columns - 1) * spacing) + (padding * 2),
@@ -180,6 +190,8 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                                     () => _selectedTableNumber =
                                         table.tableNumber,
                                   );
+                                  // ✅ เรียก callback เพิ่มเติมถ้ามี (ใช้ใน dialog)
+                                  onCellTap?.call(table.tableNumber);
                                   _showTableDetails(table, isMyTable);
                                 },
                               );
@@ -262,15 +274,66 @@ class _TableGridWidgetState extends State<TableGridWidget> {
     );
   }
 
-  void _openFullscreen(Widget Function({double? forceCellSize}) buildGrid) {
+  void _openFullscreen(
+    Widget Function({double? forceCellSize, void Function(String)? onCellTap})
+    buildGrid,
+  ) {
+    final transformController = TransformationController();
+
     showDialog(
       context: context,
       barrierColor: Colors.black87,
-      builder: (_) => _FullscreenGridDialog(
-        buildGrid: buildGrid,
-        transformController: TransformationController(),
+      builder: (_) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return Dialog.fullscreen(
+            backgroundColor: Colors.black87,
+            child: Stack(
+              children: [
+                InteractiveViewer(
+                  transformationController: transformController,
+                  minScale: 0.3,
+                  maxScale: 5.0,
+                  boundaryMargin: const EdgeInsets.all(80),
+                  constrained: false,
+                  child: buildGrid(
+                    // ✅ ตอนกด cell ใน dialog ให้ rebuild dialog ด้วย
+                    onCellTap: (tableNumber) {
+                      setDialogState(() {}); // trigger rebuild ใน dialog
+                    },
+                  ),
+                ),
+                Positioned(
+                  top: 40,
+                  right: 16,
+                  child: IconButton(
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white24,
+                    ),
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+                Positioned(
+                  top: 40,
+                  left: 16,
+                  child: IconButton(
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white24,
+                    ),
+                    icon: const Icon(
+                      Icons.center_focus_strong,
+                      color: Colors.white,
+                    ),
+                    onPressed: () =>
+                        transformController.value = Matrix4.identity(),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
-    );
+    ).then((_) => transformController.dispose());
   }
 
   // ─── Booth Card ───────────────────────────────────────────────────────────
@@ -332,13 +395,18 @@ class _TableGridWidgetState extends State<TableGridWidget> {
 
 // ─── Fullscreen Dialog ────────────────────────────────────────────────────────
 
+// 2. แก้ _FullscreenGridDialog — รับ selectedTableNumber และ callback
 class _FullscreenGridDialog extends StatefulWidget {
   final Widget Function({double? forceCellSize}) buildGrid;
   final TransformationController transformController;
+  final String? selectedTableNumber;
+  final ValueChanged<String>? onTableSelected;
 
   const _FullscreenGridDialog({
     required this.buildGrid,
     required this.transformController,
+    this.selectedTableNumber,
+    this.onTableSelected,
   });
 
   @override
@@ -346,6 +414,14 @@ class _FullscreenGridDialog extends StatefulWidget {
 }
 
 class _FullscreenGridDialogState extends State<_FullscreenGridDialog> {
+  late String? _selectedTableNumber;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTableNumber = widget.selectedTableNumber;
+  }
+
   @override
   void dispose() {
     widget.transformController.dispose();
