@@ -110,13 +110,6 @@ class ChatRepositoryImpl implements ChatRepository {
           lastActiveAt: lastMessageAt != null
               ? DateTime.parse(lastMessageAt).toLocal()
               : null,
-          isGroup: json['is_group'] ?? false,
-          groupName: json['group_name'],
-          participantIds: json['participant_ids'] != null
-              ? (json['participant_ids'] as List)
-                    .map<String>((e) => e.toString())
-                    .toList()
-              : [delegate['id'].toString()],
         );
       }).toList();
 
@@ -213,8 +206,6 @@ class ChatRepositoryImpl implements ChatRepository {
         participantId: participantId,
         participantName: data['title'] ?? '',
         unreadCount: 0,
-        isGroup: false,
-        participantIds: [participantId],
       );
     } catch (e) {
       throw Exception('Failed to create chat room: $e');

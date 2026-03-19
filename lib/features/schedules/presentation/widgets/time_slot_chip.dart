@@ -9,7 +9,7 @@ class TimeSlotHelper {
   static TimeSlotType resolveType(
     String timeLabel, {
     String? scheduleType,
-    bool isOnLeave = false, // ← เพิ่ม
+    bool isOnLeave = false,
   }) {
     if (isOnLeave) return TimeSlotType.leave;
     if (scheduleType != null) {

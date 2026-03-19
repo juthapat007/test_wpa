@@ -54,8 +54,9 @@ class TableSlotHeader extends StatelessWidget {
           Expanded(
             child: Text(
               '$dateText  |  $timeDisplay',
+              // '$timeDisplay',
               style: const TextStyle(
-                fontSize: 13,
+                fontSize: 14,
                 color: AppColors.textPrimary,
               ),
             ),

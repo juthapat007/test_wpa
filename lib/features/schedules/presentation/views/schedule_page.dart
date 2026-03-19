@@ -4,13 +4,10 @@ import 'package:flutter_modular/flutter_modular.dart';
 import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
 import 'package:test_wpa/features/meeting/presentation/bloc/table_bloc.dart';
-// import 'package:test_wpa/features/meeting/presentation/bloc/table_bloc.dart'
-//     hide ChangeDate;
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_state.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/timeline_row.dart';
-import 'package:test_wpa/features/schedules/presentation/widgets/states/empty_schedule_view.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/states/error_schedule_view.dart';
 import 'package:test_wpa/features/schedules/utils/schedule_card_helper.dart';
 import 'package:test_wpa/features/widgets/date_tab_bar.dart';
@@ -28,7 +25,6 @@ class _SchedulePageState extends State<SchedulePage> {
 
   bool _isSelectionMode = false;
   Set<int> _selectedScheduleIds = {};
-  String _selectedDateStr = '';
 
   @override
   void initState() {
@@ -36,35 +32,29 @@ class _SchedulePageState extends State<SchedulePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final bloc = ReadContext(context).read<ScheduleBloc>();
-      //ไม่โหลดซ้ำถ้า loaded แล้ว
       if (bloc.state is! ScheduleLoaded) {
         bloc.add(LoadSchedules());
       }
     });
   }
 
-  // ─── Date selection ──────────────────────────────────────────────────────────
+  // ─── Date selection ───────────────────────────────────────────────────────
 
   void _onDateSelected(String date) {
-    setState(() {
-      _selectedDateStr = date;
-      _selectedScheduleIds.clear();
-    });
+    setState(() => _selectedScheduleIds.clear());
     ReadContext(context).read<ScheduleBloc>().add(LoadSchedules(date: date));
     Modular.get<TableBloc>().add(LoadTableView(date: date));
   }
 
-  // ─── Retry ───────────────────────────────────────────────────────────────────
+  // ─── Retry ────────────────────────────────────────────────────────────────
 
   void _onRetry() {
-    ReadContext(context).read<ScheduleBloc>().add(
-      LoadSchedules(
-        date: _selectedDateStr.isNotEmpty ? _selectedDateStr : null,
-      ),
-    );
+    final state = ReadContext(context).read<ScheduleBloc>().state;
+    final date = state is ScheduleLoaded ? state.selectedDate : null;
+    ReadContext(context).read<ScheduleBloc>().add(LoadSchedules(date: date));
   }
 
-  // ─── Selection mode ──────────────────────────────────────────────────────────
+  // ─── Selection mode ───────────────────────────────────────────────────────
 
   void _toggleSelectionMode() {
     setState(() {
@@ -91,7 +81,7 @@ class _SchedulePageState extends State<SchedulePage> {
     });
   }
 
-  // ─── Proceed to attendance ───────────────────────────────────────────────────
+  // ─── Proceed to attendance ────────────────────────────────────────────────
 
   Future<void> _proceedToAttendanceStatus() async {
     if (_selectedScheduleIds.isEmpty) {
@@ -123,11 +113,14 @@ class _SchedulePageState extends State<SchedulePage> {
       _selectedScheduleIds.clear();
     });
 
-    ReadContext(context).read<ScheduleBloc>().add(
-      LoadSchedules(
-        date: _selectedDateStr.isNotEmpty ? _selectedDateStr : null,
-      ),
-    );
+    // reload วันที่ปัจจุบันจาก bloc state
+    final currentState = ReadContext(context).read<ScheduleBloc>().state;
+    final currentDate = currentState is ScheduleLoaded
+        ? currentState.selectedDate
+        : null;
+    ReadContext(
+      context,
+    ).read<ScheduleBloc>().add(LoadSchedules(date: currentDate));
 
     if (result == true) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -148,50 +141,40 @@ class _SchedulePageState extends State<SchedulePage> {
     }
   }
 
-  // ─── Build ───────────────────────────────────────────────────────────────────
+  // ─── Build ────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: color.AppColors.surface,
       floatingActionButton: _buildFAB(),
-      body: BlocListener<ScheduleBloc, ScheduleState>(
-        listenWhen: (_, curr) =>
-            curr is ScheduleLoaded && _selectedDateStr.isEmpty,
-        listener: (context, state) {
-          if (state is! ScheduleLoaded) return;
-          final response = state.scheduleResponse;
-          if (response.availableDates.isEmpty) return;
-        },
-        child: AppScaffold(
-          title: 'My Schedule',
-          currentIndex: 4,
-          backgroundColor: const Color(0xFFF9FAFB),
-          appBarStyle: AppBarStyle.elegant,
-          showBottomNavBar: true,
-          body: Stack(
-            children: [
-              // Timeline vertical line
-              Positioned(
-                left: _timelineOffset,
-                top: 0,
-                bottom: 0,
-                child: Container(width: 1, color: Colors.grey[200]),
-              ),
-              Column(
-                children: [
-                  _buildDateTabBar(),
-                  Expanded(child: _buildScheduleList()),
-                ],
-              ),
-            ],
-          ),
+      body: AppScaffold(
+        title: 'My Schedule',
+        currentIndex: 4,
+        backgroundColor: const Color(0xFFF9FAFB),
+        appBarStyle: AppBarStyle.elegant,
+        showBottomNavBar: true,
+        body: Stack(
+          children: [
+            Positioned(
+              left: _timelineOffset,
+              top: 0,
+              bottom: 0,
+              child: Container(width: 1, color: Colors.grey[200]),
+            ),
+            Column(
+              children: [
+                _buildDateTabBar(),
+                Expanded(child: _buildScheduleList()),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // ─── Sub-widgets ─────────────────────────────────────────────────────────────
+  // ─── Sub-widgets ──────────────────────────────────────────────────────────
 
   Widget _buildFAB() {
     return Column(
@@ -228,19 +211,18 @@ class _SchedulePageState extends State<SchedulePage> {
     );
   }
 
+  // ✅ มีแค่อันเดียว ใช้ state.selectedDate จาก bloc โดยตรง
   Widget _buildDateTabBar() {
     return BlocBuilder<ScheduleBloc, ScheduleState>(
-      buildWhen: (prev, curr) =>
-          curr is ScheduleLoaded && prev is! ScheduleLoaded,
       builder: (context, state) {
         if (state is! ScheduleLoaded) return const SizedBox(height: 16);
-
         final response = state.scheduleResponse;
+        if (response.availableDates.isEmpty) return const SizedBox(height: 16);
+
         return DateTabBar(
+          key: ValueKey(state.selectedDate),
           availableDates: response.availableDates,
-          selectedDate: _selectedDateStr.isNotEmpty
-              ? _selectedDateStr
-              : response.date,
+          selectedDate: state.selectedDate,
           onDateSelected: _onDateSelected,
         );
       },
@@ -258,8 +240,26 @@ class _SchedulePageState extends State<SchedulePage> {
 
         if (state is ScheduleLoaded) {
           final schedules = state.scheduleResponse.schedules;
-          if (schedules.isEmpty) return const EmptyScheduleView();
-
+          if (schedules.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.event_note_outlined, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'No events today',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Select another date from the tab above',
+                    style: TextStyle(fontSize: 13, color: Colors.grey),
+                  ),
+                ],
+              ),
+            );
+          }
           return ListView.separated(
             padding: EdgeInsets.only(left: 16, right: 16, bottom: height.m),
             itemCount: schedules.length,

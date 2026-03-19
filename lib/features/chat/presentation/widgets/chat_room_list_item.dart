@@ -87,28 +87,6 @@ class ChatRoomCard extends StatelessWidget {
             Expanded(
               child: Row(
                 children: [
-                  // badge "กลุ่ม" เล็กๆ
-                  if (room.isGroup) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        'Group',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                  ],
                   Expanded(
                     child: Text(
                       displayName,

@@ -212,6 +212,7 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           DateTabBar(
+            key: ValueKey(state.selectedDate),
             availableDates: state.availableDates,
             selectedDate: state.selectedDate,
             onDateSelected: (date) => ReadContext(context)

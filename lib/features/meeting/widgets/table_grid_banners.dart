@@ -183,7 +183,7 @@ class NoTableCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           const Text(
-            'Break Time',
+            'Break Time || No Meetings Available',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -269,6 +269,60 @@ class NoTableCard extends StatelessWidget {
               ],
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class NoAssignmentBanner extends StatelessWidget {
+  const NoAssignmentBanner({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.blue[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue[200]!),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.blue[100],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.event_seat_outlined,
+              size: 16,
+              color: Colors.blue[800],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'No table assigned',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.blue[900],
+                  ),
+                ),
+                Text(
+                  'You have no table assignment for this time slot',
+                  style: TextStyle(fontSize: 12, color: Colors.blue[700]),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

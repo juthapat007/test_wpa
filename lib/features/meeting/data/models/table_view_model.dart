@@ -39,12 +39,44 @@ class TableDelegateModel {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+class BoothOwnerModel {
+  final List<int> teamIds;
+  final List<String> companies;
+  final List<String> ownerTeams;
+
+  BoothOwnerModel({
+    required this.teamIds,
+    required this.companies,
+    required this.ownerTeams,
+  });
+
+  factory BoothOwnerModel.fromJson(Map<String, dynamic> json) {
+    return BoothOwnerModel(
+      teamIds: (json['team_ids'] as List?)?.map((e) => e as int).toList() ?? [],
+      companies:
+          (json['companies'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      ownerTeams:
+          (json['owner_teams'] as List?)?.map((e) => e.toString()).toList() ??
+          [],
+    );
+  }
+
+  BoothOwner toEntity() => BoothOwner(
+    teamIds: teamIds,
+    companies: companies,
+    ownerTeams: ownerTeams,
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 class TableInfoModel {
   final int tableId;
   final String tableNumber;
   final List<TableDelegateModel> delegates;
   final List<String> nearTables;
   final List<TableMeetingModel> meetings;
+  final BoothOwnerModel? boothOwner;
 
   TableInfoModel({
     required this.tableId,
@@ -52,6 +84,7 @@ class TableInfoModel {
     required this.delegates,
     this.nearTables = const [],
     required this.meetings,
+    this.boothOwner,
   });
 
   factory TableInfoModel.fromJson(Map<String, dynamic> json) {
@@ -77,6 +110,11 @@ class TableInfoModel {
               )
               .toList() ??
           [],
+      boothOwner: json['booth_owner'] != null
+          ? BoothOwnerModel.fromJson(
+              json['booth_owner'] as Map<String, dynamic>,
+            )
+          : null,
     );
   }
 
@@ -87,6 +125,7 @@ class TableInfoModel {
       delegates: delegates.map((d) => d.toEntity()).toList(),
       nearTables: nearTables,
       meetings: meetings.map((m) => m.toEntity()).toList(),
+      boothOwner: boothOwner?.toEntity(),
     );
   }
 }
@@ -297,6 +336,11 @@ class TableMeetingModel {
   final DateTime endAt;
   final MeetingSideAModel sideA;
   final MeetingSideBModel sideB;
+  final String? meetingRole;
+  final bool bookerIsOwner;
+  final bool targetIsOwner;
+  final String? ownerCompany;
+  final String? guestCompany;
 
   TableMeetingModel({
     required this.scheduleId,
@@ -304,6 +348,11 @@ class TableMeetingModel {
     required this.endAt,
     required this.sideA,
     required this.sideB,
+    this.meetingRole,
+    this.bookerIsOwner = false,
+    this.targetIsOwner = false,
+    this.ownerCompany,
+    this.guestCompany,
   });
 
   factory TableMeetingModel.fromJson(Map<String, dynamic> json) {
@@ -330,7 +379,25 @@ class TableMeetingModel {
       sideB: targetTeam != null
           ? MeetingSideBModel.fromJson(targetTeam)
           : MeetingSideBModel.empty(),
+      meetingRole: json['meeting_role'] as String?,
+      bookerIsOwner: json['booker_is_owner'] as bool? ?? false,
+      targetIsOwner: json['target_is_owner'] as bool? ?? false,
+      ownerCompany: json['owner_company'] as String?,
+      guestCompany: json['guest_company'] as String?,
     );
+  }
+
+  MeetingRole _parseRole() {
+    switch (meetingRole) {
+      case 'owner_hosting':
+        return MeetingRole.ownerHosting;
+      case 'owner_as_target':
+        return MeetingRole.ownerAsTarget;
+      case 'owner_internal':
+        return MeetingRole.ownerInternal;
+      default:
+        return MeetingRole.normal;
+    }
   }
 
   TableMeeting toEntity() => TableMeeting(
@@ -339,5 +406,10 @@ class TableMeetingModel {
     endAt: endAt,
     sideA: sideA.toEntity(),
     sideB: sideB.toEntity(),
+    meetingRole: _parseRole(),
+    bookerIsOwner: bookerIsOwner,
+    targetIsOwner: targetIsOwner,
+    ownerCompany: ownerCompany,
+    guestCompany: guestCompany,
   );
 }

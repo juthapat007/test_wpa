@@ -29,7 +29,7 @@ class ScheduleOthersRepositoryImpl implements ScheduleOthersRepository {
 
       return ScheduleOthersResponse(
         availableDates: availableDates,
-        selectedDate: selectedDate,
+        selectedDate: (json['selected_date'] as String?) ?? '', 
         schedules: schedules,
       );
     } catch (e) {

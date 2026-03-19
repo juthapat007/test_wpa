@@ -14,7 +14,6 @@ import 'package:test_wpa/features/schedules/domain/entities/schedule.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_bloc.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_event.dart';
 import 'package:test_wpa/features/schedules/presentation/bloc/schedules_state.dart';
-import 'package:test_wpa/features/schedules/presentation/widgets/date_header.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/schedule_status.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/time_slot_chip.dart';
 import 'package:test_wpa/features/schedules/utils/schedule_card_helper.dart';
@@ -40,11 +39,50 @@ class _MeetingWidgetState extends State<MeetingWidget> {
   bool _userSelectedTime = false;
   List<String> _tableDays = [];
   String? _delegateId;
-  bool _tableInitialized = false; //guard init ครั้งเดียว
+  bool _tableInitialized = false;
+
+  // ─── Helpers ────────────────────────────────────────────────────────────
+
   String _nowHHmm() {
     final now = DateTime.now();
     return '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
   }
+
+  // ✅ อยู่ใน class level — เรียกได้จากทุกที่
+  String _nearestSlotTime(List<String> timesToday) {
+    if (timesToday.isEmpty) return _nowHHmm();
+
+    final now = DateTime.now();
+    final nowMinutes = now.hour * 60 + now.minute;
+
+    String? bestSlot;
+    int bestDiff = 99999;
+
+    for (final t in timesToday) {
+      try {
+        final parsed = DateTime.parse(t).toLocal();
+        final slotMinutes = parsed.hour * 60 + parsed.minute;
+        final diff = nowMinutes - slotMinutes;
+
+        // เอา slot ที่ผ่านมาแล้ว (diff >= 0) และใกล้ที่สุด
+        if (diff >= 0 && diff < bestDiff) {
+          bestDiff = diff;
+          bestSlot = t;
+        }
+      } catch (_) {}
+    }
+
+    // ถ้าไม่มี slot ที่ผ่านมาเลย ให้ใช้ slot แรก
+    if (bestSlot == null && timesToday.isNotEmpty) {
+      bestSlot = timesToday.first;
+    }
+
+    if (bestSlot == null) return _nowHHmm();
+
+    final parsed = DateTime.parse(bestSlot).toLocal();
+    return '${parsed.hour.toString().padLeft(2, '0')}:${parsed.minute.toString().padLeft(2, '0')}';
+  }
+
   // ─── Lifecycle ──────────────────────────────────────────────────────────
 
   @override
@@ -82,7 +120,14 @@ class _MeetingWidgetState extends State<MeetingWidget> {
       _userSelectedTime = false;
     });
     ReadContext(context).read<ScheduleBloc>().add(LoadSchedules(date: date));
-    Modular.get<TableBloc>().add(LoadTableView(date: date, time: _nowHHmm()));
+
+    final tableState = Modular.get<TableBloc>().state;
+    final timesToday = tableState is TableLoaded
+        ? tableState.response.timesToday
+        : <String>[];
+    final snappedTime = _nearestSlotTime(timesToday);
+
+    Modular.get<TableBloc>().add(LoadTableView(date: date, time: snappedTime));
   }
 
   void _onScheduleTap(Schedule schedule) {
@@ -98,10 +143,8 @@ class _MeetingWidgetState extends State<MeetingWidget> {
   }
 
   void _onFirstScheduleLoaded(scheduleResponse) {
-    final today = DateTimeHelper.formatApiDate(DateTime.now());
     final dates = scheduleResponse.availableDates;
     if (dates.isEmpty) return;
-
     Modular.get<TableBloc>().add(LoadTableView(time: _nowHHmm()));
   }
 
@@ -186,15 +229,29 @@ class _MeetingWidgetState extends State<MeetingWidget> {
           if (scheduleState is ScheduleError) {
             return Center(child: Text(scheduleState.message));
           }
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                // const DateHeader(),
-                _buildDateTabBar(scheduleState),
-                _buildTableGridSection(scheduleState),
-                _buildScheduleSection(scheduleState),
-              ],
-            ),
+
+          return BlocBuilder<TableBloc, TableState>(
+            builder: (context, tableState) {
+              final hasNoData =
+                  tableState is TableLoaded &&
+                  tableState.response.tables.isEmpty &&
+                  tableState.response.myTable.isEmpty &&
+                  tableState.response.timesToday.isEmpty;
+
+              if (hasNoData) {
+                return Center(child: _buildNoDataView());
+              }
+
+              return SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _buildDateTabBar(scheduleState),
+                    _buildTableGridSection(scheduleState),
+                    _buildScheduleSection(scheduleState),
+                  ],
+                ),
+              );
+            },
           );
         },
       ),
@@ -206,11 +263,15 @@ class _MeetingWidgetState extends State<MeetingWidget> {
   Widget _buildDateTabBar(ScheduleState scheduleState) {
     if (scheduleState is! ScheduleLoaded) return const SizedBox(height: 16);
     if (_tableDays.isEmpty) return const SizedBox(height: 16);
+
+    final selected = _tableDays.contains(_selectedDateStr)
+        ? _selectedDateStr
+        : _tableDays.first;
+
     return DateTabBar(
+      key: ValueKey(selected),
       availableDates: _tableDays,
-      selectedDate: _selectedDateStr.isNotEmpty
-          ? _selectedDateStr
-          : _tableDays.first,
+      selectedDate: selected,
       onDateSelected: _onDateSelected,
     );
   }
@@ -218,7 +279,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
   Widget _buildScheduleSection(ScheduleState scheduleState) {
     if (scheduleState is! ScheduleLoaded) return const SizedBox.shrink();
     final schedules = scheduleState.scheduleResponse.schedules;
-    if (schedules.isEmpty) return _buildNoDataView();
+    if (schedules.isEmpty) return const SizedBox.shrink();
     final statuses = _getSchedulesWithStatus(schedules);
     final current = _findByStatus(statuses, ScheduleStatus.now);
     final next = _findByStatus(statuses, ScheduleStatus.next);
@@ -236,14 +297,25 @@ class _MeetingWidgetState extends State<MeetingWidget> {
 
         if (!_tableInitialized) {
           _tableInitialized = true;
+          final days = tableState.response.days;
+          final firstAvailableDate = days.isNotEmpty
+              ? days.first
+              : responseDate;
+          final timesToday = tableState.response.timesToday;
+          final snappedTime = _nearestSlotTime(timesToday); // ✅ เรียกได้แล้ว
+
           setState(() {
-            _tableDays = tableState.response.days;
-            _selectedDateStr = responseDate;
+            _tableDays = days;
+            _selectedDateStr = firstAvailableDate;
           });
-          // load schedule ให้ตรงกับวันที่ backend return
+
           ReadContext(
             context,
-          ).read<ScheduleBloc>().add(LoadSchedules(date: responseDate));
+          ).read<ScheduleBloc>().add(LoadSchedules(date: firstAvailableDate));
+
+          Modular.get<TableBloc>().add(
+            LoadTableView(date: firstAvailableDate, time: snappedTime),
+          );
           return;
         }
 
@@ -314,9 +386,6 @@ class _MeetingWidgetState extends State<MeetingWidget> {
               schedules: schedules,
               currentTime: _currentTime,
               onTimeSlotChanged: (time) {
-                print(
-                  'onTimeSlotChanged: time=$time date=${tableState.response.date}',
-                );
                 _userSelectedTime = true;
                 Modular.get<TableBloc>().add(
                   ChangeTimeSlot(time, date: tableState.response.date),
@@ -326,7 +395,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
           }
           if (tableState is TableError)
             return _ErrorBox(message: tableState.message);
-          return _buildNoDataView();
+          return const SizedBox.shrink();
         },
       ),
     );
@@ -364,10 +433,8 @@ class _MeetingWidgetState extends State<MeetingWidget> {
             const SizedBox(height: 20),
             AddButtonOutline(
               onPressed: () {
-                final s = ReadContext(context).read<ScheduleBloc>().state;
-                if (s is ScheduleLoaded &&
-                    s.scheduleResponse.availableDates.isNotEmpty) {
-                  _onDateSelected(s.scheduleResponse.availableDates.first);
+                if (_tableDays.isNotEmpty) {
+                  _onDateSelected(_tableDays.first);
                 }
               },
               icon: Icons.chevron_left,
@@ -417,6 +484,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
     if (mounted) setState(() => _delegateId = id);
   }
 }
+
 // ─── Private helper widgets ───────────────────────────────────────────────────
 
 class _LoadingBox extends StatelessWidget {

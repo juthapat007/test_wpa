@@ -39,7 +39,6 @@ class ChatRoomListView extends StatelessWidget {
           return _RoomList(rooms: state.rooms);
         }
 
-        // เพิ่มตรงนี้
         if (state is ConversationDeleted) {
           return _RoomList(rooms: state.rooms);
         }

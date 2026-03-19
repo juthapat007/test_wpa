@@ -89,7 +89,8 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                 response: widget.response,
                 currentTime: widget.currentTime,
               ),
-            if (hasNoAssignment) const BreakTimeBanner(),
+            if (hasNoAssignment) const NoAssignmentBanner(),
+
             const SizedBox(height: 12),
             _buildZoomableGrid(regularTables),
             const SizedBox(height: 12),
@@ -191,7 +192,6 @@ class _TableGridWidgetState extends State<TableGridWidget> {
                                     () => _selectedTableNumber =
                                         table.tableNumber,
                                   );
-                                  // ✅ เรียก callback เพิ่มเติมถ้ามี (ใช้ใน dialog)
                                   onCellTap?.call(table.tableNumber);
                                   _showTableDetails(table, isMyTable);
                                 },
@@ -338,32 +338,148 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   }
 
   // ─── Booth Card ───────────────────────────────────────────────────────────
+  // ─── แทนที่ _buildBoothCard เดิมทั้งหมดด้วยอันนี้ ───────────────────────────
 
   Widget _buildBoothCard(TableInfo booth) {
+    final owner = booth.boothOwner;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.purple[50],
-            borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () =>
+            _showTableDetails(booth, false, sectionTitle: booth.tableNumber),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ─── Header row ──────────────────────────────────────────────
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.purple[50],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.store,
+                      color: Colors.purple,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          booth.tableNumber,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                        if (owner != null)
+                          Text(
+                            'Owned by: ${owner.displayName}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.purple[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  // Meeting count badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.purple[50],
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.purple[200]!),
+                    ),
+                    child: Text(
+                      '${booth.meetings.length} meetings',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.purple[700],
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              // ─── Meeting role summary ─────────────────────────────────────
+              if (booth.meetings.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                const Divider(height: 1),
+                const SizedBox(height: 8),
+                ...booth.meetings.map((m) => _buildBoothMeetingRow(m)),
+              ],
+            ],
           ),
-          child: const Icon(Icons.store, color: Colors.purple),
         ),
-        title: Text(
-          booth.tableNumber,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(
-          booth.isOccupied ? '${booth.delegates.length} delegate(s)' : 'Empty',
-        ),
-        trailing: Icon(
-          booth.isOccupied ? Icons.people : Icons.event_available,
-          color: booth.isOccupied ? AppColors.success : AppColors.textSecondary,
-        ),
-        onTap: () => _showTableDetails(booth, false, sectionTitle: 'Booths'),
+      ),
+    );
+  }
+
+  Widget _buildBoothMeetingRow(TableMeeting meeting) {
+    final isHosting = meeting.meetingRole == MeetingRole.ownerHosting;
+    final isReceiving = meeting.meetingRole == MeetingRole.ownerAsTarget;
+
+    final Color roleColor = isHosting
+        ? Colors.green
+        : isReceiving
+        ? Colors.blue
+        : Colors.grey;
+
+    final String roleLabel = isHosting
+        ? 'Hosting'
+        : isReceiving
+        ? 'Visitor'
+        : 'Meeting';
+
+    final String guestName = isHosting
+        ? meeting.sideB.company
+        : meeting.sideA.company;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: roleColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: roleColor.withValues(alpha: 0.3)),
+            ),
+            child: Text(
+              roleLabel,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: roleColor,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              isHosting
+                  ? '${meeting.sideA.name} → ${meeting.sideB.company}'
+                  : '${meeting.sideA.name} (${meeting.guestCompany ?? meeting.sideA.company})',
+              style: const TextStyle(fontSize: 12),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }
