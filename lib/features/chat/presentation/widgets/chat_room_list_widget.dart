@@ -43,8 +43,6 @@ class _ChatRoomListWidgetState extends State<ChatRoomListWidget>
   Widget build(BuildContext context) {
     return BlocListener<ChatBloc, ChatState>(
       listenWhen: (prev, curr) {
-        // navigate เฉพาะตอนที่ prev ไม่ใช่ room state เลย
-        // ป้องกัน push ซ้ำตอนอยู่ในห้องแล้ว
         final wasInRoom =
             prev is ChatRoomSelected ||
             prev is MessageSending ||
@@ -56,7 +54,9 @@ class _ChatRoomListWidgetState extends State<ChatRoomListWidget>
       },
       listener: (context, state) {
         if (state is ChatRoomSelected) {
-          Modular.to.pushNamed('/chat/room');
+          if (ModalRoute.of(context)?.isCurrent == true) {
+            Modular.to.pushNamed('/chat/room');
+          }
         }
       },
       child: AppScaffold(

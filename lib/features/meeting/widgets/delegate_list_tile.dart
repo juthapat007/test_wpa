@@ -48,19 +48,25 @@ class DelegateListTile extends StatelessWidget {
         delegate.delegateName,
         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
       ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (delegate.title?.isNotEmpty ?? false)
-            Text(delegate.title!, style: const TextStyle(fontSize: 12)),
-          Text(
-            delegate.company,
-            style: const TextStyle(
-              fontSize: 12,
-              color: color.AppColors.textSecondary,
+      subtitle: Container(
+        decoration: BoxDecoration(
+          color: color.AppColors.primary.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (delegate.title?.isNotEmpty ?? false)
+              Text(delegate.title!, style: const TextStyle(fontSize: 12)),
+            Text(
+              delegate.company,
+              style: const TextStyle(
+                fontSize: 12,
+                color: color.AppColors.textSecondary,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       trailing: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -69,7 +75,7 @@ class DelegateListTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
-          'Table ${tableNumber}',
+          ' ${tableNumber}',
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.bold,

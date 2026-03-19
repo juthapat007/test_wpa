@@ -24,7 +24,7 @@ class SchedulePage extends StatefulWidget {
 }
 
 class _SchedulePageState extends State<SchedulePage> {
-  static const double _timelineOffset = 38.0;
+  static const double _timelineOffset = 25.0;
 
   bool _isSelectionMode = false;
   Set<int> _selectedScheduleIds = {};

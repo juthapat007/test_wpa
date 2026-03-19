@@ -81,7 +81,7 @@ class TableCellWidget extends StatelessWidget {
   ) {
     if (isOnLeave) {
       return _TableCellColors(
-        background: AppColors.error.withValues(alpha: 0.08),
+        background: AppColors.error.withValues(alpha: 0.15),
         border: AppColors.error,
         text: AppColors.error,
       );

@@ -28,7 +28,7 @@ class OtherProfilePage extends StatefulWidget {
 
 class _OtherProfilePageState extends State<OtherProfilePage> {
   ProfileDetailLoaded? _lastLoaded;
-  static const double timelineOffset = 20.0;
+  static const double timelineOffset = 15.0;
 
   @override
   Widget build(BuildContext context) {
@@ -119,13 +119,23 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
   }
 
   bool _isNavigatingToChat = false;
+
   void _onChatStateChanged(BuildContext context, ChatState state) {
     if (state is ChatRoomSelected && !_isNavigatingToChat) {
       _isNavigatingToChat = true;
-      Modular.to.pushNamed('/chat/room').then((_) {
-        if (mounted) _isNavigatingToChat = false;
-      });
+      final isAlreadyInRoom =
+          state.room.participantId == widget.delegateId.toString();
+
+      if (isAlreadyInRoom) {
+        Navigator.of(context).pop();
+        _isNavigatingToChat = false;
+      } else {
+        Modular.to.pushNamed('/chat/room').then((_) {
+          if (mounted) _isNavigatingToChat = false;
+        });
+      }
     } else if (state is ChatError) {
+      _isNavigatingToChat = false;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(state.message), backgroundColor: Colors.red),
       );

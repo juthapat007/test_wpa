@@ -24,11 +24,6 @@ class TimelineRow extends StatelessWidget {
     return DateTimeHelper.formatTime24(dateTime);
   }
 
-  //เอามาบอกว่าเช้า บ่าย เย็น อะไรแบบนี้ — เอาไว้แสดงใต้เวลาตรงข้างบนอีกที
-  String _formatPeriod(DateTime dateTime) {
-    return DateFormat('a').format(dateTime).toUpperCase();
-  }
-
   @override
   Widget build(BuildContext context) {
     final timeToDisplay = schedule?.startAt ?? DateTime.now();
@@ -47,7 +42,7 @@ class TimelineRow extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey,
+                  color: color.AppColors.textSecondary,
                   height: 1,
                 ),
               ),

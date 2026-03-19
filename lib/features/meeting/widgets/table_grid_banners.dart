@@ -114,46 +114,6 @@ class MyTableBanner extends StatelessWidget {
   }
 }
 
-// ─── No Assignment Banner ─────────────────────────────────────────────────────
-
-class NoAssignmentBanner extends StatelessWidget {
-  const NoAssignmentBanner({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: AppColors.warning.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(Icons.info_outline, size: 15, color: AppColors.warning),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            'No table assigned for this time slot',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: AppColors.warning.withAlpha(220),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 // ─── No Table Card ────────────────────────────────────────────────────────────
 
 class NoTableCard extends StatelessWidget {
@@ -223,7 +183,7 @@ class NoTableCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           const Text(
-            'Free Time',
+            'Break Time',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -350,7 +310,7 @@ class BreakTimeBanner extends StatelessWidget {
             child: Text(
               title != null && title!.isNotEmpty
                   ? 'This slot is: $title — no table assigned'
-                  : 'This slot is a break — no table assigned',
+                  : 'Available slot — no table booked',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,

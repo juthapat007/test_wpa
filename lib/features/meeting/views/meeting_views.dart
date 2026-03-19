@@ -87,6 +87,8 @@ class _MeetingWidgetState extends State<MeetingWidget> {
 
   void _onScheduleTap(Schedule schedule) {
     if (!_isSelectableSchedule(schedule)) return;
+    if (schedule.type == 'event') return;
+
     Modular.get<TableBloc>().add(
       LoadTableView(
         date: DateTimeHelper.formatApiDate(schedule.startAt),

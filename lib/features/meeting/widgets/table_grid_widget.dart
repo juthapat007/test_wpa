@@ -75,20 +75,21 @@ class _TableGridWidgetState extends State<TableGridWidget> {
             currentTime: widget.currentTime,
           ),
           const SizedBox(height: 12),
-          if (hasNoTables)
+          if (widget.currentSchedule?.type == 'event' ||
+              widget.currentSchedule?.type == 'nomeeting') ...[
+            BreakTimeBanner(title: widget.currentSchedule?.title),
+          ] else if (hasNoTables) ...[
             NoTableCard(
               response: widget.response,
               onTimeSlotChanged: widget.onTimeSlotChanged,
-            )
-          else ...[
-            if (widget.currentSchedule?.type == 'event')
-              BreakTimeBanner(title: widget.currentSchedule?.title),
+            ),
+          ] else ...[
             if (!hasNoAssignment)
               MyTableBanner(
                 response: widget.response,
                 currentTime: widget.currentTime,
               ),
-            if (hasNoAssignment) const NoAssignmentBanner(),
+            if (hasNoAssignment) const BreakTimeBanner(),
             const SizedBox(height: 12),
             _buildZoomableGrid(regularTables),
             const SizedBox(height: 12),
