@@ -45,10 +45,14 @@ class NotificationItemModel {
 class NotificationNotifiableModel {
   final String type;
   final int id;
-  final NotificationSenderModel? sender; // requester (คนส่ง request)
-  final NotificationSenderModel? target; // target (คนรับ)
+  final NotificationSenderModel? sender;
+  final NotificationSenderModel? target;
   final String? content;
   final String? status;
+
+  // ── ใหม่: ใบลา ───────────────────────────────────────────────────────────
+  final NotificationSenderModel? reporter;
+  final int? scheduleId;
 
   NotificationNotifiableModel({
     required this.type,
@@ -57,6 +61,8 @@ class NotificationNotifiableModel {
     this.target,
     this.content,
     this.status,
+    this.reporter,
+    this.scheduleId,
   });
 
   factory NotificationNotifiableModel.fromJson(Map<String, dynamic> json) {
@@ -74,6 +80,11 @@ class NotificationNotifiableModel {
           : null,
       content: json['content'],
       status: json['status'],
+      // ── ใหม่: parse reporter & schedule_id ────────────────────────────────
+      reporter: json['reporter'] != null
+          ? NotificationSenderModel.fromJson(json['reporter'])
+          : null,
+      scheduleId: json['schedule_id'] as int?,
     );
   }
 
@@ -85,6 +96,8 @@ class NotificationNotifiableModel {
       status: status,
       requester: sender?.toEntity(),
       target: target?.toEntity(),
+      reporter: reporter?.toEntity(), // ← ใหม่
+      scheduleId: scheduleId, // ← ใหม่
     );
   }
 }

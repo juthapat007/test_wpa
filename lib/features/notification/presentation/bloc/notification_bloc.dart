@@ -34,6 +34,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
         case WsEventType.friendRequest:
         case WsEventType.requestAccepted:
         case WsEventType.requestRejected:
+        case WsEventType.leaveReported: // ← ใหม่: reload + badge
           add(WsNotificationReceived(event));
         case WsEventType.unknown:
           break;
@@ -49,9 +50,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   ) async {
     try {
       final notifications = await notificationRepository.getNotifications();
-      final systemUnread = notifications
-          .where((n) => n.isUnread && !_excludeFromBadge.contains(n.type))
-          .length;
+      final systemUnread = _countSystemUnread(notifications);
       emit(
         NotificationLoaded(
           notifications: notifications,
@@ -61,12 +60,19 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     } catch (_) {}
   }
 
+  // type ที่ไม่นับเข้า badge ของหน้า Event Plan
+  // หมายเหตุ: leave_reported "นับ" badge ด้วย จึงไม่อยู่ใน set นี้
   static const _excludeFromBadge = {
     'connection_request',
     'connection_accepted',
     'connection_rejected',
     'new_message',
   };
+
+  int _countSystemUnread(List<NotificationItem> notifications) => notifications
+      .where((n) => n.isUnread && !_excludeFromBadge.contains(n.type))
+      .length;
+
   Future<void> _onLoadNotifications(
     LoadNotifications event,
     Emitter<NotificationState> emit,
@@ -74,15 +80,10 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     emit(NotificationLoading());
     try {
       final notifications = await notificationRepository.getNotifications();
-
-      final systemUnread = notifications
-          .where((n) => n.isUnread && !_excludeFromBadge.contains(n.type))
-          .length;
-
       emit(
         NotificationLoaded(
           notifications: notifications,
-          unreadCount: systemUnread,
+          unreadCount: _countSystemUnread(notifications),
         ),
       );
     } catch (e) {
@@ -117,14 +118,10 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     try {
       await notificationRepository.markAllAsRead(type: event.type);
       final notifications = await notificationRepository.getNotifications();
-      final systemUnread = notifications
-          .where((n) => n.isUnread && !_excludeFromBadge.contains(n.type))
-          .length;
-
       emit(
         NotificationLoaded(
           notifications: notifications,
-          unreadCount: systemUnread,
+          unreadCount: _countSystemUnread(notifications),
         ),
       );
     } catch (e) {
@@ -152,12 +149,11 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
           );
         }).toList();
 
-        final freshCount = updated
-            .where((n) => n.isUnread && !_excludeFromBadge.contains(n.type))
-            .length;
-
         emit(
-          NotificationLoaded(notifications: updated, unreadCount: freshCount),
+          NotificationLoaded(
+            notifications: updated,
+            unreadCount: _countSystemUnread(updated),
+          ),
         );
       }
     } catch (e) {

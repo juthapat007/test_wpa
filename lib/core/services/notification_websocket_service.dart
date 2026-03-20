@@ -8,6 +8,7 @@ enum WsEventType {
   friendRequest, // connection_request ใหม่
   requestAccepted, // คนอื่น accept request เรา
   requestRejected, // คนอื่น reject request เรา
+  leaveReported, // มีการยื่นใบลา ← ใหม่
 
   unknown,
 }
@@ -53,8 +54,11 @@ class NotificationWebSocketService {
         _emit(WsEventType.requestRejected, message);
         _emit(WsEventType.notificationBadge, message);
 
+      case 'leave_reported':
+        _emit(WsEventType.leaveReported, message);
+        _emit(WsEventType.notificationBadge, message);
+
       default:
-        // schedule_reminder, announcement, etc.
         _emit(WsEventType.notificationBadge, message);
     }
   }
@@ -62,7 +66,7 @@ class NotificationWebSocketService {
   // ─── Helpers ────────────────────────────────────────────────────────────────
 
   String _extractNotifType(Map<String, dynamic> message) {
-    // รูปแบบ: { type: "new_notification", notification: { type: "connection_request" } }
+    // รูปแบบ: { type: "new_notification", notification: { type: "leave_reported" } }
     final notification = message['notification'];
     if (notification is Map<String, dynamic>) {
       return notification['type'] as String? ?? '';
@@ -82,4 +86,4 @@ class NotificationWebSocketService {
     _eventController.close();
   }
 }
-///การแจ้งเตือนเแบบ real time
+/// การแจ้งเตือนแบบ real-time

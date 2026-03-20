@@ -33,7 +33,6 @@ class ChatRoom {
           ? DateTime.parse(json['last_active_at'])
           : null,
 
-      // ── field ใหม่ ──────────────────────────────────
     );
   }
 
@@ -56,10 +55,6 @@ class ChatRoom {
     int? unreadCount,
     DateTime? lastActiveAt,
 
-    // ── field ใหม่ ──────────────────────────────────
-    bool? isGroup,
-    String? groupName,
-    List<String>? participantIds,
   }) {
     return ChatRoom(
       id: id ?? this.id,

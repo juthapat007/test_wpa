@@ -1,6 +1,7 @@
 class NotificationItem {
   final int id;
-  final String type; // "new_message", "new_connection", "schedule_reminder"
+  final String
+  type; // "new_message", "new_connection", "schedule_reminder", "leave_reported"
   final DateTime? readAt;
   final DateTime createdAt;
   final bool isUnread;
@@ -23,6 +24,10 @@ class NotificationItem {
         return 'New Connection';
       case 'schedule_reminder':
         return 'Schedule Reminder';
+      case 'leave_reported':
+        return 'Leave Request';
+      case 'admin_announce':
+        return 'Announcement';
       default:
         return 'Notification';
     }
@@ -30,13 +35,17 @@ class NotificationItem {
 }
 
 class NotificationNotifiable {
-  final String type; // "message", "connection", "schedule"
+  final String type;
   final int id;
-  final String? status; 
-  final NotificationSender? requester; 
-  final NotificationSender? target; 
-
+  final String? status;
+  final NotificationSender? requester;
+  final NotificationSender? target;
   final String? content;
+
+  final NotificationSender? reporter;
+
+  /// schedule ที่เกี่ยวข้อง (จาก notifiable.schedule_id)
+  final int? scheduleId;
 
   NotificationNotifiable({
     required this.type,
@@ -45,6 +54,8 @@ class NotificationNotifiable {
     this.status,
     this.requester,
     this.target,
+    this.reporter,
+    this.scheduleId,
   });
 }
 

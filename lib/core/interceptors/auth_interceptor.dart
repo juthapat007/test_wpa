@@ -26,19 +26,46 @@ class AuthInterceptor extends Interceptor {
   }
 
   @override
+  // Future<void> onError(
+  //   DioException err,
+  //   ErrorInterceptorHandler handler,
+  // ) async {
+  //   if (err.response?.statusCode == 401 && !_isRedirecting) {
+  //     _isRedirecting = true;
+  //     final storage = Modular.get<FlutterSecureStorage>();
+  //     await storage.delete(key: 'auth_token');
+  //     await storage.delete(key: 'user_data');
+  //     await storage.delete(key: 'delegate_id');
+  //     Modular.to.navigate('/login');
+  //     Future.delayed(const Duration(seconds: 1), () {
+  //       _isRedirecting = false;
+  //     });
+  //   }
+  //   handler.next(err);
+  // }
+  @override
   Future<void> onError(
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
-    if (err.response?.statusCode == 401 && !_isRedirecting) {
+    final status = err.response?.statusCode;
+
+    final is401 = status == 401;
+
+    final isSslError =
+        err.type == DioExceptionType.unknown &&
+        err.error.toString().contains('CERTIFICATE_VERIFY_FAILED');
+
+    if ((is401 || isSslError) && !_isRedirecting) {
       _isRedirecting = true;
 
       final storage = Modular.get<FlutterSecureStorage>();
       await storage.delete(key: 'auth_token');
+      await storage.delete(key: 'user_data');
+      await storage.delete(key: 'delegate_id');
 
       Modular.to.navigate('/login');
 
-      // Reset flag หลัง navigate เสร็จ
       Future.delayed(const Duration(seconds: 1), () {
         _isRedirecting = false;
       });
