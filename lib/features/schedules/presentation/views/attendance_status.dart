@@ -58,7 +58,7 @@ class _AttendanceStatusState extends State<AttendanceStatus> {
 
   void _onStateChanged(BuildContext context, ScheduleState state) {
     if (state is LeaveTypesLoaded) {
-      setState(() => _leaveTypes = state.leaveTypes); 
+      setState(() => _leaveTypes = state.leaveTypes);
     } else if (state is LeaveTypesError) {
       _showSnackBar(state.message, Colors.red);
     } else if (state is LeaveFormsSubmitted) {
@@ -91,6 +91,7 @@ class _AttendanceStatusState extends State<AttendanceStatus> {
         final isSubmitting = state is LeaveFormsSubmitting;
 
         return Scaffold(
+          resizeToAvoidBottomInset: false,
           appBar: const AppBarBack(title: 'Attendance Status'),
           bottomNavigationBar: BottomActionBar(
             onCancel: () => Navigator.pop(context),

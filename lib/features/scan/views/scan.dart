@@ -80,12 +80,13 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
     _animationController.dispose();
     super.dispose();
   }
-  //ถ้าwidget ถูก destroy แต่ controller ยังอยู่มันจะยังrender frame ต่อทำให้ memory leak ค่ะ
+  //ถ้าwidget ถูก destroy แต่ controller ยังอยู่มันจะยังrender frame ต่อทำให้ memory leak
 
   //Logic
   Future<void> _loadUserData() async {
     final id = await _storage.read(key: 'delegate_id');
     final userDataStr = await _storage.read(key: 'user_data');
+    //delegate_id คือ id ของ user || user_data คือข้อมูล user แบบ JSON string คือข้อมูล user แบบ JSON string
 
     String? name, title, company, team;
     if (userDataStr != null) {
@@ -99,6 +100,8 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
         print('Error parsing user data: $e');
       }
     }
+
+    //แปลง json => Map แล้วค่อยดึงค่าออกมา แบบว่า เอามา select || views
 
     setState(() {
       _delegateId = id;
@@ -377,7 +380,9 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
       final base64String = _currentQrBase64!.contains(',')
           ? _currentQrBase64!.split(',').last
           : _currentQrBase64!;
+      //รูปแบบ QR ที่ได้จาก backend
       final bytes = base64Decode(base64String);
+      //แปลง base64 string เป็น bytes (decode) ข้อความที่ถูกเข้ารหัสด้วย Base64 กลับมาเป็นข้อมูลดิบ
 
       final result = await ImageGallerySaverPlus.saveImage(
         Uint8List.fromList(bytes),
@@ -432,13 +437,17 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
           ? _currentQrBase64!.split(',').last
           : _currentQrBase64!;
       final bytes = base64Decode(base64String);
+      //แปลง base64 string เป็น bytes (decode) ข้อความที่ถูกเข้ารหัสด้วย Base64 กลับมาเป็นข้อมูลดิบ
 
       final tempDir = await getTemporaryDirectory();
       final file = File('${tempDir.path}/qr_code_${_delegateId}.png');
       await file.writeAsBytes(bytes);
+      //path โฟลเดอร์ชั่วคราวของเครื่อง สร้างไฟล์ชั่วคราว แล้วเขียน bytes ลงไป
       await Share.shareXFiles([XFile(file.path)]);
+      //เปิด share sheet ของระบบ
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted)
+        return; //มันคือ property - flutter widget ที่บอกว่า widget ยังอยู่บน screen
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error occurred: $e'),
@@ -471,6 +480,7 @@ class _ScanState extends State<Scan> with SingleTickerProviderStateMixin {
     }
   }
 
+  //popupตอนกำลังจะแชร์ QR Code
   Widget _buildQrCodeError() {
     return Container(
       width: 280,

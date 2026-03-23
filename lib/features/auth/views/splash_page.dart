@@ -21,29 +21,6 @@ class _SplashPageState extends State<SplashPage> {
     _checkToken();
   }
 
-  // Future<void> _checkToken() async {
-  //   final storage = Modular.get<FlutterSecureStorage>();
-  //   final token = await storage.read(key: 'auth_token');
-
-  //   if (token != null) {
-  //     Modular.get<ChatBloc>()
-  //       ..add(ConnectWebSocket())
-  //       ..add(LoadChatRooms());
-  //     Modular.get<NotificationBloc>().add(LoadUnreadCount());
-
-  //     final pending = NotificationService.pendingPayload;
-  //     if (pending != null) {
-  //       await Future.delayed(const Duration(milliseconds: 300));
-  //       NotificationService.handlePendingPayload(pending);
-  //       return; // ไม่ต้อง navigate('/meeting')
-  //     }
-
-  //     Modular.to.navigate('/meeting');
-  //   } else {
-  //     Modular.to.navigate('/login');
-  //   }
-  // }
-
   Future<void> _checkToken() async {
     final storage = Modular.get<FlutterSecureStorage>();
     final token = await storage.read(key: 'auth_token');
@@ -55,7 +32,11 @@ class _SplashPageState extends State<SplashPage> {
 
     try {
       final dio = Modular.get<Dio>();
-      await dio.get('/delegates/me');
+      //ตรวจ token มี token ลองยิง API จริงเลย ภายใน 5 วินาที
+      await dio.get(
+        '/delegates/me',
+        options: Options(sendTimeout: const Duration(seconds: 5)),
+      );
 
       Modular.get<ChatBloc>()
         ..add(ConnectWebSocket())
@@ -68,9 +49,12 @@ class _SplashPageState extends State<SplashPage> {
         NotificationService.handlePendingPayload(pending);
         return;
       }
-
+      //ถ้าสำเร็จ
       Modular.to.navigate('/meeting');
-    } catch (_) {}
+    } catch (_) {
+      //fail / timeout → catch รับ → ไป /login ทันที
+      Modular.to.navigate('/login');
+    }
   }
 
   @override

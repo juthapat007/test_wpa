@@ -331,11 +331,11 @@ class MeetingSideBModel {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class TableMeetingModel {
+  final MeetingSideBModel sideA;
+  final MeetingSideBModel sideB;
   final int scheduleId;
   final DateTime startAt;
   final DateTime endAt;
-  final MeetingSideAModel sideA;
-  final MeetingSideBModel sideB;
   final String? meetingRole;
   final bool bookerIsOwner;
   final bool targetIsOwner;
@@ -356,12 +356,12 @@ class TableMeetingModel {
   });
 
   factory TableMeetingModel.fromJson(Map<String, dynamic> json) {
-    final booker = json['booker'] as Map<String, dynamic>?;
+    final bookerTeam = json['booker_team'] as Map<String, dynamic>?;
     final targetTeam = json['target_team'] as Map<String, dynamic>?;
 
-    if (booker == null || targetTeam == null) {
+    if (bookerTeam == null || targetTeam == null) {
       debugPrint(
-        'TableMeetingModel: missing booker/target_team | keys: ${json.keys.toList()}',
+        'TableMeetingModel: missing booker_team/target_team | keys: ${json.keys.toList()}',
       );
     }
 
@@ -373,9 +373,9 @@ class TableMeetingModel {
       endAt: json['end_at'] != null
           ? DateTime.parse(json['end_at'] as String)
           : DateTime.now(),
-      sideA: booker != null
-          ? MeetingSideAModel.fromJson(booker)
-          : MeetingSideAModel.empty(),
+      sideA: bookerTeam != null
+          ? MeetingSideBModel.fromJson(bookerTeam)
+          : MeetingSideBModel.empty(),
       sideB: targetTeam != null
           ? MeetingSideBModel.fromJson(targetTeam)
           : MeetingSideBModel.empty(),

@@ -115,6 +115,7 @@ class TeamScheduleSheet extends StatelessWidget {
     if (friendIds.contains(delegateId)) return _FriendStatus.friend;
     return _FriendStatus.none;
   }
+  //เช็ค connection
 
   // ─── Meeting Card ─────────────────────────────────────────────────────────
 
@@ -150,38 +151,43 @@ class TeamScheduleSheet extends StatelessWidget {
             const SizedBox(height: 10),
 
             // ─── Side A ───────────────────────────────────────────────
-            Card(
-              margin: EdgeInsets.zero,
-              // color: Colors.blue.withValues(alpha: 0.05),
-              color: const Color(0xFFF0F9FF),
-
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-                side: BorderSide(color: Colors.blue.shade100),
-              ),
-              clipBehavior: Clip.hardEdge,
-              child: InkWell(
-                onTap: () {
-                  // ดักตัวเอง
-                  if (meeting.sideA.delegateId == myDelegateId) return;
-                  Modular.to.pushNamed(
-                    '/other_profile',
-                    arguments: {'delegate_id': meeting.sideA.delegateId},
-                  );
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: _buildSideRow(
-                    avatarUrl: meeting.sideA.avatarUrl,
-                    name: meeting.sideA.name,
-                    title: meeting.sideA.title,
-                    company: meeting.sideA.company,
-                    delegateId: meeting.sideA.delegateId,
-                    status: _resolveStatus(meeting.sideA.delegateId, friendIds),
+            // เปลี่ยนจาก single card เป็น loop members
+            ...meeting.sideA.members.asMap().entries.map((entry) {
+              final isLast = entry.key == meeting.sideA.members.length - 1;
+              return Padding(
+                padding: EdgeInsets.only(bottom: isLast ? 0 : 8),
+                child: Card(
+                  margin: EdgeInsets.zero,
+                  color: const Color(0xFFF0F9FF),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(color: Colors.blue.shade100),
+                  ),
+                  clipBehavior: Clip.hardEdge,
+                  child: InkWell(
+                    onTap: () {
+                      if (entry.value.id == myDelegateId) return;
+                      Modular.to.pushNamed(
+                        '/other_profile',
+                        arguments: {'delegate_id': entry.value.id},
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: _buildSideRow(
+                        avatarUrl: entry.value.avatarUrl,
+                        name: entry.value.name,
+                        title: entry.value.title,
+                        company: meeting.sideA.company,
+                        delegateId: entry.value.id,
+                        status: _resolveStatus(entry.value.id, friendIds),
+                        //เอาไว้เช็คความสัมพันธ์
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
+              );
+            }),
 
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 8),

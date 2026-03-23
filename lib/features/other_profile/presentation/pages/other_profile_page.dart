@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_modular/flutter_modular.dart';
-import 'package:test_wpa/core/constants/set_space.dart';
 import 'package:test_wpa/core/theme/app_colors.dart';
 import 'package:test_wpa/core/theme/app_colors.dart' as color;
 import 'package:test_wpa/features/chat/presentation/bloc/chat_bloc.dart';
@@ -9,10 +8,8 @@ import 'package:test_wpa/features/other_profile/domain/entities/profile_detail.d
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_bloc.dart';
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_event.dart';
 import 'package:test_wpa/features/other_profile/presentation/bloc/profile_detail_state.dart';
-import 'package:test_wpa/features/schedules/presentation/widgets/schedule_event_card.dart';
 import 'package:test_wpa/features/schedules/presentation/widgets/timeline_row.dart';
 import 'package:test_wpa/features/schedules/utils/schedule_card_helper.dart';
-import 'package:test_wpa/features/widgets/add_button_outline.dart';
 import 'package:test_wpa/features/widgets/app_bar_back.dart';
 import 'package:test_wpa/features/widgets/app_button.dart';
 import 'package:test_wpa/features/widgets/app_dialog.dart';
@@ -85,8 +82,10 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
       setState(() {
         _lastLoaded = state;
       });
-    } else if (state is FriendRequestSending) {
-    } else if (state is FriendRequestSuccess) {
+    }
+    // else if (state is FriendRequestSending) {
+    // }
+    else if (state is FriendRequestSuccess) {
       ReadContext(
         context,
       ).read<ProfileDetailBloc>().add(LoadProfileDetail(widget.delegateId));
@@ -107,7 +106,8 @@ class _OtherProfilePageState extends State<OtherProfilePage> {
           ],
         ),
       );
-    } else if (state is FriendRequestFailed) {
+    } 
+    else if (state is FriendRequestFailed) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(state.message),

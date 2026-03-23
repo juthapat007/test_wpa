@@ -41,7 +41,7 @@ class TableInfo {
   final List<TableDelegate> delegates;
   final List<String> nearTables;
   final List<TableMeeting> meetings;
-  final BoothOwner? boothOwner; 
+  final BoothOwner? boothOwner;
 
   TableInfo({
     required this.tableId,
@@ -157,7 +157,7 @@ class TableMeeting {
   final int scheduleId;
   final DateTime startAt;
   final DateTime endAt;
-  final MeetingSideA sideA;
+  final MeetingSideB sideA;
   final MeetingSideB sideB;
   final MeetingRole meetingRole;
   final bool bookerIsOwner;

@@ -41,9 +41,13 @@ class _SchedulePageState extends State<SchedulePage> {
   // ─── Date selection ───────────────────────────────────────────────────────
 
   void _onDateSelected(String date) {
+    debugPrint('📅 onDateSelected: $date');
     setState(() => _selectedScheduleIds.clear());
+    //ล้าง schedule เดิมเพราะ user เปลี่ยนวันใหม่
     ReadContext(context).read<ScheduleBloc>().add(LoadSchedules(date: date));
+    //สั่งโหลด schedule ของวันที่เลือกใหม่
     Modular.get<TableBloc>().add(LoadTableView(date: date));
+    //table/meeting grid ของวันที่เลือกด้วย เพราะทั้ง 2 ส่วนต้องแสดงวันเดียวกัน
   }
 
   // ─── Retry ────────────────────────────────────────────────────────────────
@@ -60,8 +64,10 @@ class _SchedulePageState extends State<SchedulePage> {
     setState(() {
       _isSelectionMode = !_isSelectionMode;
       if (!_isSelectionMode) _selectedScheduleIds.clear();
+      //ถ้าอกจากโหมดselection จะ clear รายการที่เลือกไว้ด้วย
     });
   }
+  //การสลับโหมดไปมา  เข้า/ออก selection mode
 
   void _cancelSelectionMode() {
     setState(() {
@@ -95,16 +101,18 @@ class _SchedulePageState extends State<SchedulePage> {
     }
 
     final state = ReadContext(context).read<ScheduleBloc>().state;
-    if (state is! ScheduleLoaded) return;
+    if (state is! ScheduleLoaded) return; //เช็คว่ามีข้อมูลมั้ย
 
     final selectedSchedules = state.scheduleResponse.schedules
         .where((s) => _selectedScheduleIds.contains(s.id))
         .toList();
 
+    final currentDate = state.selectedDate; //กรองเฉพาะที่เลือก
+
     final result = await Modular.to.pushNamed<bool>(
       '/attendance',
       arguments: selectedSchedules,
-    );
+    ); // ไปหน้า attendance รอ result
 
     if (!mounted) return;
 
@@ -113,27 +121,18 @@ class _SchedulePageState extends State<SchedulePage> {
       _selectedScheduleIds.clear();
     });
 
-    // reload วันที่ปัจจุบันจาก bloc state
-    final currentState = ReadContext(context).read<ScheduleBloc>().state;
-    final currentDate = currentState is ScheduleLoaded
-        ? currentState.selectedDate
-        : null;
-    ReadContext(
-      context,
-    ).read<ScheduleBloc>().add(LoadSchedules(date: currentDate));
+    ReadContext(context).read<ScheduleBloc>().add(
+      LoadSchedules(date: currentDate),
+    ); //รีโหลดวันเดิม
 
     if (result == true) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Leave submitted successfully! ✓'),
+              content: const Text('Leave submitted successfully!'),
               backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              margin: const EdgeInsets.all(12),
+              behavior: SnackBarBehavior.fixed,
             ),
           );
         }
@@ -211,7 +210,6 @@ class _SchedulePageState extends State<SchedulePage> {
     );
   }
 
-  // ✅ มีแค่อันเดียว ใช้ state.selectedDate จาก bloc โดยตรง
   Widget _buildDateTabBar() {
     return BlocBuilder<ScheduleBloc, ScheduleState>(
       builder: (context, state) {
@@ -220,9 +218,9 @@ class _SchedulePageState extends State<SchedulePage> {
         if (response.availableDates.isEmpty) return const SizedBox(height: 16);
 
         return DateTabBar(
-          key: ValueKey(state.selectedDate),
+          key: ValueKey(state.selectedDate), //rebuild เมื่อวันเปลี่ยน
           availableDates: response.availableDates,
-          selectedDate: state.selectedDate,
+          selectedDate: state.selectedDate, //highlight วันที่ถูกต้อง
           onDateSelected: _onDateSelected,
         );
       },
@@ -240,6 +238,9 @@ class _SchedulePageState extends State<SchedulePage> {
 
         if (state is ScheduleLoaded) {
           final schedules = state.scheduleResponse.schedules;
+          for (final s in schedules) {
+            debugPrint('📋 id:${s.id} type:${s.type} leave:${s.leave}');
+          }
           if (schedules.isEmpty) {
             return const Center(
               child: Column(
@@ -268,7 +269,9 @@ class _SchedulePageState extends State<SchedulePage> {
               final schedule = schedules[index];
               final isSelected = _selectedScheduleIds.contains(schedule.id);
               final isSelectable =
-                  schedule.leave == null && schedule.type == 'meeting';
+                  schedule.leave == null &&
+                  schedule.type ==
+                      'meeting'; //การลาจะทำได้แค่เมื่อ card เป็น meeting เท่านั้น
 
               return GestureDetector(
                 onTap: (_isSelectionMode && isSelectable)

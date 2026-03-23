@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:test_wpa/features/profile/data/models/select_option.dart';
 
 class ProfileViewModel {
   final String name;

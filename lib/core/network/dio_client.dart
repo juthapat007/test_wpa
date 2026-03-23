@@ -8,7 +8,7 @@ class DioClient {
   factory DioClient() => _instance;
 
   DioClient._internal() {
-    dio.interceptors.add(setupLogger());
+    // dio.interceptors.add(setupLogger());
     dio.interceptors.add(AuthInterceptor());
   }
 
@@ -29,7 +29,7 @@ class DioClient {
         receiveTimeout: const Duration(seconds: 60),
       ),
     );
-    dio.interceptors.add(setupLogger());
+    // dio.interceptors.add(setupLogger());
     dio.interceptors.add(AuthInterceptor());
     return dio;
   }

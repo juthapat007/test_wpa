@@ -132,11 +132,11 @@ class TableDetailSheet extends StatelessWidget {
         ? Colors.blue[700]!
         : Colors.grey[600]!;
 
-    final String roleLabel = isHosting
-        ? 'Hosting Guest'
-        : isReceiving
-        ? 'Receiving Visitor'
-        : 'Meeting';
+    // final String roleLabel = isHosting
+    //     ? 'Hosting Guest'
+    //     : isReceiving
+    //     ? 'Receiving Visitor'
+    //     : 'Meeting';
 
     final bool ownerIsSideA = isHosting
         ? meeting.bookerIsOwner
@@ -153,22 +153,22 @@ class TableDetailSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Role badge
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: roleColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: roleColor.withValues(alpha: 0.3)),
-              ),
-              child: Text(
-                roleLabel,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: roleColor,
-                ),
-              ),
-            ),
+            // Container(
+            //   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            //   decoration: BoxDecoration(
+            //     color: roleColor.withValues(alpha: 0.1),
+            //     borderRadius: BorderRadius.circular(8),
+            //     border: Border.all(color: roleColor.withValues(alpha: 0.3)),
+            //   ),
+            //   child: Text(
+            //     roleLabel,
+            //     style: TextStyle(
+            //       fontSize: 12,
+            //       fontWeight: FontWeight.w700,
+            //       color: roleColor,
+            //     ),
+            //   ),
+            // ),
             const SizedBox(height: 10),
 
             // ─── Owner side ────────────────────────────────────────────
@@ -180,15 +180,19 @@ class TableDetailSheet extends StatelessWidget {
             const SizedBox(height: 6),
 
             if (isHosting) ...[
-              // owner_hosting → sideA (booker) คือ owner
-              _buildPersonCard(
-                avatarUrl: meeting.sideA.avatarUrl,
-                name: meeting.sideA.name,
-                title: meeting.sideA.title,
-                company: meeting.sideA.company,
-                delegateId: meeting.sideA.delegateId,
-                bgColor: const Color(0xFFF5F3FF),
-                borderColor: Colors.purple.shade100,
+              ...meeting.sideA.members.map(
+                (m) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: _buildPersonCard(
+                    avatarUrl: m.avatarUrl,
+                    name: m.name,
+                    title: m.title,
+                    company: meeting.sideA.company,
+                    delegateId: m.id,
+                    bgColor: const Color(0xFFF5F3FF),
+                    borderColor: Colors.purple.shade100,
+                  ),
+                ),
               ),
             ] else ...[
               // owner_as_target → sideB (target) คือ owner
@@ -234,33 +238,35 @@ class TableDetailSheet extends StatelessWidget {
               color: isHosting ? Colors.green[700]! : Colors.blue[700]!,
             ),
             const SizedBox(height: 6),
-
             if (isHosting) ...[
-              // owner_hosting → sideB (target) คือ guest
-              ...meeting.sideB.members.map(
+              ...meeting.sideA.members.map(
                 (m) => Padding(
                   padding: const EdgeInsets.only(bottom: 6),
                   child: _buildPersonCard(
                     avatarUrl: m.avatarUrl,
                     name: m.name,
                     title: m.title,
-                    company: meeting.sideB.company,
+                    company: meeting.sideA.company,
                     delegateId: m.id,
-                    bgColor: const Color(0xFFF0FDF4),
-                    borderColor: Colors.green.shade100,
+                    bgColor: const Color(0xFFF5F3FF),
+                    borderColor: Colors.purple.shade100,
                   ),
                 ),
               ),
             ] else ...[
-              // owner_as_target → sideA (booker) คือ visitor
-              _buildPersonCard(
-                avatarUrl: meeting.sideA.avatarUrl,
-                name: meeting.sideA.name,
-                title: meeting.sideA.title,
-                company: meeting.sideA.company,
-                delegateId: meeting.sideA.delegateId,
-                bgColor: const Color(0xFFF0F9FF),
-                borderColor: Colors.blue.shade100,
+              ...meeting.sideA.members.map(
+                (m) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: _buildPersonCard(
+                    avatarUrl: m.avatarUrl,
+                    name: m.name,
+                    title: m.title,
+                    company: meeting.sideA.company,
+                    delegateId: m.id,
+                    bgColor: const Color(0xFFF0F9FF),
+                    borderColor: Colors.blue.shade100,
+                  ),
+                ),
               ),
             ],
           ],
@@ -358,34 +364,41 @@ class TableDetailSheet extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Card(
-              margin: EdgeInsets.zero,
-              color: const Color(0xFFF0F9FF),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-                side: BorderSide(color: Colors.blue.shade100),
-              ),
-              clipBehavior: Clip.hardEdge,
-              child: InkWell(
-                onTap: () {
-                  if (meeting.sideA.delegateId == myDelegateId) return;
-                  Modular.to.pushNamed(
-                    '/other_profile',
-                    arguments: {'delegate_id': meeting.sideA.delegateId},
-                  );
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: _buildSideRow(
-                    avatarUrl: meeting.sideA.avatarUrl,
-                    name: meeting.sideA.name,
-                    title: meeting.sideA.title,
-                    company: meeting.sideA.company,
-                    delegateId: meeting.sideA.delegateId,
+            // ─── Side A (loop members) ─────────────────────────────────
+            ...meeting.sideA.members.asMap().entries.map((entry) {
+              final isLast = entry.key == meeting.sideA.members.length - 1;
+              return Padding(
+                padding: EdgeInsets.only(bottom: isLast ? 0 : 8),
+                child: Card(
+                  margin: EdgeInsets.zero,
+                  color: const Color(0xFFF0F9FF),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(color: Colors.blue.shade100),
+                  ),
+                  clipBehavior: Clip.hardEdge,
+                  child: InkWell(
+                    onTap: () {
+                      if (entry.value.id == myDelegateId) return;
+                      Modular.to.pushNamed(
+                        '/other_profile',
+                        arguments: {'delegate_id': entry.value.id},
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: _buildSideRow(
+                        avatarUrl: entry.value.avatarUrl,
+                        name: entry.value.name,
+                        title: entry.value.title,
+                        company: meeting.sideA.company,
+                        delegateId: entry.value.id,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
+              );
+            }),
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
               child: Row(
@@ -403,6 +416,7 @@ class TableDetailSheet extends StatelessWidget {
                 ],
               ),
             ),
+            // ─── Side B (loop members) ─────────────────────────────────
             ...meeting.sideB.members.asMap().entries.map((entry) {
               final isLast = entry.key == meeting.sideB.members.length - 1;
               return Padding(
@@ -442,7 +456,6 @@ class TableDetailSheet extends StatelessWidget {
       ),
     );
   }
-
   // ─── Side Row ─────────────────────────────────────────────────────────────
 
   Widget _buildSideRow({

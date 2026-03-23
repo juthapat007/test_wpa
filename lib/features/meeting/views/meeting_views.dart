@@ -114,6 +114,7 @@ class _MeetingWidgetState extends State<MeetingWidget> {
   // ─── Actions ────────────────────────────────────────────────────────────
 
   void _onDateSelected(String date) {
+    debugPrint('📅 onDateSelected: $date');
     setState(() {
       _selectedDateStr = date;
       _showFullList = true;
@@ -142,12 +143,17 @@ class _MeetingWidgetState extends State<MeetingWidget> {
     );
   }
 
+  // void _onFirstScheduleLoaded(scheduleResponse) {
+  //   final dates = scheduleResponse.availableDates;
+  //   if (dates.isEmpty) return;
+  //   Modular.get<TableBloc>().add(LoadTableView(time: _nowHHmm()));
+  // }
   void _onFirstScheduleLoaded(scheduleResponse) {
     final dates = scheduleResponse.availableDates;
     if (dates.isEmpty) return;
-    Modular.get<TableBloc>().add(LoadTableView(time: _nowHHmm()));
+    // ไม่ส่งวันที่ไปก่อน ให้ backend return days มาก่อน
+    Modular.get<TableBloc>().add(LoadTableView());
   }
-
   // ─── Helpers ────────────────────────────────────────────────────────────
 
   bool _isSelectableSchedule(Schedule s) =>
@@ -298,11 +304,21 @@ class _MeetingWidgetState extends State<MeetingWidget> {
         if (!_tableInitialized) {
           _tableInitialized = true;
           final days = tableState.response.days;
-          final firstAvailableDate = days.isNotEmpty
-              ? days.first
-              : responseDate;
           final timesToday = tableState.response.timesToday;
-          final snappedTime = _nearestSlotTime(timesToday); // ✅ เรียกได้แล้ว
+          final today = DateTimeHelper.formatApiDate(DateTime.now());
+          final firstAvailableDate = days.contains(today)
+              ? today
+              : days.isNotEmpty
+              ? days.first
+              : tableState.response.date;
+          final snappedTime = _nearestSlotTime(timesToday);
+
+          //debugPrint
+          debugPrint('🕐 now: ${DateTime.now()}');
+          debugPrint('📅 today: $today');
+          debugPrint('📅 days: $days');
+          debugPrint('📅 selected: $firstAvailableDate');
+          debugPrint('⏰ snappedTime: $snappedTime');
 
           setState(() {
             _tableDays = days;
@@ -318,7 +334,6 @@ class _MeetingWidgetState extends State<MeetingWidget> {
           );
           return;
         }
-
         if (tableState.response.days.isNotEmpty) {
           setState(() {
             _tableDays = tableState.response.days;

@@ -433,48 +433,49 @@ class _TableGridWidgetState extends State<TableGridWidget> {
   Widget _buildBoothMeetingRow(TableMeeting meeting) {
     final isHosting = meeting.meetingRole == MeetingRole.ownerHosting;
     final isReceiving = meeting.meetingRole == MeetingRole.ownerAsTarget;
+    //เช็คว่า booth นี้กำลัง hosting guest อยู่ หรือกำลัง receiving visitor
+    // final Color roleColor = isHosting
+    //     ? Colors.green
+    //     : isReceiving
+    //     ? Colors.blue
+    //     : Colors.grey;
+    //กำหนดสิตาม role
 
-    final Color roleColor = isHosting
-        ? Colors.green
-        : isReceiving
-        ? Colors.blue
-        : Colors.grey;
+    // final String roleLabel = isHosting
+    //     ? 'Hosting'
+    //     : isReceiving
+    //     ? 'Visitor'
+    //     : 'Meeting';
 
-    final String roleLabel = isHosting
-        ? 'Hosting'
-        : isReceiving
-        ? 'Visitor'
-        : 'Meeting';
-
-    final String guestName = isHosting
-        ? meeting.sideB.company
-        : meeting.sideA.company;
+    // final String guestName = isHosting
+    //     ? meeting.sideB.company
+    //     : meeting.sideA.company;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: roleColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: roleColor.withValues(alpha: 0.3)),
-            ),
-            child: Text(
-              roleLabel,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: roleColor,
-              ),
-            ),
-          ),
+          // Container(
+          //   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          //   decoration: BoxDecoration(
+          //     color: roleColor.withValues(alpha: 0.1),
+          //     borderRadius: BorderRadius.circular(6),
+          //     border: Border.all(color: roleColor.withValues(alpha: 0.3)),
+          //   ),
+          //   child: Text(
+          //     roleLabel,
+          //     style: TextStyle(
+          //       fontSize: 10,
+          //       fontWeight: FontWeight.w700,
+          //       color: roleColor,
+          //     ),
+          //   ),
+          // ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               isHosting
-                  ? '${meeting.sideA.name} → ${meeting.sideB.company}'
-                  : '${meeting.sideA.name} (${meeting.guestCompany ?? meeting.sideA.company})',
+                  ? '${meeting.sideA.company} → ${meeting.sideB.company}'
+                  : '${meeting.sideA.company} (${meeting.guestCompany ?? meeting.sideA.company})',
               style: const TextStyle(fontSize: 12),
               overflow: TextOverflow.ellipsis,
             ),
